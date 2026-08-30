@@ -34,15 +34,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import org.example.myapp.auth.viewmodel.HomeScreenUiState
-import org.example.myapp.auth.viewmodel.HomeScreenViewModel
+import org.example.myapp.auth.viewmodel.HomeUiState
+import org.example.myapp.auth.viewmodel.HomeViewModel
 import org.example.myapp.shared.R
 import org.koin.compose.viewmodel.koinViewModel
 
 
 @Composable
 fun HomeScreen(
-    viewModel: HomeScreenViewModel = koinViewModel(),
+    viewModel: HomeViewModel = koinViewModel(),
     onNavigateToCreatePost: () -> Unit,
     onNavigateToEditPost: (Long) -> Unit
 ) {
@@ -88,13 +88,13 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             when (val state = uiState) {
-                is HomeScreenUiState.Loading -> {
+                is HomeUiState.Loading -> {
                     CircularProgressIndicator(
                         color = Color.Black,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
-                is HomeScreenUiState.Success -> {
+                is HomeUiState.Success -> {
                     if (state.posts.isEmpty()) {
                         Box(
                             modifier = Modifier
@@ -118,6 +118,7 @@ fun HomeScreen(
                                     post = post,
                                     onEditClick = { onNavigateToEditPost(post.id) },
                                     onDeleteClick = { deletingPostId = it },
+                                    onUnhidePostClick = {},
                                     onHidePostClick = { hidingPostId = it },
                                     onBlockUserClick = { blockingUserId = it },
                                     onReportPostClick = { reportingPostId = it }

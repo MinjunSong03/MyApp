@@ -129,6 +129,20 @@ class MyPostViewModel(
         }
     }
 
+    fun unhidePost(post: PostResponse) {
+        viewModelScope.launch {
+            postRepository.unhidePost(post)
+                .onSuccess {
+                    currentPostList.removeAll { it.id == post.id }
+                    _uiState.value = MyPostUiState.Success(currentPostList.toList(), isLastPage)
+                    _toastEvent.send("게시물 숨김을 해제하였습니다.")
+                }
+                .onFailure { error ->
+                    _toastEvent.send(error.message ?: "숨김 해제 처리에 실패했습니다.")
+                }
+        }
+    }
+
     fun deletePost(postId: Long) {
         viewModelScope.launch {
             postRepository.deletePost(postId)

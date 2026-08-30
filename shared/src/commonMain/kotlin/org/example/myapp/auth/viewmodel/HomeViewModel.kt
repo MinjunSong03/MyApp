@@ -9,8 +9,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import org.example.myapp.auth.network.CreatePostRequest
-import org.example.myapp.auth.network.MediaType
 import org.example.myapp.auth.network.PostResponse
 import org.example.myapp.auth.network.ReportReason
 import org.example.myapp.auth.repository.PostRepository
@@ -18,18 +16,18 @@ import org.example.myapp.auth.repository.ReportRepository
 import org.example.myapp.auth.repository.UserBlockRepository
 import kotlin.coroutines.cancellation.CancellationException
 
-sealed class HomeScreenUiState {
-    object Loading: HomeScreenUiState()
-    data class Success(val posts: List<PostResponse>, val isLast: Boolean): HomeScreenUiState()
+sealed class HomeUiState {
+    object Loading: HomeUiState()
+    data class Success(val posts: List<PostResponse>, val isLast: Boolean): HomeUiState()
 }
 
-class HomeScreenViewModel(
+class HomeViewModel(
     private val postRepository: PostRepository,
     private val userBlockRepository: UserBlockRepository,
     private val reportRepository: ReportRepository
 ): ViewModel() {
-    private val _uiState = MutableStateFlow<HomeScreenUiState>(HomeScreenUiState.Loading)
-    val uiState: StateFlow<HomeScreenUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
+    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
@@ -49,7 +47,7 @@ class HomeScreenViewModel(
                 val index = currentPostList.indexOfFirst { it.id == editedPost.id }
                 if (index != -1) {
                     currentPostList[index] = editedPost
-                    _uiState.value = HomeScreenUiState.Success(currentPostList.toList(), isLastPage)
+                    _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
                 }
             }
         }
@@ -59,7 +57,37 @@ class HomeScreenViewModel(
         viewModelScope.launch {
             postRepository.createPostEvent.collect { newPost ->
                 currentPostList.add(0, newPost)
-                _uiState.value = HomeScreenUiState.Success(currentPostList.toList(), isLastPage)
+                _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
+            }
+        }
+    }
+
+    init {
+        viewModelScope.launch {
+            postRepository.postHiddenEvent.collect { hiddenId ->
+                currentPostList.removeAll { it.id == hiddenId }
+                _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
+            }
+        }
+        viewModelScope.launch {
+            postRepository.postDeletedEvent.collect { deletedId ->
+                currentPostList.removeAll { it.id == deletedId }
+                _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
+            }
+        }
+
+        viewModelScope.launch {
+            postRepository.postUnhiddenEvent.collect { unhiddenPost ->
+                if (currentPostList.any { it.id == unhiddenPost.id }) return@collect
+
+                val targetIndex = currentPostList.indexOfFirst { it.createdAt < unhiddenPost.createdAt }
+                if (targetIndex != -1) {
+                    currentPostList.add(targetIndex, unhiddenPost)
+                    _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
+                } else if (isLastPage) {
+                    currentPostList.add(unhiddenPost)
+                    _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
+                }
             }
         }
     }
@@ -72,7 +100,7 @@ class HomeScreenViewModel(
             currentPage = 0
             isLastPage = false
             currentPostList.clear()
-            _uiState.value = HomeScreenUiState.Loading
+            _uiState.value = HomeUiState.Loading
         } else {
             if (isLastPage || feedJob?.isActive == true) return
         }
@@ -85,22 +113,22 @@ class HomeScreenViewModel(
                         currentPostList.addAll(slice.content)
                         isLastPage = slice.last
                         currentPage++
-                        _uiState.value = HomeScreenUiState.Success(currentPostList.toList(), isLastPage)
+                        _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
                     }
                     .onFailure { error ->
                         if (error is CancellationException) return@onFailure
 
                         if (currentPostList.isEmpty()) {
-                            _uiState.value = HomeScreenUiState.Success(emptyList(), isLast = true)
+                            _uiState.value = HomeUiState.Success(emptyList(), isLast = true)
                         } else {
-                            _uiState.value = HomeScreenUiState.Success(currentPostList.toList(), isLastPage)
+                            _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
                         }
                     }
             } catch (e : Exception) {
                 if (e is CancellationException) throw e
 
                 _toastEvent.send(e.message ?: "알 수 없는 오류가 발생했습니다.")
-                _uiState.value = HomeScreenUiState.Success(currentPostList.toList(), isLastPage)
+                _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
             } finally {
                 if (isRefresh) {
                     _isRefreshing.value = false
@@ -124,8 +152,6 @@ class HomeScreenViewModel(
         viewModelScope.launch {
             postRepository.hidePost(postId)
                 .onSuccess {
-                    currentPostList.removeAll { it.id == postId }
-                    _uiState.value = HomeScreenUiState.Success(currentPostList.toList(), isLastPage)
                     _toastEvent.send("게시물을 숨김 처리하였습니다.")
                 }
                 .onFailure { error ->
@@ -138,8 +164,6 @@ class HomeScreenViewModel(
         viewModelScope.launch {
             postRepository.deletePost(postId)
                 .onSuccess {
-                    currentPostList.removeAll { it.id == postId }
-                    _uiState.value = HomeScreenUiState.Success(currentPostList.toList(), isLastPage)
                     _toastEvent.send("게시물을 삭제하였습니다.")
                 }
                 .onFailure { error ->
@@ -153,7 +177,7 @@ class HomeScreenViewModel(
             userBlockRepository.blockUser(targetUserId)
                 .onSuccess {
                     currentPostList.removeAll { it.userId == targetUserId }
-                    _uiState.value = HomeScreenUiState.Success(currentPostList.toList(), isLastPage)
+                    _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
                     _toastEvent.send("사용자를 차단하였습니다.")
                 }
                 .onFailure { error ->

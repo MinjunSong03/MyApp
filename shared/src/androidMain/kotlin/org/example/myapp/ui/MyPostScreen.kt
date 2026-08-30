@@ -41,6 +41,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.example.myapp.auth.network.PostResponse
 import org.example.myapp.auth.viewmodel.MyPostUiState
 import org.example.myapp.auth.viewmodel.MyPostViewModel
 import org.example.myapp.auth.viewmodel.PostTab
@@ -62,6 +63,7 @@ fun MyPostScreen(
     var blockingUserId by rememberSaveable { mutableStateOf<Long?>(null) }
     var deletingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
     var hidingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var unhidingPost by rememberSaveable { mutableStateOf<PostResponse?>(null) }
 
     val listState = rememberLazyListState()
 
@@ -178,8 +180,9 @@ fun MyPostScreen(
                                 items(state.posts, key = { it.id }) { post ->
                                     PostCard(
                                         post = post,
-                                        onEditClick = { onNavigateToEditPost(post.id) },
+                                        onEditClick = { onNavigateToEditPost(it) },
                                         onDeleteClick = { deletingPostId = it },
+                                        onUnhidePostClick = { unhidingPost = post },
                                         onHidePostClick = { hidingPostId = it },
                                         onBlockUserClick = { blockingUserId = it },
                                         onReportPostClick = { reportingPostId = it }
@@ -250,6 +253,29 @@ fun MyPostScreen(
             },
             dismissButton = {
                 TextButton(onClick = { hidingPostId = null }) {
+                    Text(text = "취소")
+                }
+            }
+        )
+    }
+
+    unhidingPost?.let { targetPost ->
+        AlertDialog(
+            onDismissRequest = { unhidingPost = null },
+            title = { Text(text = "게시물 숨기기 해제") },
+            text = { Text(text = "이 게시물의 숨김 처리를 해제하시겠습니까?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.unhidePost(targetPost)
+                        unhidingPost = null
+                    }
+                ) {
+                    Text(text = "해제")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { unhidingPost = null }) {
                     Text(text = "취소")
                 }
             }

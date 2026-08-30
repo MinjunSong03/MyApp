@@ -38,7 +38,8 @@ data class PostResponse(
     val mediaUrl: String,
     val viewCount: Long,
     val createdAt: String,
-    val isMine: Boolean
+    val isMine: Boolean,
+    val isHidden: Boolean
 )
 
 @Serializable

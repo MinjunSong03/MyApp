@@ -20,6 +20,15 @@ class PostRepository(
     private val _createPostEvent = MutableSharedFlow<PostResponse>()
     val createPostEvent: SharedFlow<PostResponse> = _createPostEvent.asSharedFlow()
 
+    private val _postHiddenEvent = MutableSharedFlow<Long>()
+    val postHiddenEvent: SharedFlow<Long> = _postHiddenEvent.asSharedFlow()
+
+    private val _postUnhiddenEvent = MutableSharedFlow<PostResponse>()
+    val postUnhiddenEvent: SharedFlow<PostResponse> = _postUnhiddenEvent.asSharedFlow()
+
+    private val _postDeletedEvent = MutableSharedFlow<Long>()
+    val postDeletedEvent: SharedFlow<Long> = _postDeletedEvent.asSharedFlow()
+
     private fun getAccessToken(): String =
         sessionManager.sessionFlow.value?.accessToken ?: throw IllegalStateException("로그인이 필요합니다.")
     suspend fun createPost(request: CreatePostRequest): Result<PostResponse> = withContext(Dispatchers.IO) {
@@ -85,6 +94,8 @@ class PostRepository(
     suspend fun deletePost(postId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             postApiService.deletePost(getAccessToken(), postId)
+        }.onSuccess {
+            _postDeletedEvent.emit(postId)
         }.onFailure { e ->
             if (e is CancellationException) throw e
         }
@@ -93,6 +104,18 @@ class PostRepository(
     suspend fun hidePost(postId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching{
             postApiService.hidePost(getAccessToken(), postId)
+        }.onSuccess {
+            _postHiddenEvent.emit(postId)
+        }.onFailure { e ->
+            if (e is CancellationException) throw e
+        }
+    }
+
+    suspend fun unhidePost(post: PostResponse): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching{
+            postApiService.unhidePost(getAccessToken(), post.id)
+        }.onSuccess {
+            _postUnhiddenEvent.emit(post.copy(isHidden = false))
         }.onFailure { e ->
             if (e is CancellationException) throw e
         }
@@ -103,7 +126,7 @@ class UserBlockRepository(
     private val userBlockApiService: UserBlockApiService,
     private val sessionManager: SessionManager
 ) {
-    private suspend fun getAccessToken(): String =
+    private fun getAccessToken(): String =
         sessionManager.sessionFlow.value?.accessToken ?: throw IllegalStateException("로그인이 필요합니다.")
 
     suspend fun blockUser(targetUserId: Long): Result<Unit> = withContext(Dispatchers.IO) {

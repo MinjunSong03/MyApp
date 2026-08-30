@@ -40,6 +40,7 @@ fun PostCard(
     post: PostResponse,
     onEditClick: (Long) -> Unit,
     onDeleteClick: (Long) -> Unit,
+    onUnhidePostClick: (Long) -> Unit = {},
     onHidePostClick: (Long) -> Unit,
     onBlockUserClick: (Long) -> Unit,
     onReportPostClick: (Long) -> Unit,
@@ -93,13 +94,23 @@ fun PostCard(
                         onDismissRequest = { isMenuExpanded = false }
                     ) {
                         if (post.isMine) {
-                            DropdownMenuItem(
-                                text = { Text(text = "내 게시물 숨기기") },
-                                onClick = {
-                                    isMenuExpanded = false
-                                    onHidePostClick(post.id)
-                                },
-                            )
+                            if (post.isHidden) {
+                                DropdownMenuItem(
+                                    text = { Text(text = "내 게시물 숨기기 해제") },
+                                    onClick = {
+                                        isMenuExpanded = false
+                                        onUnhidePostClick(post.id)
+                                    }
+                                )
+                            } else {
+                                DropdownMenuItem(
+                                    text = { Text(text = "내 게시물 숨기기") },
+                                    onClick = {
+                                        isMenuExpanded = false
+                                        onHidePostClick(post.id)
+                                    },
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text(text = "내 게시물 수정하기") },
                                 onClick = {

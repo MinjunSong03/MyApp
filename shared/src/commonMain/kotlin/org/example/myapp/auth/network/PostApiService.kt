@@ -149,6 +149,18 @@ class PostApiService(
             throw IllegalStateException(message)
         }
     }
+
+    suspend fun unhidePost(token: String, postId: Long) {
+        val response = client.delete("$baseUrl/api/posts/$postId/unhide") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        if (!response.status.isSuccess()) {
+            val errorBody = runCatching { response.body<ErrorResponse>() }.getOrNull()
+            val message = errorBody?.message ?: "게시물 숨기기 해제에 실패했습니다. (${response.status.value})"
+            throw IllegalStateException(message)
+        }
+    }
 }
 
 class UserBlockApiService(
@@ -166,7 +178,6 @@ class UserBlockApiService(
             throw IllegalStateException(message)
         }
     }
-
 
     suspend fun unblockUser(token: String, targetUserId: Long) {
         val response = client.delete("$baseUrl/api/user/$targetUserId/unblock") {
