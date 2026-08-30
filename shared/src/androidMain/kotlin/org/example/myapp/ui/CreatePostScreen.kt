@@ -1,7 +1,6 @@
 package org.example.myapp.ui
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -27,34 +26,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.myapp.auth.network.MediaType
-import org.example.myapp.auth.viewmodel.PostViewModel
+import org.example.myapp.auth.viewmodel.CreatePostViewModel
 import org.koin.compose.viewmodel.koinViewModel
 import org.example.myapp.shared.R
 
 
 @Composable
 fun CreatePostScreen(
-    viewModel: PostViewModel = koinViewModel(),
+    viewModel: CreatePostViewModel = koinViewModel(),
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-
-    LaunchedEffect(Unit) {
-        viewModel.toastEvent.collect { message ->
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.updateSuccessEvent.collect {
-            onBack()
-        }
-    }
-
 
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
@@ -64,6 +49,20 @@ fun CreatePostScreen(
     var isLoading by rememberSaveable { mutableStateOf(false) }
 
     val isFormValid = title.isNotBlank() && description.isNotBlank() && mediaUrl.isNotBlank() && thumbnailUrl.isNotBlank()
+
+    LaunchedEffect(Unit) {
+        viewModel.toastEvent.collect { message ->
+            isLoading = false
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.updateSuccessEvent.collect {
+            isLoading = false
+            onBack()
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize()

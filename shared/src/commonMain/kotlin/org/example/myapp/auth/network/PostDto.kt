@@ -5,6 +5,8 @@ import kotlinx.serialization.Serializable
 enum class MediaType { IMAGE, VIDEO }
 enum class ReportReason { SPAM, INAPPROPRIATE, VIOLENCE, COPYRIGHT, OTHER }
 
+enum class UserStatus { ACTIVE, BANNED }
+
 @Serializable
 data class CreatePostRequest(
     val title: String,
@@ -49,4 +51,12 @@ data class SliceResponse<T>(
 data class CreateReportRequest(
     val reason: ReportReason,
     val detail: String
+)
+
+@Serializable
+data class BlockedUserResponse(
+    val id: Long,
+    val nickname: String,
+    val profileImageUrl: String?,
+    val status: UserStatus
 )

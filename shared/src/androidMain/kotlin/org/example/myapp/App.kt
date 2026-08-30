@@ -30,7 +30,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun App() {
     KoinContext {
         MaterialTheme {
-            val viewModel: AuthViewModel = koinViewModel()
+            val viewModel: AppViewModel = koinViewModel()
             val authState by viewModel.authState.collectAsState()
 
             LaunchedEffect(Unit) {

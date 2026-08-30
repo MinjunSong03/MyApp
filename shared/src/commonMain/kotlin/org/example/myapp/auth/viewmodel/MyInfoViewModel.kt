@@ -9,18 +9,15 @@ import kotlinx.coroutines.launch
 import org.example.myapp.auth.model.OAuthProvider
 import org.example.myapp.auth.repository.AuthRepository
 
-class AuthViewModel(
+class MyInfoViewModel(
     private val authRepository: AuthRepository
 ): ViewModel() {
+
     val authState = authRepository.authState
 
     // 오류 메세지 Toast
     private val _toastEvent = Channel<String>(Channel.BUFFERED)
     val toastEvent = _toastEvent.receiveAsFlow()
-
-    // 닉네임 변경 성공 시
-    private val _updateSuccessEvent = Channel<Unit>(Channel.BUFFERED)
-    val updateSuccessEvent = _updateSuccessEvent.receiveAsFlow()
 
     // Concurrency 문제 해결
     private var authJob: Job? = null
@@ -30,24 +27,6 @@ class AuthViewModel(
 
         authJob = viewModelScope.launch {
             action()
-        }
-    }
-
-    fun checkAutoLogin() {
-        executeAuthAction {
-            authRepository.checkAutoLogin()
-        }
-    }
-
-    fun login(provider: OAuthProvider) {
-        executeAuthAction {
-            authRepository.login(provider)
-                .onSuccess {
-                    _toastEvent.send("로그인 되었습니다.")
-                }
-                .onFailure { error ->
-                    _toastEvent.send(error.message ?: "로그인 처리에 실패했습니다.")
-                }
         }
     }
 
@@ -70,20 +49,6 @@ class AuthViewModel(
                 .onFailure { error ->
                     _toastEvent.send(error.message ?: "회원탈퇴 처리에 실패했습니다.")
                 }
-        }
-    }
-
-    fun updateNickname(nickname: String) {
-        executeAuthAction {
-            authRepository.updateNickname(nickname)
-                .onSuccess {
-                    _toastEvent.send("닉네임이 변경되었습니다.")
-                    _updateSuccessEvent.send(Unit)
-                }
-                .onFailure { error ->
-                    _toastEvent.send(error.message ?: "닉네임 변경에 실패했습니다.")
-                }
-
         }
     }
 }

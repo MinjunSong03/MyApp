@@ -26,12 +26,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
-import org.example.myapp.auth.viewmodel.AuthViewModel
+import org.example.myapp.auth.viewmodel.DetailViewModel
+import org.example.myapp.auth.viewmodel.ProfileSetupViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun ProfileSetupScreen(
-    viewModel: AuthViewModel = koinViewModel()
+    viewModel: ProfileSetupViewModel = koinViewModel()
 ) {
     val authState by viewModel.authState.collectAsState()
     val context = LocalContext.current

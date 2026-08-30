@@ -2,7 +2,6 @@ package org.example.myapp.ui
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -34,27 +32,27 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.myapp.auth.model.AuthState
-import org.example.myapp.auth.viewmodel.AuthViewModel
+import org.example.myapp.auth.viewmodel.DetailViewModel
 import org.koin.compose.viewmodel.koinViewModel
 import org.example.myapp.shared.R
 
 @Composable
 fun DetailScreen(
-    viewModel: AuthViewModel = koinViewModel(),
+    viewModel: DetailViewModel = koinViewModel(),
     onBack: () -> Unit,
 ) {
     val authState by viewModel.authState.collectAsState()
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        viewModel.toastEvent.collect { message ->
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        viewModel.updateSuccessEvent.collect {
+            onBack()
         }
     }
 
     LaunchedEffect(Unit) {
-        viewModel.updateSuccessEvent.collect {
-            onBack()
+        viewModel.toastEvent.collect { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
     }
 

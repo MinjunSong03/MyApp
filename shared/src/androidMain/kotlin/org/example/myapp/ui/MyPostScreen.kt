@@ -1,7 +1,6 @@
 package org.example.myapp.ui
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -46,8 +44,6 @@ import androidx.compose.ui.unit.sp
 import org.example.myapp.auth.viewmodel.MyPostUiState
 import org.example.myapp.auth.viewmodel.MyPostViewModel
 import org.example.myapp.auth.viewmodel.PostTab
-import org.example.myapp.auth.viewmodel.PostUiState
-import org.example.myapp.auth.viewmodel.PostViewModel
 import org.example.myapp.shared.R
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -68,6 +64,7 @@ fun MyPostScreen(
     var hidingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
 
     val listState = rememberLazyListState()
+
     val shouldLoadMore by remember {
         derivedStateOf {
             val totalItems = listState.layoutInfo.totalItemsCount
@@ -77,12 +74,12 @@ fun MyPostScreen(
     }
 
     LaunchedEffect(currentTab) {
-        viewModel.loadMyActPost(isRefresh = true)
+        viewModel.loadMyPost(isRefresh = true)
     }
 
     LaunchedEffect(shouldLoadMore) {
         if (shouldLoadMore) {
-            viewModel.loadMyActPost(isRefresh = false)
+            viewModel.loadMyPost(isRefresh = false)
         }
     }
 
@@ -91,13 +88,6 @@ fun MyPostScreen(
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
     }
-
-    LaunchedEffect(Unit) {
-        viewModel.updateSuccessEvent.collect {
-            onBack()
-        }
-    }
-
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -156,7 +146,7 @@ fun MyPostScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             PullToRefreshBox(
                 isRefreshing = isRefreshing,
-                onRefresh = { viewModel.loadMyActPost(isRefresh = true) },
+                onRefresh = { viewModel.loadMyPost(isRefresh = true) },
                 modifier = Modifier.fillMaxSize()
             ) {
                 when (val state = uiState) {
@@ -214,6 +204,8 @@ fun MyPostScreen(
             }
         }
     }
+
+
 
     deletingPostId?.let { postId ->
         AlertDialog(

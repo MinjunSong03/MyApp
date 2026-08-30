@@ -45,7 +45,8 @@ class AndroidAuthService(private val context: Context): AuthService {
                     refreshToken = token.refreshToken,
                     userId = null,
                     nickname = null,
-                    profileImageUrl = null
+                    profileImageUrl = null,
+                    isNewUser = false
                 )
                 continuation.resume(session)
             }

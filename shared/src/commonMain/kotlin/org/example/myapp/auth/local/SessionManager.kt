@@ -25,6 +25,7 @@ class SessionManager(
         private val KEY_USER_ID = longPreferencesKey("user_id")
         private val KEY_NICKNAME = stringPreferencesKey("user_nickname")
         private val KEY_PROFILE_IMAGE = stringPreferencesKey("user_profile_image")
+        private val KEY_IS_NEW_USER = booleanPreferencesKey("is_new_user")
 
     }
 
@@ -35,7 +36,8 @@ class SessionManager(
                 accessToken = token,
                 userId = preferences[KEY_USER_ID],
                 nickname = preferences[KEY_NICKNAME],
-                profileImageUrl = preferences[KEY_PROFILE_IMAGE]
+                profileImageUrl = preferences[KEY_PROFILE_IMAGE],
+                isNewUser = preferences[KEY_IS_NEW_USER] ?: false
             )
         }
         .stateIn(
@@ -50,6 +52,7 @@ class SessionManager(
             session.userId?.let { preferences[KEY_USER_ID] = it }
             session.nickname?.let { preferences[KEY_NICKNAME] = it }
             session.profileImageUrl?.let { preferences[KEY_PROFILE_IMAGE] = it }
+            preferences[KEY_IS_NEW_USER] = session.isNewUser
         }
     }
 

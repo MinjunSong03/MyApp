@@ -1,8 +1,6 @@
 package org.example.myapp.ui
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
@@ -10,9 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,9 +16,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -41,16 +34,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import org.example.myapp.auth.network.ReportReason
-import org.example.myapp.auth.viewmodel.PostUiState
-import org.example.myapp.auth.viewmodel.PostViewModel
+import org.example.myapp.auth.viewmodel.HomeScreenUiState
+import org.example.myapp.auth.viewmodel.HomeScreenViewModel
 import org.example.myapp.shared.R
 import org.koin.compose.viewmodel.koinViewModel
 
 
 @Composable
 fun HomeScreen(
-    viewModel: PostViewModel = koinViewModel(),
+    viewModel: HomeScreenViewModel = koinViewModel(),
     onNavigateToCreatePost: () -> Unit,
     onNavigateToEditPost: (Long) -> Unit
 ) {
@@ -64,6 +56,7 @@ fun HomeScreen(
     var hidingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
 
     val listState = rememberLazyListState()
+
     val shouldLoadMore by remember {
         derivedStateOf {
             val totalItems = listState.layoutInfo.totalItemsCount
@@ -95,13 +88,13 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             when (val state = uiState) {
-                is PostUiState.Loading -> {
+                is HomeScreenUiState.Loading -> {
                     CircularProgressIndicator(
                         color = Color.Black,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
-                is PostUiState.Success -> {
+                is HomeScreenUiState.Success -> {
                     if (state.posts.isEmpty()) {
                         Box(
                             modifier = Modifier

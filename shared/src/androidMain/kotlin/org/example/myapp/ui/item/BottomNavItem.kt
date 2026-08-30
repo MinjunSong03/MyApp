@@ -1,4 +1,4 @@
-package org.example.myapp.ui
+package org.example.myapp.ui.item
 
 import androidx.annotation.DrawableRes
 import org.example.myapp.shared.R

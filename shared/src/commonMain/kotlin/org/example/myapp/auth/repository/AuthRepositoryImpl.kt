@@ -27,7 +27,7 @@ class AuthRepositoryImpl(
     override val authState: StateFlow<AuthState> = sessionManager.sessionFlow
         .map { session ->
             if (session != null) {
-                AuthState.Authenticated(session, isNewUser = false)
+                AuthState.Authenticated(session, session.isNewUser)
             } else {
                 AuthState.Unauthenticated
             }
@@ -59,7 +59,8 @@ class AuthRepositoryImpl(
                 refreshToken = null,
                 userId = serverAuth.userId,
                 nickname = serverAuth.nickname,
-                profileImageUrl = serverAuth.profileImageUrl
+                profileImageUrl = serverAuth.profileImageUrl,
+                isNewUser = serverAuth.isNewUser
             )
             sessionManager.saveSession(session)
         }.onFailure { e ->
@@ -107,7 +108,7 @@ class AuthRepositoryImpl(
                 ?: throw IllegalStateException("로그인 세션이 만료되었습니다.")
 
             authApiService.updateNickname(token = session.accessToken, nickname = nickname)
-            val updatedSession = session.copy(nickname = nickname)
+            val updatedSession = session.copy(nickname = nickname, isNewUser = false)
             sessionManager.saveSession(updatedSession)
         }.onFailure { e ->
             if (e is CancellationException) throw e

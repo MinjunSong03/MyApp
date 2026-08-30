@@ -36,14 +36,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.myapp.auth.network.MediaType
-import org.example.myapp.auth.viewmodel.PostViewModel
+import org.example.myapp.auth.viewmodel.EditPostViewModel
 import org.example.myapp.shared.R
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun EditPostScreen(
     postId: Long,
-    viewModel: PostViewModel = koinViewModel(),
+    viewModel: EditPostViewModel = koinViewModel(),
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -67,7 +67,6 @@ fun EditPostScreen(
                 thumbnailUrl = existingPost.thumbnailUrl
                 isInitialDataLoaded = true
             } else {
-                Toast.makeText(context, "게시물 정보를 불러오지 못했습니다.", Toast.LENGTH_SHORT).show()
                 onBack()
             }
         }

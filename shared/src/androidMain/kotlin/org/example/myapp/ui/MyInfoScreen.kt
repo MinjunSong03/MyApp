@@ -1,5 +1,6 @@
 package org.example.myapp.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -18,22 +19,31 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import org.example.myapp.auth.model.OAuthProvider
-import org.example.myapp.auth.viewmodel.AuthViewModel
+import org.example.myapp.auth.viewmodel.MyInfoViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun MyInfoScreen(
-    viewModel: AuthViewModel = koinViewModel(),
+    viewModel: MyInfoViewModel = koinViewModel(),
     onUpdateNicknameClick: () -> Unit,
     onMyPostClick: () -> Unit,
     onManageMyClick: () -> Unit
 ) {
     val authState by viewModel.authState.collectAsState()
+    val context = LocalContext.current
 
     val session = when (val state = authState) {
         is AuthState.Authenticated -> state.session
         else -> null
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.toastEvent.collect { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
     }
 
     Box(
@@ -87,7 +97,7 @@ fun MyInfoScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
             ) {
                 Text(
-                    text = "차단 관리",
+                    text = "차단한 사용자 관리",
                     color = Color.White
                 )
             }

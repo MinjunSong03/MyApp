@@ -179,6 +179,22 @@ class UserBlockApiService(
             throw IllegalStateException(message)
         }
     }
+
+    suspend fun getMyBlockedUser(token: String, page: Int, size: Int = 10): SliceResponse<BlockedUserResponse> {
+        val response = client.get("$baseUrl/api/user/my_blocked_user") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            parameter("page", page)
+            parameter("size", size)
+        }
+
+        if (!response.status.isSuccess()) {
+            val errorBody = runCatching { response.body<ErrorResponse>() }.getOrNull()
+            val message = errorBody?.message ?: "차단한 사용자 불러오기에 실패했습니다. (${response.status.value})"
+            throw IllegalStateException(message)
+        }
+
+        return response.body()
+    }
 }
 
 class ReportApiService(

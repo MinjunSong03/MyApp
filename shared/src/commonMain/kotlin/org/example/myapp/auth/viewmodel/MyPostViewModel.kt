@@ -39,10 +39,7 @@ class MyPostViewModel(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-    private val _updateSuccessEvent = Channel<Unit>(Channel.BUFFERED)
-    val updateSuccessEvent = _updateSuccessEvent.receiveAsFlow()
-
-    private val _toastEvent = Channel<String>()
+    private val _toastEvent = Channel<String>(Channel.BUFFERED)
     val toastEvent = _toastEvent.receiveAsFlow()
 
     private val _currentTab = MutableStateFlow<PostTab>(PostTab.Act)
@@ -59,7 +56,7 @@ class MyPostViewModel(
         _currentTab.value = tab
     }
 
-    fun loadMyActPost(isRefresh: Boolean = false) {
+    fun loadMyPost(isRefresh: Boolean = false) {
 
         if (isRefresh) {
             feedJob?.cancel()
@@ -118,40 +115,6 @@ class MyPostViewModel(
             .getOrNull()
     }
 
-    fun editPost(
-        postId: Long,
-        title: String,
-        description: String,
-        mediaType: MediaType,
-        thumbnailUrl: String,
-        mediaUrl: String
-    ) {
-        viewModelScope.launch {
-
-            val request = EditPostRequest(
-                title = title,
-                description = description,
-                mediaType = mediaType,
-                thumbnailUrl = thumbnailUrl,
-                mediaUrl = mediaUrl
-            )
-            postRepository.editPost(postId, request)
-                .onSuccess { editedPost ->
-                    val index = currentPostList.indexOfFirst { it.id == postId }
-                    if (index != -1) {
-                        currentPostList[index] = editedPost
-                        _uiState.value = MyPostUiState.Success(currentPostList.toList(), isLastPage)
-                    }
-                    _toastEvent.send("게시물이 수정되었습니다.")
-                    _updateSuccessEvent.send(Unit)
-                }
-                .onFailure { error ->
-                    if (error is CancellationException) return@onFailure
-                    _toastEvent.send(error.message ?: "게시물 수정에 실패했습니다.")
-                }
-        }
-    }
-
     fun hidePost(postId: Long) {
         viewModelScope.launch {
             postRepository.hidePost(postId)
@@ -205,5 +168,4 @@ class MyPostViewModel(
                 }
         }
     }
-
 }
