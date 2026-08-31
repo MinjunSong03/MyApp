@@ -91,11 +91,6 @@ class AuthRepositoryImpl(
             val session = sessionManager.sessionFlow.value
                 ?: throw IllegalStateException("유효하지 않은 Access Token입니다.")
             authApiService.unlinkAccount(provider, session.accessToken)
-            runCatching {
-                authService.unlink(provider)
-            }.onFailure { e ->
-                println("SDK Unlink Failure: ${e.message}")
-            }
             sessionManager.clearSession()
         }.onFailure { e ->
             if (e is CancellationException) throw e

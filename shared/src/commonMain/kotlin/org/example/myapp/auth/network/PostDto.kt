@@ -29,8 +29,8 @@ data class EditPostRequest(
 data class PostResponse(
     val id: Long,
     val userId: Long,
-    val authorNickname: String,
-    val authorProfileImageUrl: String?,
+    val userNickname: String,
+    val userProfileImageUrl: String?,
     val title: String,
     val description: String,
     val mediaType: MediaType,
@@ -39,7 +39,8 @@ data class PostResponse(
     val viewCount: Long,
     val createdAt: String,
     val isMine: Boolean,
-    val isHidden: Boolean
+    val isHidden: Boolean,
+    val isUserDeleted: Boolean
 )
 
 @Serializable

@@ -64,7 +64,7 @@ fun PostCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 AsyncImage(
-                    model = post.authorProfileImageUrl,
+                    model = post.userProfileImageUrl,
                     contentDescription = "프로필 이미지",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -75,8 +75,9 @@ fun PostCard(
                 Spacer(modifier = Modifier.width(10.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = post.authorNickname,
+                        text = post.userNickname,
                         fontWeight = FontWeight.Bold,
+                        color = if (post.isUserDeleted) Color.Gray else Color.Black,
                         fontSize = 14.sp
                     )
                 }
