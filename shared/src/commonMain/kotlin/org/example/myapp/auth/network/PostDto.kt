@@ -4,8 +4,7 @@ import kotlinx.serialization.Serializable
 
 enum class MediaType { IMAGE, VIDEO }
 enum class ReportReason { SPAM, INAPPROPRIATE, VIOLENCE, COPYRIGHT, OTHER }
-
-enum class UserStatus { ACTIVE, BANNED }
+enum class UserStatus { ACTIVE, BANNED, DELETED }
 
 @Serializable
 data class CreatePostRequest(

@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import org.example.myapp.auth.network.BlockedUserResponse
+import org.example.myapp.auth.network.UserStatus
 import org.example.myapp.shared.R
 
 @Composable
@@ -73,6 +74,7 @@ fun BlockedUserCard(
                     Text(
                         text = user.nickname,
                         fontWeight = FontWeight.Bold,
+                        color = if (user.status == UserStatus.DELETED) Color.Gray else Color.Black,
                         fontSize = 14.sp
                     )
                 }
