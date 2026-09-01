@@ -1,7 +1,6 @@
 package org.example.myapp.ui
 
 import android.app.Activity
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize

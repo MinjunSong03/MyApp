@@ -13,9 +13,11 @@ import org.koin.core.module.Module
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.module
 import org.example.myapp.auth.network.AuthApiService
+import org.example.myapp.auth.network.MediaApiService
 import org.example.myapp.auth.network.PostApiService
 import org.example.myapp.auth.network.ReportApiService
 import org.example.myapp.auth.network.UserBlockApiService
+import org.example.myapp.auth.repository.MediaRepository
 import org.example.myapp.auth.repository.PostRepository
 import org.example.myapp.auth.repository.ReportRepository
 import org.example.myapp.auth.repository.UserBlockRepository
@@ -46,6 +48,8 @@ val commonModule = module {
     single { PostApiService(get()) }
     single { UserBlockApiService(get()) }
     single { ReportApiService(get()) }
+    single { MediaApiService(get()) }
+    single { MediaRepository(get(),get()) }
 
     single { SessionManager(get()) }
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get()) }
@@ -54,7 +58,7 @@ val commonModule = module {
     single { ReportRepository(get(), get()) }
 
     viewModel { AppViewModel(get()) }
-    viewModel { CreatePostViewModel(get()) }
+    viewModel { CreatePostViewModel(get(), get()) }
     viewModel { DetailViewModel(get()) }
     viewModel { EditPostViewModel(get()) }
     viewModel { HomeViewModel(get(), get(), get()) }

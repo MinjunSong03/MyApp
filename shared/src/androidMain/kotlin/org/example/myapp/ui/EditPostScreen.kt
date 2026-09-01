@@ -135,28 +135,6 @@ fun EditPostScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
-            Text(
-                text = "미디어 형식",
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                RadioButton(
-                    selected = mediaType == MediaType.IMAGE,
-                    onClick = { mediaType = MediaType.IMAGE }
-                )
-                Text(text = "이미지")
-                Spacer(modifier = Modifier.width(16.dp))
-                RadioButton(
-                    selected = mediaType == MediaType.VIDEO,
-                    onClick = { mediaType = MediaType.VIDEO }
-                )
-                Text(text = "동영상")
-            }
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
                 value = title,

@@ -43,6 +43,7 @@ kotlin {
     sourceSets {
         androidMain.dependencies {
             implementation(libs.androidx.material3)
+            implementation(libs.androidx.runtime)
             implementation(libs.androidx.runtime.saveable)
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
@@ -50,7 +51,12 @@ kotlin {
             implementation(libs.koin.android)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.kakao.user)
-            implementation("io.coil-kt:coil-compose:2.6.0")
+            implementation("io.coil-kt.coil3:coil-compose:3.0.4")
+            implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.4")
+            implementation("io.coil-kt.coil3:coil-gif:3.0.4")
+            implementation("androidx.media3:media3-exoplayer:1.4.1")
+            implementation("androidx.media3:media3-ui:1.4.1")
+            implementation("androidx.media3:media3-datasource-okhttp:1.4.1")
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)

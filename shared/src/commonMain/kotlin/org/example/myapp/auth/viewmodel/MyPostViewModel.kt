@@ -9,8 +9,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import org.example.myapp.auth.network.EditPostRequest
-import org.example.myapp.auth.network.MediaType
 import org.example.myapp.auth.network.PostResponse
 import org.example.myapp.auth.network.ReportReason
 import org.example.myapp.auth.repository.PostRepository

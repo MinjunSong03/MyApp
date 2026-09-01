@@ -1,4 +1,4 @@
-package org.example.myapp.ui
+package org.example.myapp.ui.card
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -32,7 +32,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import org.example.myapp.auth.network.BlockedUserResponse
 import org.example.myapp.auth.network.UserStatus
 import org.example.myapp.shared.R

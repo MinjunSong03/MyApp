@@ -46,6 +46,8 @@ import org.example.myapp.auth.viewmodel.MyPostUiState
 import org.example.myapp.auth.viewmodel.MyPostViewModel
 import org.example.myapp.auth.viewmodel.PostTab
 import org.example.myapp.shared.R
+import org.example.myapp.ui.card.PostCard
+import org.example.myapp.ui.dialog.ReportDialog
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable

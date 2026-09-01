@@ -1,4 +1,4 @@
-package org.example.myapp.ui
+package org.example.myapp.ui.card
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -29,10 +29,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import org.example.myapp.auth.network.MediaType
 import org.example.myapp.auth.network.PostResponse
 import org.example.myapp.shared.R
+import org.example.myapp.util.VideoPlayer
 
 
 @Composable
@@ -167,28 +168,22 @@ fun PostCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(220.dp)
-                    .background(Color(0xFFF0F0F0))
+                    .background(Color(0xFFF0F0F0)),
+                contentAlignment = Alignment.Center
             ) {
-                AsyncImage(
-                    model = post.thumbnailUrl,
-                    contentDescription = post.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-
-                if (post.mediaType == MediaType.VIDEO) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp)
-                            .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = "VIDEO",
-                            color = Color.White,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
+                when (post.mediaType) {
+                    MediaType.IMAGE -> {
+                        AsyncImage(
+                            model = post.thumbnailUrl,
+                            contentDescription = post.title,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    MediaType.VIDEO -> {
+                        VideoPlayer(
+                            videoUrl = post.mediaUrl,
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
                 }

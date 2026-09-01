@@ -1,6 +1,11 @@
 package org.example.myapp.ui
 
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -13,12 +18,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -28,10 +36,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.example.myapp.auth.model.PickedMedia
 import org.example.myapp.auth.network.MediaType
 import org.example.myapp.auth.viewmodel.CreatePostViewModel
 import org.koin.compose.viewmodel.koinViewModel
 import org.example.myapp.shared.R
+import org.example.myapp.util.toPickedMedia
 
 
 @Composable
@@ -43,23 +53,32 @@ fun CreatePostScreen(
 
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
-    var mediaType by rememberSaveable { mutableStateOf(MediaType.IMAGE) }
-    var mediaUrl by rememberSaveable { mutableStateOf("") }
-    var thumbnailUrl by rememberSaveable { mutableStateOf("") }
-    var isLoading by rememberSaveable { mutableStateOf(false) }
+    var selectedMedia by remember { mutableStateOf<PickedMedia?>(null) }
 
-    val isFormValid = title.isNotBlank() && description.isNotBlank() && mediaUrl.isNotBlank() && thumbnailUrl.isNotBlank()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val isFormValid = title.isNotBlank() && description.isNotBlank() && selectedMedia != null
+
+    val mediaPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            val media = uri.toPickedMedia(context)
+            if (media != null) {
+                selectedMedia = media
+            } else {
+                Toast.makeText(context, "파일을 불러오지 못했습니다.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.toastEvent.collect { message ->
-            isLoading = false
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
     }
 
     LaunchedEffect(Unit) {
         viewModel.updateSuccessEvent.collect {
-            isLoading = false
             onBack()
         }
     }
@@ -103,28 +122,6 @@ fun CreatePostScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
-            Text(
-                text = "미디어 형식",
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                RadioButton(
-                    selected = mediaType == MediaType.IMAGE,
-                    onClick = { mediaType = MediaType.IMAGE }
-                )
-                Text(text = "이미지")
-                Spacer(modifier = Modifier.width(16.dp))
-                RadioButton(
-                    selected = mediaType == MediaType.VIDEO,
-                    onClick = { mediaType = MediaType.VIDEO }
-                )
-                Text(text = "동영상")
-            }
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
                 value = title,
@@ -143,53 +140,82 @@ fun CreatePostScreen(
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(
-                value = mediaUrl,
-                onValueChange = { mediaUrl = it },
-                label = { Text("미디어(S3) URL") },
-                placeholder = { Text("https://...") },
-                minLines = 1,
-                maxLines = 2,
-                modifier = Modifier.fillMaxWidth()
+            Text(
+                text = "미디어 첨부 (사진 또는 동영상)",
+                fontSize = 14.sp,
+                color = Color.DarkGray
             )
-            Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(
-                value = thumbnailUrl,
-                onValueChange = { thumbnailUrl = it },
-                label = { Text("썸네일 URL") },
-                minLines = 1,
-                maxLines = 2,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(28.dp))
-            Button(
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedButton(
                 onClick = {
-                    isLoading = true
-                    viewModel.createPost(
-                        title = title.trim(),
-                        description = description.trim(),
-                        mediaType = mediaType,
-                        thumbnailUrl = thumbnailUrl.trim(),
-                        mediaUrl = mediaUrl.trim()
+                    mediaPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)
                     )
                 },
-                enabled = isFormValid && !isLoading,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        color = Color.Black,
-                        modifier = Modifier.size(24.dp)
-                    )
-                } else {
-                    Text(
-                        text = "게시물 올리기",
-                        color = Color.White,
-                        fontSize = 16.sp
-                    )
+                Text(if (selectedMedia == null) "갤러리에서 파일 선택하기" else "파일 변경하기")
+            }
+            if (selectedMedia != null) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFFF5F5F5),
+                    border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "선택된 파일: ${selectedMedia?.fileName}",
+                                fontSize = 13.sp,
+                                color = Color.Black
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "종류: ${if (selectedMedia?.mediaType == MediaType.IMAGE) "이미지" else "동영상"} (${selectedMedia?.mimeType})",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                        }
+                        TextButton(onClick = { selectedMedia = null }) {
+                            Text("삭제", color = Color.Red, fontSize = 12.sp)
+                        }
+                        Button(
+                            onClick = {
+                                selectedMedia?.let { media ->
+                                    viewModel.createPost(
+                                        title = title.trim(),
+                                        description = description.trim(),
+                                        pickedMedia = media
+                                    )
+                                }
+                            },
+                            enabled = isFormValid && !isLoading,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                        ) {
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    color = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            } else {
+                                Text(
+                                    text = "게시물 올리기",
+                                    color = Color.White,
+                                    fontSize = 16.sp
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

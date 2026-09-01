@@ -38,6 +38,7 @@ import org.example.myapp.auth.viewmodel.ManageMyUiState
 import org.example.myapp.auth.viewmodel.ManageMyViewModel
 import org.example.myapp.shared.R
 import org.koin.compose.viewmodel.koinViewModel
+import org.example.myapp.ui.card.BlockedUserCard
 
 @Composable
 fun ManageMyScreen(

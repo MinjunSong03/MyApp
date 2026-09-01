@@ -37,7 +37,9 @@ import androidx.compose.ui.unit.dp
 import org.example.myapp.auth.viewmodel.HomeUiState
 import org.example.myapp.auth.viewmodel.HomeViewModel
 import org.example.myapp.shared.R
+import org.example.myapp.ui.card.PostCard
 import org.koin.compose.viewmodel.koinViewModel
+import org.example.myapp.ui.dialog.ReportDialog
 
 
 @Composable
