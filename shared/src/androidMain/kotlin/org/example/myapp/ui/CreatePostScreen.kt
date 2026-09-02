@@ -90,7 +90,6 @@ fun CreatePostScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
             Spacer(modifier = Modifier.height(12.dp))
@@ -117,23 +116,20 @@ fun CreatePostScreen(
                 color = Color.Black
             )
             Spacer(modifier = Modifier.height(8.dp))
-            OutlinedButton(
+            Button(
                 onClick = {
                     mediaPickerLauncher.launch(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)
                     )
                 },
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(if (selectedMedia == null) "선택하기" else "변경하기")
             }
             if (selectedMedia != null) {
                 Spacer(modifier = Modifier.height(10.dp))
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFFF5F5F5),
-                    border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
+                Column(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -161,36 +157,37 @@ fun CreatePostScreen(
                                 fontSize = 12.sp
                             )
                         }
-                        Button(
-                            onClick = {
-                                selectedMedia?.let { media ->
-                                    viewModel.createPost(
-                                        title = title.trim(),
-                                        description = description.trim(),
-                                        pickedMedia = media
-                                    )
-                                }
-                            },
-                            enabled = isFormValid && !isLoading,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(50.dp)
-                        ) {
-                            if (isLoading) {
-                                CircularProgressIndicator(
-                                    color = Color.White,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            } else {
-                                Text(
-                                    text = "게시물 올리기",
-                                    color = Color.White,
-                                    fontSize = 16.sp
-                                )
-                            }
-                        }
                     }
+                }
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Button(
+                onClick = {
+                    selectedMedia?.let { media ->
+                        viewModel.createPost(
+                            title = title.trim(),
+                            description = description.trim(),
+                            pickedMedia = media
+                        )
+                    }
+                },
+                enabled = isFormValid && !isLoading,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                } else {
+                    Text(
+                        text = "게시물 올리기",
+                        color = Color.White,
+                        fontSize = 16.sp
+                    )
                 }
             }
         }

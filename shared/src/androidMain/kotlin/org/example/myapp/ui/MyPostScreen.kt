@@ -9,18 +9,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,21 +32,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import org.example.myapp.auth.network.PostResponse
 import org.example.myapp.auth.viewmodel.MyPostUiState
 import org.example.myapp.auth.viewmodel.MyPostViewModel
 import org.example.myapp.auth.viewmodel.PostTab
-import org.example.myapp.shared.R
 import org.example.myapp.ui.card.PostCard
 import org.example.myapp.ui.dialog.ReportDialog
-import org.example.myapp.ui.item.AppTopBar
 import org.example.myapp.util.AndroidVideoPlayerManager
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -58,7 +55,6 @@ fun MyPostScreen(
     viewModel: MyPostViewModel = koinViewModel(),
     videoManager: AndroidVideoPlayerManager = koinViewModel(),
     onNavigateToEditPost: (Long) -> Unit,
-    onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -73,8 +69,43 @@ fun MyPostScreen(
 
     val listState = rememberLazyListState()
 
-    DisposableEffect(Unit) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(listState, uiState) {
+        snapshotFlow {
+            val layoutInfo = listState.layoutInfo
+            val visibleItems = layoutInfo.visibleItemsInfo
+            if (visibleItems.isEmpty()) null
+            else {
+                val viewportCenter = (layoutInfo.viewportStartOffset + layoutInfo.viewportEndOffset) / 2
+                visibleItems.minByOrNull { item ->
+                    val itemCenter = item.offset + item.size / 2
+                    kotlin.math.abs(itemCenter - viewportCenter)
+                }?.index
+            }
+        }.collect { centerIndex ->
+            val state = uiState
+            if (centerIndex != null && state is MyPostUiState.Success) {
+                val posts = state.posts
+                val targetPost = posts.getOrNull(centerIndex)
+                val videoUrl = targetPost?.mediaUrl
+                if (!videoUrl.isNullOrEmpty() && videoManager.currentPlayingUrl.value != videoUrl) {
+                    videoManager.play(videoUrl)
+                }
+            }
+        }
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
+                videoManager.pause()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+
         onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
             videoManager.pause()
         }
     }
@@ -88,6 +119,7 @@ fun MyPostScreen(
     }
 
     LaunchedEffect(currentTab) {
+        videoManager.stop()
         viewModel.loadMyPost(isRefresh = true)
     }
 
@@ -135,7 +167,10 @@ fun MyPostScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             PullToRefreshBox(
                 isRefreshing = isRefreshing,
-                onRefresh = { viewModel.loadMyPost(isRefresh = true) },
+                onRefresh = {
+                    videoManager.stop()
+                    viewModel.loadMyPost(isRefresh = true)
+                            },
                 modifier = Modifier.fillMaxSize()
             ) {
                 when (val state = uiState) {

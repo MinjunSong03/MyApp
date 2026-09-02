@@ -95,7 +95,8 @@ fun PostCard(
                     }
                     DropdownMenu(
                         expanded = isMenuExpanded,
-                        onDismissRequest = { isMenuExpanded = false }
+                        onDismissRequest = { isMenuExpanded = false },
+                        containerColor = Color.White
                     ) {
                         if (post.isMine) {
                             if (post.isHidden) {

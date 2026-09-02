@@ -32,17 +32,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import org.example.myapp.auth.viewmodel.HomeUiState
 import org.example.myapp.auth.viewmodel.HomeViewModel
 import org.example.myapp.shared.R
 import org.example.myapp.ui.card.PostCard
 import org.koin.compose.viewmodel.koinViewModel
 import org.example.myapp.ui.dialog.ReportDialog
-import org.example.myapp.ui.item.AppTopBar
 import org.example.myapp.util.AndroidVideoPlayerManager
 
 
@@ -64,8 +67,42 @@ fun HomeScreen(
 
     val listState = rememberLazyListState()
 
-    DisposableEffect(Unit) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(listState, uiState) {
+        snapshotFlow {
+            val layoutInfo = listState.layoutInfo
+            val visibleItems = layoutInfo.visibleItemsInfo
+            if (visibleItems.isEmpty()) null
+            else {
+                val viewportCenter = (layoutInfo.viewportStartOffset + layoutInfo.viewportEndOffset) / 2
+                visibleItems.minByOrNull { item ->
+                    val itemCenter = item.offset + item.size / 2
+                    kotlin.math.abs(itemCenter - viewportCenter)
+                }?.index
+            }
+        }.collect { centerIndex ->
+            if (centerIndex != null && uiState is HomeUiState.Success) {
+                val posts = (uiState as HomeUiState.Success).posts
+                val targetPost = posts.getOrNull(centerIndex)
+                val videoUrl = targetPost?.mediaUrl
+                if (!videoUrl.isNullOrEmpty() && videoManager.currentPlayingUrl.value != videoUrl) {
+                    videoManager.play(videoUrl)
+                }
+            }
+        }
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
+                videoManager.pause()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+
         onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
             videoManager.pause()
         }
     }
@@ -100,7 +137,10 @@ fun HomeScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             PullToRefreshBox(
                 isRefreshing = isRefreshing,
-                onRefresh = { viewModel.loadHomeFeed(isRefresh = true) },
+                onRefresh = {
+                    videoManager.stop()
+                    viewModel.loadHomeFeed(isRefresh = true)
+                            },
                 modifier = Modifier.fillMaxSize()
             ) {
                 when (val state = uiState) {

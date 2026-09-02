@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -46,7 +47,6 @@ fun VideoPlayer(
     thumbnailUrl: String? = null,
     videoManager: AndroidVideoPlayerManager,
     modifier: Modifier = Modifier,
-    autoPlay: Boolean = true
 ) {
     val currentUrl by videoManager.currentPlayingUrl.collectAsState()
     val isPlayingState by videoManager.isPlaying.collectAsState()
@@ -63,18 +63,20 @@ fun VideoPlayer(
     var isDragging by remember { mutableStateOf(false) }
     var dragProgress by remember { mutableFloatStateOf(0f) }
 
-    LaunchedEffect(videoUrl) {
-        if (autoPlay && currentUrl == null) {
-            videoManager.play(videoUrl)
-        }
-    }
-
     LaunchedEffect(isPlaying, isEnded) {
         while (isPlaying && !isEnded) {
             if (!isDragging) {
                 currentTimeMs = videoManager.exoPlayer.currentPosition.coerceAtLeast(0L)
             }
             delay(30)
+        }
+    }
+
+    DisposableEffect(videoUrl) {
+        onDispose {
+            if (videoManager.currentPlayingUrl.value == videoUrl) {
+                videoManager.pause()
+            }
         }
     }
 
@@ -112,7 +114,6 @@ fun VideoPlayer(
                         .inflate(R.layout.view_video_player, null, false) as PlayerView
                     view.apply {
                         player = videoManager.exoPlayer
-                        setKeepContentOnPlayerReset(true)
                     }
                 },
                 modifier = Modifier.fillMaxSize()
@@ -150,8 +151,8 @@ fun VideoPlayer(
             onClick = { videoManager.toggleMute() },
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(8.dp)
-                .size(24.dp)
+                .padding(top = 4.dp, end = 4.dp)
+                .size(36.dp)
         ) {
             Icon(
                 painter = if (isMuted) {

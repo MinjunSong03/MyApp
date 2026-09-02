@@ -9,6 +9,7 @@ import org.example.myapp.auth.local.SessionManager
 import org.example.myapp.auth.model.PickedMedia
 import org.example.myapp.auth.network.MediaApiService
 import org.example.myapp.auth.network.MediaType
+import org.example.myapp.auth.platform.FastStartUtil
 import org.example.myapp.auth.platform.ThumbnailExtractor
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -60,7 +61,9 @@ class MediaRepository(
                         )
                     )
 
-                    mediaApiService.uploadBinaryToR2(presigned.video.uploadUrl, media.bytes, media.mimeType)
+                    val fastStartVideoBytes = FastStartUtil.process(media.bytes)
+
+                    mediaApiService.uploadBinaryToR2(presigned.video.uploadUrl, fastStartVideoBytes, media.mimeType)
                     mediaApiService.uploadBinaryToR2(presigned.thumbnail.uploadUrl, thumbBytes, "image/jpeg")
 
                     MediaUploadResult(

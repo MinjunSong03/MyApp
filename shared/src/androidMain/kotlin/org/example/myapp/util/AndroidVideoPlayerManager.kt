@@ -65,6 +65,15 @@ class AndroidVideoPlayerManager(context: Context): ViewModel(), VideoPlayerViewM
         exoPlayer.playWhenReady = true
     }
 
+    fun stop() {
+        exoPlayer.stop()
+        exoPlayer.clearMediaItems()
+        _currentPlayingUrl.value = null
+        _isPlaying.value = false
+        _isEnded.value = false
+        _isPlayerReady.value = false
+    }
+
     override fun pause() {
         exoPlayer.pause()
     }

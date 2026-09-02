@@ -2,9 +2,11 @@ package org.example.myapp.ui
 
 import android.app.Activity
 import androidx.activity.compose.BackHandler
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -22,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -72,7 +75,8 @@ fun MainScreen() {
         },
         bottomBar = {
             NavigationBar(
-                containerColor = Color.White
+                modifier = Modifier.height(90.dp),
+                containerColor = Color.Black
             ) {
                 bottomNavItems.forEach { item ->
                     val isSelected = currentRoute == item.route
@@ -99,8 +103,8 @@ fun MainScreen() {
                             Text(text = item.title)
                         },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color.Black,
-                            selectedTextColor = Color.Black,
+                            selectedIconColor = Color.White,
+                            selectedTextColor = Color.White,
                             unselectedIconColor = Color.Gray,
                             unselectedTextColor = Color.Gray,
                             indicatorColor = Color.Transparent
@@ -114,7 +118,7 @@ fun MainScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(Color.LightGray)
+                .background(Color(0xFFF8F9FA))
         ) {
             NavHost(
                 navController = navController,
@@ -166,13 +170,11 @@ fun MainScreen() {
                 composable("post_my") {
                     MyPostScreen(
                         onNavigateToEditPost = { postId ->
-                            navController.navigate("edit_post/$postId") },
-                        onBack = { navController.popBackStack() }
+                            navController.navigate("edit_post/$postId") }
                     )
                 }
                 composable("manage_my") {
                     ManageMyScreen(
-                        onBack = { navController.popBackStack() }
                     )
                 }
             }
