@@ -9,8 +9,11 @@ import okio.Path.Companion.toPath
 import org.example.myapp.auth.platform.AndroidAuthService
 import org.example.myapp.auth.platform.AuthService
 import org.example.myapp.auth.local.DATASTORE_FILE_NAME
+import org.example.myapp.manager.VideoPlayerViewManager
+import org.example.myapp.util.AndroidVideoPlayerManager
 import org.example.myapp.util.getAsyncImageLoader
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 actual val platformModule: Module = module {
@@ -24,4 +27,5 @@ actual val platformModule: Module = module {
         )
     }
     single<ImageLoader> { getAsyncImageLoader(get()) }
+    viewModel { AndroidVideoPlayerManager(get()) }
 }

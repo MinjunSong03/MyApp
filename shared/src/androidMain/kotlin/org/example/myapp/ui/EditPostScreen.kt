@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import org.example.myapp.auth.network.MediaType
 import org.example.myapp.auth.viewmodel.EditPostViewModel
 import org.example.myapp.shared.R
+import org.example.myapp.ui.item.AppTopBar
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -99,36 +100,6 @@ fun EditPostScreen(
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    horizontal = 16.dp,
-                    vertical = 8.dp
-                ),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Button(
-                onClick = onBack,
-                modifier = Modifier.size(40.dp),
-                shape = CircleShape,
-                contentPadding = PaddingValues(0.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_back),
-                    contentDescription = "뒤로가기",
-                    tint = Color.Black
-                )
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = "게시물 수정",
-                fontSize = 18.sp,
-                color = Color.Black
-            )
-        }
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -153,25 +124,6 @@ fun EditPostScreen(
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(
-                value = mediaUrl,
-                onValueChange = { mediaUrl = it },
-                label = { Text("미디어(S3) URL") },
-                placeholder = { Text("https://...") },
-                minLines = 1,
-                maxLines = 2,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(
-                value = thumbnailUrl,
-                onValueChange = { thumbnailUrl = it },
-                label = { Text("썸네일 URL") },
-                minLines = 1,
-                maxLines = 2,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(28.dp))
             Button(
                 onClick = {
                     isLoading = true
@@ -185,7 +137,7 @@ fun EditPostScreen(
                     )
                 },
                 enabled = isFormValid && !isLoading,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)

@@ -41,6 +41,7 @@ import org.example.myapp.auth.network.MediaType
 import org.example.myapp.auth.viewmodel.CreatePostViewModel
 import org.koin.compose.viewmodel.koinViewModel
 import org.example.myapp.shared.R
+import org.example.myapp.ui.item.AppTopBar
 import org.example.myapp.util.toPickedMedia
 
 
@@ -86,36 +87,6 @@ fun CreatePostScreen(
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    horizontal = 16.dp,
-                    vertical = 8.dp
-                ),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Button(
-                onClick = onBack,
-                modifier = Modifier.size(40.dp),
-                shape = CircleShape,
-                contentPadding = PaddingValues(0.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_back),
-                    contentDescription = "뒤로가기",
-                    tint = Color.Black
-                )
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = "새 게시물 작성",
-                fontSize = 18.sp,
-                color = Color.Black
-            )
-        }
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -143,7 +114,7 @@ fun CreatePostScreen(
             Text(
                 text = "미디어 첨부 (사진 또는 동영상)",
                 fontSize = 14.sp,
-                color = Color.DarkGray
+                color = Color.Black
             )
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedButton(
@@ -153,9 +124,9 @@ fun CreatePostScreen(
                     )
                 },
                 shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(if (selectedMedia == null) "갤러리에서 파일 선택하기" else "파일 변경하기")
+                Text(if (selectedMedia == null) "선택하기" else "변경하기")
             }
             if (selectedMedia != null) {
                 Spacer(modifier = Modifier.height(10.dp))
@@ -184,7 +155,11 @@ fun CreatePostScreen(
                             )
                         }
                         TextButton(onClick = { selectedMedia = null }) {
-                            Text("삭제", color = Color.Red, fontSize = 12.sp)
+                            Text(
+                                text = "삭제",
+                                color = Color.Red,
+                                fontSize = 12.sp
+                            )
                         }
                         Button(
                             onClick = {
@@ -197,7 +172,7 @@ fun CreatePostScreen(
                                 }
                             },
                             enabled = isFormValid && !isLoading,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(50.dp)

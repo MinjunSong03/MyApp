@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import org.example.myapp.auth.model.OAuthProvider
 import org.example.myapp.auth.viewmodel.MyInfoViewModel
+import org.example.myapp.ui.item.AppTopBar
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -113,7 +114,7 @@ fun MyInfoScreen(
     }
 
 
-    Box(
+    Column(
         modifier = Modifier.fillMaxSize()
     ) {
         Column(
@@ -141,7 +142,7 @@ fun MyInfoScreen(
             Spacer(modifier = Modifier.height(20.dp))
             Button(
                 onClick = { onUpdateNicknameClick() },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
             ) {
                 Text(
                     text = "닉네임 변경",
@@ -151,7 +152,7 @@ fun MyInfoScreen(
             Spacer(modifier = Modifier.height(20.dp))
             Button(
                 onClick = { onMyPostClick() },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
             ) {
                 Text(
                     text = "나의 게시물",
@@ -161,7 +162,7 @@ fun MyInfoScreen(
             Spacer(modifier = Modifier.height(20.dp))
             Button(
                 onClick = { onManageMyClick() },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
             ) {
                 Text(
                     text = "차단한 사용자 관리",

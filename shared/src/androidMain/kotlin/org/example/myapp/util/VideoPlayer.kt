@@ -1,5 +1,6 @@
 package org.example.myapp.util
 
+import android.view.LayoutInflater
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -16,8 +17,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -28,15 +29,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
 import org.example.myapp.shared.R
 
@@ -44,67 +43,53 @@ import org.example.myapp.shared.R
 @Composable
 fun VideoPlayer(
     videoUrl: String,
+    thumbnailUrl: String? = null,
+    videoManager: AndroidVideoPlayerManager,
     modifier: Modifier = Modifier,
-    autoPlay: Boolean = true,
-    initialMuted: Boolean = true
+    autoPlay: Boolean = true
 ) {
-    val context = LocalContext.current
-    var isMuted by remember { mutableStateOf(initialMuted) }
-    var isPlaying by remember { mutableStateOf(autoPlay) }
-    var isEnded by remember { mutableStateOf(false) }
+    val currentUrl by videoManager.currentPlayingUrl.collectAsState()
+    val isPlayingState by videoManager.isPlaying.collectAsState()
+    val isEndedState by videoManager.isEnded.collectAsState()
+    val isMuted by videoManager.isMuted.collectAsState()
+    val isPlayerReady by videoManager.isPlayerReady.collectAsState()
+    val totalDurationMs by videoManager.durationMs.collectAsState()
+
+    val isCurrentCard = (currentUrl == videoUrl)
+    val isPlaying = isCurrentCard && isPlayingState
+    val isEnded = isCurrentCard && isEndedState
 
     var currentTimeMs by remember { mutableLongStateOf(0L) }
-    var totalDurationMs by remember { mutableLongStateOf(0L) }
     var isDragging by remember { mutableStateOf(false) }
     var dragProgress by remember { mutableFloatStateOf(0f) }
 
-    val exoPlayer = remember(videoUrl) {
-        ExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri(videoUrl))
-            prepare()
-            playWhenReady = autoPlay
-            repeatMode = ExoPlayer.REPEAT_MODE_OFF
-            volume = if (initialMuted) 0f else 1f
-
-            addListener(object : Player.Listener {
-                override fun onIsPlayingChanged(playing: Boolean) {
-                    isPlaying = playing
-                }
-
-                override fun onPlaybackStateChanged(playbackState: Int) {
-                    isEnded = (playbackState == Player.STATE_ENDED)
-                    if (playbackState == Player.STATE_READY) {
-                        totalDurationMs = duration.coerceAtLeast(0L)
-                    }
-                }
-            })
+    LaunchedEffect(videoUrl) {
+        if (autoPlay && currentUrl == null) {
+            videoManager.play(videoUrl)
         }
     }
 
     LaunchedEffect(isPlaying, isEnded) {
         while (isPlaying && !isEnded) {
             if (!isDragging) {
-                currentTimeMs = exoPlayer.currentPosition.coerceAtLeast(0L)
-                totalDurationMs = exoPlayer.duration.coerceAtLeast(0L)
+                currentTimeMs = videoManager.exoPlayer.currentPosition.coerceAtLeast(0L)
             }
-            delay(50)
-        }
-    }
-
-    DisposableEffect(exoPlayer) {
-        onDispose {
-            exoPlayer.release()
+            delay(30)
         }
     }
 
     val handlePlayPause = {
-        if (isEnded) {
-            exoPlayer.seekTo(0)
-            exoPlayer.play()
-        } else if (exoPlayer.isPlaying) {
-            exoPlayer.pause()
+        if (isCurrentCard) {
+            if (isEnded) {
+                videoManager.seekTo(0)
+                videoManager.play(videoUrl)
+            } else if (isPlaying) {
+                videoManager.pause()
+            } else {
+                videoManager.play(videoUrl)
+            }
         } else {
-            exoPlayer.play()
+            videoManager.play(videoUrl)
         }
     }
 
@@ -120,17 +105,30 @@ fun VideoPlayer(
         contentAlignment = Alignment.Center
     ) {
         // 1. 영상 재생 화면
-        AndroidView(
-            factory = { ctx ->
-                PlayerView(ctx).apply {
-                    player = exoPlayer
-                    useController = false
-                }
-            },
-            modifier = Modifier.fillMaxSize()
-        )
+        if (isCurrentCard) {
+            AndroidView(
+                factory = { ctx ->
+                    val view = LayoutInflater.from(ctx)
+                        .inflate(R.layout.view_video_player, null, false) as PlayerView
+                    view.apply {
+                        player = videoManager.exoPlayer
+                        setKeepContentOnPlayerReset(true)
+                    }
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        // 2. 영상 재생 전 썸네일 화면
+        if ((!isCurrentCard || !isPlayerReady) && !thumbnailUrl.isNullOrEmpty()) {
+            AsyncImage(
+                model = thumbnailUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
 
-        // 2. 일시정지 / 다시재생 중앙 아이콘
+        // 3. 일시정지 / 다시재생 중앙 아이콘
         if (!isPlaying || isEnded) {
             Box(
                 modifier = Modifier
@@ -147,17 +145,13 @@ fun VideoPlayer(
             }
         }
 
-        // 3. 우측 상단 음소거 버튼
+        // 4. 우측 상단 음소거 버튼
         IconButton(
-            onClick = {
-                isMuted = !isMuted
-                exoPlayer.volume = if (isMuted) 0f else 1f
-            },
+            onClick = { videoManager.toggleMute() },
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(8.dp)
-                .size(32.dp)
-                .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                .size(24.dp)
         ) {
             Icon(
                 painter = if (isMuted) {
@@ -171,7 +165,7 @@ fun VideoPlayer(
             )
         }
 
-        // 4. 영상 최하단 터치 영역
+        // 5. 영상 최하단 터치 영역
         val progress = if (isDragging) {
             dragProgress
         } else {
@@ -183,35 +177,41 @@ fun VideoPlayer(
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .height(20.dp)
-                .pointerInput(totalDurationMs) {
+                .pointerInput(isCurrentCard, totalDurationMs) {
                     detectTapGestures { offset ->
-                        if (totalDurationMs > 0) {
+                        if (isCurrentCard && totalDurationMs > 0) {
                             val ratio = (offset.x / size.width).coerceIn(0f, 1f)
                             val targetMs = (ratio * totalDurationMs).toLong()
-                            exoPlayer.seekTo(targetMs)
+                            videoManager.seekTo(targetMs)
                             currentTimeMs = targetMs
                         }
                     }
                 }
-                .pointerInput(totalDurationMs) {
+                .pointerInput(isCurrentCard, totalDurationMs) {
                     detectHorizontalDragGestures(
                         onDragStart = { offset ->
-                            isDragging = true
-                            dragProgress = (offset.x / size.width).coerceIn(0f, 1f)
+                            if (isCurrentCard) {
+                                isDragging = true
+                                dragProgress = (offset.x / size.width).coerceIn(0f, 1f)
+                            }
                         },
                         onDragEnd = {
-                            val targetMs = (dragProgress * totalDurationMs).toLong()
-                            exoPlayer.seekTo(targetMs)
-                            isDragging = false
+                            if (isCurrentCard) {
+                                val targetMs = (dragProgress * totalDurationMs).toLong()
+                                videoManager.seekTo(targetMs)
+                                isDragging = false
+                            }
                         },
                         onDragCancel = {
                             isDragging = false
                         },
                         onHorizontalDrag = { change, _ ->
-                            change.consume()
-                            val ratio = (change.position.x / size.width).coerceIn(0f, 1f)
-                            dragProgress = ratio
-                            currentTimeMs = (ratio * totalDurationMs).toLong()
+                            if (isCurrentCard) {
+                                change.consume()
+                                val ratio = (change.position.x / size.width).coerceIn(0f, 1f)
+                                dragProgress = ratio
+                                currentTimeMs = (ratio * totalDurationMs).toLong()
+                            }
                         }
                     )
                 },

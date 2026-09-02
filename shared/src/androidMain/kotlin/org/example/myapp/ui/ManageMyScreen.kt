@@ -39,6 +39,7 @@ import org.example.myapp.auth.viewmodel.ManageMyViewModel
 import org.example.myapp.shared.R
 import org.koin.compose.viewmodel.koinViewModel
 import org.example.myapp.ui.card.BlockedUserCard
+import org.example.myapp.ui.item.AppTopBar
 
 @Composable
 fun ManageMyScreen(
@@ -77,31 +78,6 @@ fun ManageMyScreen(
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Button(
-                onClick = onBack,
-                modifier = Modifier.size(40.dp),
-                shape = CircleShape,
-                contentPadding = PaddingValues(0.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_back),
-                    contentDescription = "뒤로가기",
-                    tint = Color.Black
-                )
-            }
-            Text(
-                text = "차단한 사용자 관리",
-                fontSize = 18.sp,
-                color = Color.Black
-            )
-        }
         Box(modifier = Modifier.fillMaxSize()) {
             PullToRefreshBox(
                 isRefreshing = isRefreshing,

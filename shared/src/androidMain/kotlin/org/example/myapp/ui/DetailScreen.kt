@@ -35,6 +35,7 @@ import org.example.myapp.auth.model.AuthState
 import org.example.myapp.auth.viewmodel.DetailViewModel
 import org.koin.compose.viewmodel.koinViewModel
 import org.example.myapp.shared.R
+import org.example.myapp.ui.item.AppTopBar
 
 @Composable
 fun DetailScreen(
@@ -66,31 +67,6 @@ fun DetailScreen(
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Button(
-                onClick = onBack,
-                modifier = Modifier.size(40.dp),
-                shape = CircleShape,
-                contentPadding = PaddingValues(0.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_back),
-                    contentDescription = "뒤로가기",
-                    tint = Color.Black
-                )
-            }
-            Text(
-                text = "닉네임 변경",
-                fontSize = 18.sp,
-                color = Color.Black
-            )
-        }
         Column(
             modifier = Modifier.fillMaxSize()
                 .padding(24.dp),
@@ -120,7 +96,7 @@ fun DetailScreen(
             Button(
                 onClick = { viewModel.updateNickname(inputNickname.trim()) },
                 enabled = inputNickname.isNotBlank() && authState !is AuthState.Loading,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(

@@ -2,6 +2,7 @@ package org.example.myapp.ui
 
 import android.app.Activity
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -30,6 +31,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import org.example.myapp.ui.item.BottomNavItem
+import org.example.myapp.ui.item.AppTopBar
 
 @Composable
 fun MainScreen() {
@@ -49,7 +51,25 @@ fun MainScreen() {
 
     val isTopLevelTab = currentRoute in bottomNavItems.map { it.route }
 
+    val topBarTitle = when {
+        currentRoute == "home" -> "MyApp"
+        currentRoute == "menu" -> "MyApp"
+        currentRoute == "my_info" -> "MyApp"
+        currentRoute == "create_post" -> "새 게시물 생성"
+        currentRoute?.startsWith("edit_post") == true -> "게시물 수정"
+        currentRoute == "detail" -> "닉네임 변경"
+        currentRoute == "post_my" -> "나의 게시물"
+        currentRoute == "manage_my" -> "차단한 사용자 관리"
+        else -> "MyApp"
+    }
+
     Scaffold(
+        topBar = {
+            AppTopBar(
+                title = topBarTitle,
+                onBackClick = if (isTopLevelTab) null else { { navController.popBackStack() } }
+            )
+        },
         bottomBar = {
             NavigationBar(
                 containerColor = Color.White
@@ -94,10 +114,12 @@ fun MainScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .background(Color.LightGray)
         ) {
             NavHost(
                 navController = navController,
-                startDestination = "home"
+                startDestination = "home",
+                modifier = Modifier.background(Color(0xFFF8F9FA))
             ) {
                 composable("menu") {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

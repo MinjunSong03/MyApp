@@ -33,12 +33,14 @@ import coil3.compose.AsyncImage
 import org.example.myapp.auth.network.MediaType
 import org.example.myapp.auth.network.PostResponse
 import org.example.myapp.shared.R
+import org.example.myapp.util.AndroidVideoPlayerManager
 import org.example.myapp.util.VideoPlayer
 
 
 @Composable
 fun PostCard(
     post: PostResponse,
+    videoManager: AndroidVideoPlayerManager,
     onEditClick: (Long) -> Unit,
     onDeleteClick: (Long) -> Unit,
     onUnhidePostClick: (Long) -> Unit = {},
@@ -183,6 +185,8 @@ fun PostCard(
                     MediaType.VIDEO -> {
                         VideoPlayer(
                             videoUrl = post.mediaUrl,
+                            thumbnailUrl = post.thumbnailUrl,
+                            videoManager = videoManager,
                             modifier = Modifier.fillMaxSize()
                         )
                     }

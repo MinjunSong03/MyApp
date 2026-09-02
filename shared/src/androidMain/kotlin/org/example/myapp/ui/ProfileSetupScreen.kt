@@ -27,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import org.example.myapp.auth.viewmodel.ProfileSetupViewModel
+import org.example.myapp.ui.item.AppTopBar
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -78,7 +79,7 @@ fun ProfileSetupScreen(
         Button(
             onClick = { viewModel.updateNickname(inputNickname.trim()) },
             enabled = inputNickname.isNotBlank(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
