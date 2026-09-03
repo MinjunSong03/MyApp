@@ -18,7 +18,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.getValue
-import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
@@ -28,7 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import org.example.myapp.auth.model.OAuthProvider
 import org.example.myapp.auth.viewmodel.MyInfoViewModel
-import org.example.myapp.ui.item.AppTopBar
+import org.example.myapp.ui.item.AutoScrollingImage
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -36,7 +35,7 @@ fun MyInfoScreen(
     viewModel: MyInfoViewModel = koinViewModel(),
     onUpdateNicknameClick: () -> Unit,
     onMyPostClick: () -> Unit,
-    onManageMyClick: () -> Unit
+    onManageMyClick: () -> Unit,
 ) {
     val authState by viewModel.authState.collectAsState()
     val context = LocalContext.current

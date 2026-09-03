@@ -3,19 +3,17 @@ package org.example.myapp.ui
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,14 +26,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.myapp.auth.model.AuthState
 import org.example.myapp.auth.viewmodel.DetailViewModel
 import org.koin.compose.viewmodel.koinViewModel
-import org.example.myapp.shared.R
-import org.example.myapp.ui.item.AppTopBar
 
 @Composable
 fun DetailScreen(
@@ -90,12 +85,21 @@ fun DetailScreen(
                 onValueChange = { inputNickname = it },
                 label = { Text( text = "닉네임") },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Black,
+                    focusedLabelColor = Color.Black,
+                    cursorColor = MaterialTheme.colorScheme.outline,
+                    selectionColors = TextSelectionColors(
+                        handleColor = Color.Black,
+                        backgroundColor = Color.Black.copy(alpha = 0.2f)
+                    )
+                )
             )
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = { viewModel.updateNickname(inputNickname.trim()) },
-                enabled = inputNickname.isNotBlank() && authState !is AuthState.Loading,
+                enabled = inputNickname.isNotBlank() && authState !is AuthState.Loading && inputNickname != initialNickname,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
                 modifier = Modifier.fillMaxWidth()
             ) {

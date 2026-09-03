@@ -1,6 +1,13 @@
 package org.example.myapp.ui
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
@@ -15,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -33,7 +41,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -66,8 +78,21 @@ fun HomeScreen(
     var hidingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
 
     val listState = rememberLazyListState()
-
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    var isFloatingVisible by rememberSaveable { mutableStateOf(true) }
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (available.y < -10f) {
+                    isFloatingVisible = false
+                } else if (available.y > 10f) {
+                    isFloatingVisible = true
+                }
+                return Offset.Zero
+            }
+        }
+    }
 
     LaunchedEffect(listState, uiState) {
         snapshotFlow {
@@ -85,9 +110,11 @@ fun HomeScreen(
             if (centerIndex != null && uiState is HomeUiState.Success) {
                 val posts = (uiState as HomeUiState.Success).posts
                 val targetPost = posts.getOrNull(centerIndex)
-                val videoUrl = targetPost?.mediaUrl
+                val videoUrl = targetPost?.videoUrl
                 if (!videoUrl.isNullOrEmpty() && videoManager.currentPlayingUrl.value != videoUrl) {
                     videoManager.play(videoUrl)
+                } else if (videoUrl.isNullOrEmpty()) {
+                    videoManager.pause()
                 }
             }
         }
@@ -131,67 +158,66 @@ fun HomeScreen(
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier.fillMaxSize()
+        .nestedScroll(nestedScrollConnection)
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            PullToRefreshBox(
-                isRefreshing = isRefreshing,
-                onRefresh = {
-                    videoManager.stop()
-                    viewModel.loadHomeFeed(isRefresh = true)
-                            },
-                modifier = Modifier.fillMaxSize()
-            ) {
-                when (val state = uiState) {
-                    is HomeUiState.Loading -> {
-                        CircularProgressIndicator(
-                            color = Color.Black,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    }
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                videoManager.stop()
+                viewModel.loadHomeFeed(isRefresh = true)
+                        },
+            modifier = Modifier.fillMaxSize()
+        ) {
+            when (val state = uiState) {
+                is HomeUiState.Loading -> {
+                    CircularProgressIndicator(
+                        color = Color.Black,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
 
-                    is HomeUiState.Success -> {
-                        if (state.posts.isEmpty()) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .verticalScroll(rememberScrollState()),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "등록된 게시물이 없습니다.\n아래로 스와이프하여 게시물을 로드해 보세요!",
-                                    color = Color.Gray
+                is HomeUiState.Success -> {
+                    if (state.posts.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState()),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "아래로 스와이프하여 게시물을 로드해 보세요!",
+                                color = Color.Gray
+                            )
+                        }
+                    } else {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(top = 8.dp, bottom = 100.dp)
+                        ) {
+                            items(state.posts, key = { it.id }) { post ->
+                                PostCard(
+                                    post = post,
+                                    videoManager = videoManager,
+                                    onEditClick = { onNavigateToEditPost(post.id) },
+                                    onDeleteClick = { deletingPostId = it },
+                                    onUnhidePostClick = {},
+                                    onHidePostClick = { hidingPostId = it },
+                                    onBlockUserClick = { blockingUserId = it },
+                                    onReportPostClick = { reportingPostId = it }
                                 )
                             }
-                        } else {
-                            LazyColumn(
-                                state = listState,
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(vertical = 8.dp)
-                            ) {
-                                items(state.posts, key = { it.id }) { post ->
-                                    PostCard(
-                                        post = post,
-                                        videoManager = videoManager,
-                                        onEditClick = { onNavigateToEditPost(post.id) },
-                                        onDeleteClick = { deletingPostId = it },
-                                        onUnhidePostClick = {},
-                                        onHidePostClick = { hidingPostId = it },
-                                        onBlockUserClick = { blockingUserId = it },
-                                        onReportPostClick = { reportingPostId = it }
-                                    )
-                                }
-                                if (!state.isLast) {
-                                    item {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(16.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            CircularProgressIndicator(color = Color.Black)
-                                        }
+                            if (!state.isLast) {
+                                item {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(color = Color.Black)
                                     }
                                 }
                             }
@@ -199,105 +225,112 @@ fun HomeScreen(
                     }
                 }
             }
+        }
 
+        AnimatedVisibility(
+            visible = isFloatingVisible,
+            enter = scaleIn() + fadeIn(),
+            exit = scaleOut() + fadeOut(),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 20.dp, bottom = 110.dp)
+        ) {
             FloatingActionButton(
                 onClick = onNavigateToCreatePost,
                 containerColor = Color.Black,
+                shape = CircleShape,
                 contentColor = Color.White,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(20.dp)
             ) {
                 Icon(
                     painterResource(R.drawable.ic_add),
                     contentDescription = "글 작성"
                 )
             }
+        }
 
-            deletingPostId?.let { postId ->
-                AlertDialog(
-                    onDismissRequest = { deletingPostId = null },
-                    title = { Text(text = "이 게시물 삭제") },
-                    text = { Text(text = "이 게시물을 삭제하시겠습니까? 게시물을 삭제 후 복구는 불가능합니다.") },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                viewModel.deletePost(postId)
-                                deletingPostId = null
-                            }
-                        ) {
-                            Text(text = "삭제", color = MaterialTheme.colorScheme.error)
+        deletingPostId?.let { postId ->
+            AlertDialog(
+                onDismissRequest = { deletingPostId = null },
+                title = { Text(text = "이 게시물 삭제") },
+                text = { Text(text = "이 게시물을 삭제하시겠습니까? 게시물을 삭제 후 복구는 불가능합니다.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.deletePost(postId)
+                            deletingPostId = null
                         }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { deletingPostId = null }) {
-                            Text(text = "취소")
-                        }
+                    ) {
+                        Text(text = "삭제", color = MaterialTheme.colorScheme.error)
                     }
-                )
-            }
+                },
+                dismissButton = {
+                    TextButton(onClick = { deletingPostId = null }) {
+                        Text(text = "취소")
+                    }
+                }
+            )
+        }
 
-            hidingPostId?.let { postId ->
-                AlertDialog(
-                    onDismissRequest = { hidingPostId = null },
-                    title = { Text(text = "게시물 숨기기") },
-                    text = { Text(text = "이 게시물을 숨기시겠습니까?") },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                viewModel.hidePost(postId)
-                                hidingPostId = null
-                            }
-                        ) {
-                            Text(
-                                text = "숨기기",
-                                color = MaterialTheme.colorScheme.error
-                            )
+        hidingPostId?.let { postId ->
+            AlertDialog(
+                onDismissRequest = { hidingPostId = null },
+                title = { Text(text = "게시물 숨기기") },
+                text = { Text(text = "이 게시물을 숨기시겠습니까?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.hidePost(postId)
+                            hidingPostId = null
                         }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { hidingPostId = null }) {
-                            Text(text = "취소")
-                        }
+                    ) {
+                        Text(
+                            text = "숨기기",
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
-                )
-            }
+                },
+                dismissButton = {
+                    TextButton(onClick = { hidingPostId = null }) {
+                        Text(text = "취소")
+                    }
+                }
+            )
+        }
 
-            blockingUserId?.let { targetId ->
-                AlertDialog(
-                    onDismissRequest = { blockingUserId = null },
-                    title = { Text(text = "이 사용자 차단") },
-                    text = { Text(text = "이 사용자를 차단하시겠습니까? 피드에서 해당 사용자의 모든 글이 즉시 숨겨집니다.") },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                viewModel.blockUser(targetId)
-                                blockingUserId = null
-                            }
-                        ) {
-                            Text(
-                                text = "차단",
-                                color = MaterialTheme.colorScheme.error
-                            )
+        blockingUserId?.let { targetId ->
+            AlertDialog(
+                onDismissRequest = { blockingUserId = null },
+                title = { Text(text = "이 사용자 차단") },
+                text = { Text(text = "이 사용자를 차단하시겠습니까? 피드에서 해당 사용자의 모든 글이 즉시 숨겨집니다.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.blockUser(targetId)
+                            blockingUserId = null
                         }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { blockingUserId = null }) {
-                            Text(text = "취소")
-                        }
+                    ) {
+                        Text(
+                            text = "차단",
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
-                )
-            }
+                },
+                dismissButton = {
+                    TextButton(onClick = { blockingUserId = null }) {
+                        Text(text = "취소")
+                    }
+                }
+            )
+        }
 
-            reportingPostId?.let { postId ->
-                ReportDialog(
-                    onDismiss = { reportingPostId = null },
-                    onConfirm = { reportReason, detail ->
-                        viewModel.reportPost(postId, reportReason, detail)
-                        reportingPostId = null
-                    }
-                )
-            }
+        reportingPostId?.let { postId ->
+            ReportDialog(
+                onDismiss = { reportingPostId = null },
+                onConfirm = { reportReason, detail ->
+                    viewModel.reportPost(postId, reportReason, detail)
+                    reportingPostId = null
+                }
+            )
         }
     }
 }

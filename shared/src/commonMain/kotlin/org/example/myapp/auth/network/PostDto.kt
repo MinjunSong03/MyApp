@@ -6,22 +6,28 @@ enum class MediaType { IMAGE, VIDEO }
 enum class ReportReason { SPAM, INAPPROPRIATE, VIOLENCE, COPYRIGHT, OTHER }
 enum class UserStatus { ACTIVE, BANNED, DELETED }
 
+data class PostMediaItem(
+    val mediaType: MediaType,
+    val mediaUrl: String,
+    val thumbnailUrl: String
+)
+
 @Serializable
 data class CreatePostRequest(
     val title: String,
     val description: String,
-    val mediaType: MediaType,
-    val thumbnailUrl: String,
-    val mediaUrl: String
+    val videoUrl: String? = null,
+    val videoThumbnailUrl: String? = null,
+    val imageUrls: List<String> = emptyList()
 )
 
 @Serializable
 data class EditPostRequest(
     val title: String,
     val description: String,
-    val mediaType: MediaType,
-    val thumbnailUrl: String,
-    val mediaUrl: String
+    val videoUrl: String? = null,
+    val videoThumbnailUrl: String? = null,
+    val imageUrls: List<String> = emptyList()
 )
 
 @Serializable
@@ -32,15 +38,39 @@ data class PostResponse(
     val userProfileImageUrl: String?,
     val title: String,
     val description: String,
-    val mediaType: MediaType,
-    val thumbnailUrl: String,
-    val mediaUrl: String,
+    val videoUrl: String? = null,
+    val videoThumbnailUrl: String? = null,
+    val imageUrls: List<String> = emptyList(),
     val viewCount: Long,
     val createdAt: String,
     val isMine: Boolean,
     val isHidden: Boolean,
     val isUserDeleted: Boolean
-)
+) {
+    val mediaItems: List<PostMediaItem>
+        get() {
+            val list = mutableListOf<PostMediaItem>()
+            if (!videoUrl.isNullOrBlank()) {
+                list.add(
+                    PostMediaItem(
+                        mediaType = MediaType.VIDEO,
+                        mediaUrl = videoUrl,
+                        thumbnailUrl = videoThumbnailUrl.orEmpty()
+                    )
+                )
+            }
+            imageUrls.forEach { url ->
+                list.add(
+                    PostMediaItem(
+                        mediaType = MediaType.IMAGE,
+                        mediaUrl = url,
+                        thumbnailUrl = url
+                    )
+                )
+            }
+            return list
+        }
+}
 
 @Serializable
 data class SliceResponse<T>(

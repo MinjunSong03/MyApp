@@ -2,6 +2,9 @@ package org.example.myapp.auth.repository
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import org.example.myapp.ImagePresignedRequest
 import org.example.myapp.VideoPresignedRequest
@@ -13,10 +16,10 @@ import org.example.myapp.auth.platform.FastStartUtil
 import org.example.myapp.auth.platform.ThumbnailExtractor
 import kotlin.coroutines.cancellation.CancellationException
 
-data class MediaUploadResult(
-    val mediaUrl: String,
-    val thumbnailUrl: String,
-    val mediaType: MediaType
+data class UploadedPostMediaResult(
+    val videoUrl: String? = null,
+    val videoThumbnailUrl: String? = null,
+    val imageUrls: List<String> = emptyList()
 )
 
 class MediaRepository(
@@ -27,51 +30,68 @@ class MediaRepository(
     private fun getAccessToken(): String =
         sessionManager.sessionFlow.value?.accessToken ?: throw IllegalStateException("로그인이 필요합니다.")
 
-    suspend fun uploadMedia(media: PickedMedia): Result<MediaUploadResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            when (media.mediaType) {
-                MediaType.IMAGE -> {
-                    val presigned = mediaApiService.getImagePresignedUrl(
-                        token = getAccessToken(),
-                        request = ImagePresignedRequest(
-                            fileName = media.fileName,
-                            contentType = media.mimeType
-                        )
-                    )
-                    mediaApiService.uploadBinaryToR2(presigned.uploadUrl, media.bytes, media.mimeType)
+    private suspend fun uploadSingleImage(image: PickedMedia, token: String): String {
+        val presigned = mediaApiService.getImagePresignedUrl(
+            token = token,
+            request = ImagePresignedRequest(
+                fileName = image.fileName,
+                contentType = image.mimeType
+            )
+        )
+        mediaApiService.uploadBinaryToR2(presigned.uploadUrl, image.bytes, image.mimeType)
+        return presigned.fileUrl
+    }
 
-                    MediaUploadResult(
-                        mediaUrl = presigned.fileUrl,
-                        thumbnailUrl = presigned.fileUrl,
-                        mediaType = MediaType.IMAGE
-                    )
+    suspend fun uploadPostMedia(
+        video: PickedMedia?,
+        images: List<PickedMedia>
+    ): Result<UploadedPostMediaResult> = withContext(Dispatchers.IO) {
+        runCatching {
+            if (video == null && images.isEmpty()) {
+                return@runCatching UploadedPostMediaResult()
+            }
+
+            val token = getAccessToken()
+
+            coroutineScope {
+                val imagesDeferred = async {
+                    images.take(10).map { img ->
+                        async { uploadSingleImage(img, token) }
+                    }.awaitAll()
                 }
-                MediaType.VIDEO -> {
-                    val thumbBytes = thumbnailExtractor.extractThumbnail(media.bytes)
+
+                val videoDeferred = async {
+                    if (video == null) return@async null
+
+                    val thumbBytes = thumbnailExtractor.extractThumbnail(video.bytes)
                         ?: throw IllegalStateException("동영상 썸네일 생성에 실패했습니다.")
-                    val thumbFileName = "thumb_${media.fileName.substringBeforeLast(".")}.jpg"
+                    val thumbFileName = "thumb_${video.fileName.substringBeforeLast(".")}.jpg"
 
                     val presigned = mediaApiService.getVideoPresignedUrl(
-                        token = getAccessToken(),
+                        token = token,
                         request = VideoPresignedRequest(
-                            videoFileName = media.fileName,
-                            videoContentType = media.mimeType,
+                            videoFileName = video.fileName,
+                            videoContentType = video.mimeType,
                             thumbFileName = thumbFileName,
                             thumbContentType = "image/jpeg"
                         )
                     )
 
-                    val fastStartVideoBytes = FastStartUtil.process(media.bytes)
-
-                    mediaApiService.uploadBinaryToR2(presigned.video.uploadUrl, fastStartVideoBytes, media.mimeType)
+                    val fastStartBytes = FastStartUtil.process(video.bytes)
+                    mediaApiService.uploadBinaryToR2(presigned.video.uploadUrl, fastStartBytes, video.mimeType)
                     mediaApiService.uploadBinaryToR2(presigned.thumbnail.uploadUrl, thumbBytes, "image/jpeg")
 
-                    MediaUploadResult(
-                        mediaUrl = presigned.video.fileUrl,
-                        thumbnailUrl = presigned.thumbnail.fileUrl,
-                        mediaType = MediaType.VIDEO
-                    )
+                    Pair(presigned.video.fileUrl, presigned.thumbnail.fileUrl)
                 }
+
+                val uploadedImageUrls = imagesDeferred.await()
+                val uploadedVideoPair = videoDeferred.await()
+
+                UploadedPostMediaResult(
+                    videoUrl = uploadedVideoPair?.first,
+                    videoThumbnailUrl = uploadedVideoPair?.second,
+                    imageUrls = uploadedImageUrls
+                )
             }
         }.onFailure { e ->
             if (e is CancellationException) throw e

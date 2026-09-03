@@ -1,5 +1,6 @@
 package org.example.myapp.ui.card
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -50,11 +53,14 @@ fun PostCard(
     modifier: Modifier = Modifier
 ) {
     var isMenuExpanded by rememberSaveable { mutableStateOf(false) }
+    val mediaItems = post.mediaItems
+    val pagerState = rememberPagerState(pageCount = { mediaItems.size })
 
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
+        border = BorderStroke(1.dp, Color.Black),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -167,29 +173,57 @@ fun PostCard(
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(220.dp)
-                    .background(Color(0xFFF0F0F0)),
-                contentAlignment = Alignment.Center
-            ) {
-                when (post.mediaType) {
-                    MediaType.IMAGE -> {
-                        AsyncImage(
-                            model = post.thumbnailUrl,
-                            contentDescription = post.title,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize()
-                        )
+            if (mediaItems.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .background(Color(0xFFF0F0F0)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize()
+                    ) { page ->
+                        val item = mediaItems[page]
+                        when (item.mediaType) {
+                            MediaType.VIDEO -> {
+                                VideoPlayer(
+                                    videoUrl = item.mediaUrl,
+                                    thumbnailUrl = item.thumbnailUrl,
+                                    videoManager = videoManager,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                            MediaType.IMAGE -> {
+                                AsyncImage(
+                                    model = item.mediaUrl,
+                                    contentDescription = "${post.title}",
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
                     }
-                    MediaType.VIDEO -> {
-                        VideoPlayer(
-                            videoUrl = post.mediaUrl,
-                            thumbnailUrl = post.thumbnailUrl,
-                            videoManager = videoManager,
-                            modifier = Modifier.fillMaxSize()
-                        )
+
+                    if (mediaItems.size > 1) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(10.dp)
+                                .background(
+                                    color = Color.Black.copy(alpha = 0.6f),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = "${pagerState.currentPage + 1}/${mediaItems.size}",
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 }
             }

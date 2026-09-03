@@ -88,9 +88,11 @@ fun MyPostScreen(
             if (centerIndex != null && state is MyPostUiState.Success) {
                 val posts = state.posts
                 val targetPost = posts.getOrNull(centerIndex)
-                val videoUrl = targetPost?.mediaUrl
+                val videoUrl = targetPost?.videoUrl
                 if (!videoUrl.isNullOrEmpty() && videoManager.currentPlayingUrl.value != videoUrl) {
                     videoManager.play(videoUrl)
+                } else if (videoUrl.isNullOrEmpty()) {
+                    videoManager.pause()
                 }
             }
         }
@@ -197,7 +199,7 @@ fun MyPostScreen(
                             LazyColumn(
                                 state = listState,
                                 modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(vertical = 8.dp)
+                                contentPadding = PaddingValues(top = 8.dp, bottom = 20.dp)
                             ) {
                                 items(state.posts, key = { it.id }) { post ->
                                     PostCard(

@@ -33,18 +33,17 @@ class EditPostViewModel(
         postId: Long,
         title: String,
         description: String,
-        mediaType: MediaType,
-        thumbnailUrl: String,
-        mediaUrl: String
+        videoUrl: String? = null,
+        videoThumbnailUrl: String? = null,
+        imageUrls: List<String> = emptyList()
     ) {
         viewModelScope.launch {
-
             val request = EditPostRequest(
                 title = title,
                 description = description,
-                mediaType = mediaType,
-                thumbnailUrl = thumbnailUrl,
-                mediaUrl = mediaUrl
+                videoUrl = videoUrl,
+                videoThumbnailUrl = videoThumbnailUrl,
+                imageUrls = imageUrls
             )
             postRepository.editPost(postId, request)
                 .onSuccess {

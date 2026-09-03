@@ -31,19 +31,27 @@ class CreatePostViewModel(
     fun createPost(
         title: String,
         description: String,
-        pickedMedia: PickedMedia
+        video: PickedMedia? = null,
+        images: List<PickedMedia> = emptyList()
     ) {
+        if (title.isBlank()) {
+            viewModelScope.launch { _toastEvent.send("제목을 입력해주세요.") }
+            return
+        }
+
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val uploadResult = mediaRepository.uploadMedia(pickedMedia).getOrThrow()
+                val uploadResult = mediaRepository.uploadPostMedia(video, images).getOrThrow()
+
                 val request = CreatePostRequest(
                     title = title,
                     description = description,
-                    mediaType = uploadResult.mediaType,
-                    thumbnailUrl = uploadResult.thumbnailUrl,
-                    mediaUrl = uploadResult.mediaUrl
+                    videoUrl = uploadResult.videoUrl,
+                    videoThumbnailUrl = uploadResult.videoThumbnailUrl,
+                    imageUrls = uploadResult.imageUrls
                 )
+
                 postRepository.createPost(request)
                     .onSuccess {
                         _toastEvent.send("게시물을 생성하였습니다.")

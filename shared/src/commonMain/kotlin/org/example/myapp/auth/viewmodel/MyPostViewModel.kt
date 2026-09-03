@@ -169,8 +169,6 @@ class MyPostViewModel(
         }
     }
 
-    //fun unblockUser() {}
-
     fun reportPost(postId: Long, reason: ReportReason, detail: String) {
         viewModelScope.launch {
             reportRepository.reportPost(postId, reason, detail)
