@@ -74,7 +74,7 @@ fun PostCard(
             ) {
                 AsyncImage(
                     model = post.userProfileImageUrl,
-                    contentDescription = "프로필 이미지",
+                    contentDescription = "프로필 사진",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .size(36.dp)

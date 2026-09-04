@@ -58,16 +58,16 @@ class AuthApiService(
         }
     }
 
-    suspend fun updateNickname(token: String, nickname: String) {
-        val response = client.patch("$baseUrl/api/user/updateNickname") {
+    suspend fun updateProfile(token: String, request: UpdateProfileRequest) {
+        val response = client.patch("$baseUrl/api/user/update_profile") {
             contentType(ContentType.Application.Json)
             header(HttpHeaders.Authorization, "Bearer $token")
-            setBody(UpdateNicknameRequest(nickname = nickname))
+            setBody(request)
         }
 
         if (!response.status.isSuccess()) {
             val errorBody = runCatching { response.body<ErrorResponse>() }.getOrNull()
-            val message = errorBody?.message ?: "닉네임 변경에 실패했습니다. (${response.status.value})"
+            val message = errorBody?.message ?: "프로필 변경에 실패했습니다. (${response.status.value})"
             throw IllegalStateException(message)
         }
     }

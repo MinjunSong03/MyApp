@@ -99,141 +99,137 @@ fun EditPostScreen(
     val isFormValid = title.isNotBlank() && description.isNotBlank()
 
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(20.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(20.dp)
-        ) {
-            Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text(text = "제목") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.outline,
-                    focusedLabelColor = MaterialTheme.colorScheme.outline
-                )
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedTextField(
+            value = title,
+            onValueChange = { title = it },
+            label = { Text(text = "제목") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedLabelColor = MaterialTheme.colorScheme.outline
             )
-            Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text(text = "내용") },
-                minLines = 2,
-                maxLines = 4,
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.outline,
-                    focusedLabelColor = MaterialTheme.colorScheme.outline
-                )
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedTextField(
+            value = description,
+            onValueChange = { description = it },
+            label = { Text(text = "내용") },
+            minLines = 2,
+            maxLines = 4,
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedLabelColor = MaterialTheme.colorScheme.outline
             )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "첨부된 미디어",
-                fontSize = 15.sp,
-                color = Color.Black
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            if (!videoUrl.isNullOrBlank()) {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F7)),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "동영상 1개 첨부됨",
-                                fontSize = 13.sp,
-                                color = Color.Black
-                            )
-                            Text(
-                                text = "포스트카드 첫 화면에 고정 노출 중",
-                                fontSize = 11.sp,
-                                color = Color.Gray
-                            )
-                        }
-                        TextButton(
-                            onClick = {
-                                videoUrl = null
-                                videoThumbnailUrl = null
-                            }
-                        ) {
-                            Text("동영상 삭제", color = Color.Red, fontSize = 12.sp)
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            if (imageUrls.isNotEmpty()) {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F7)),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "사진 ${imageUrls.size}장 첨부됨",
-                                fontSize = 13.sp,
-                                color = Color.Black
-                            )
-                            Text(
-                                text = "동영상 뒤로 스와이프 노출 중",
-                                fontSize = 11.sp,
-                                color = Color.Gray
-                            )
-                        }
-                        TextButton(onClick = { imageUrls = emptyList() }) {
-                            Text("사진 전체 삭제", color = Color.Red, fontSize = 12.sp)
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            Button(
-                onClick = {
-                    isLoading = true
-                    viewModel.editPost(
-                        postId = postId,
-                        title = title.trim(),
-                        description = description.trim(),
-                        videoUrl = videoUrl,
-                        videoThumbnailUrl = videoThumbnailUrl,
-                        imageUrls = imageUrls
-                    )
-                },
-                enabled = isFormValid && !isLoading,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = "첨부된 미디어",
+            fontSize = 15.sp,
+            color = Color.Black
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        if (!videoUrl.isNullOrBlank()) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F7)),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        color = Color.Black,
-                        modifier = Modifier.size(24.dp)
-                    )
-                } else {
-                    Text(
-                        text = "게시물 수정",
-                        color = Color.White,
-                        fontSize = 16.sp
-                    )
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "동영상 1개 첨부됨",
+                            fontSize = 13.sp,
+                            color = Color.Black
+                        )
+                        Text(
+                            text = "포스트카드 첫 화면에 고정 노출 중",
+                            fontSize = 11.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    TextButton(
+                        onClick = {
+                            videoUrl = null
+                            videoThumbnailUrl = null
+                        }
+                    ) {
+                        Text("동영상 삭제", color = Color.Red, fontSize = 12.sp)
+                    }
                 }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+        if (imageUrls.isNotEmpty()) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F7)),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "사진 ${imageUrls.size}장 첨부됨",
+                            fontSize = 13.sp,
+                            color = Color.Black
+                        )
+                        Text(
+                            text = "동영상 뒤로 스와이프 노출 중",
+                            fontSize = 11.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    TextButton(onClick = { imageUrls = emptyList() }) {
+                        Text("사진 전체 삭제", color = Color.Red, fontSize = 12.sp)
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+        Button(
+            onClick = {
+                isLoading = true
+                viewModel.editPost(
+                    postId = postId,
+                    title = title.trim(),
+                    description = description.trim(),
+                    videoUrl = videoUrl,
+                    videoThumbnailUrl = videoThumbnailUrl,
+                    imageUrls = imageUrls
+                )
+            },
+            enabled = isFormValid && !isLoading,
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    color = Color.Black,
+                    modifier = Modifier.size(24.dp)
+                )
+            } else {
+                Text(
+                    text = "게시물 수정",
+                    color = Color.White,
+                    fontSize = 16.sp
+                )
             }
         }
     }

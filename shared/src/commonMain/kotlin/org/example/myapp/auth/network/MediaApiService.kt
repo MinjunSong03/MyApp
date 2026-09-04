@@ -27,7 +27,7 @@ class MediaApiService(
         }
         if (!response.status.isSuccess()) {
             val errorBody = runCatching { response.body<ErrorResponse>() }.getOrNull()
-            throw IllegalStateException(errorBody?.message ?: "이미지 업로드 URL 발급에 실패했습니다.")
+            throw IllegalStateException(errorBody?.message ?: "사진 업로드 URL 발급에 실패했습니다.")
         }
         return response.body()
     }

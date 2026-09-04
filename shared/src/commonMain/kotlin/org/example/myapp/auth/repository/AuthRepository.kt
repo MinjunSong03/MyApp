@@ -10,6 +10,10 @@ interface AuthRepository {
     suspend fun login(provider: OAuthProvider): Result<Unit>
     suspend fun logout(provider: OAuthProvider?): Result<Unit>
     suspend fun unlink(provider: OAuthProvider): Result<Unit>
-    suspend fun updateNickname(nickname: String): Result<Unit>
+    suspend fun updateProfile(
+        nickname: String,
+        profileImageUrl: String?,
+        deleteProfileImage: Boolean
+    ): Result<Unit>
 
 }

@@ -59,14 +59,14 @@ val commonModule = module {
 
     viewModel { AppViewModel(get()) }
     viewModel { CreatePostViewModel(get(), get()) }
-    viewModel { DetailViewModel(get()) }
+    viewModel { DetailViewModel(get(), get()) }
     viewModel { EditPostViewModel(get()) }
     viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { LoginViewModel(get()) }
     viewModel { ManageMyViewModel(get()) }
     viewModel { MyInfoViewModel(get()) }
     viewModel { MyPostViewModel(get(), get(), get()) }
-    viewModel { ProfileSetupViewModel(get()) }
+    viewModel { ProfileSetupViewModel(get(), get()) }
 }
 
 expect val platformModule: Module

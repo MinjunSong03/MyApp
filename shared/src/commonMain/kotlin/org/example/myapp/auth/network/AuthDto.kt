@@ -8,8 +8,10 @@ data class OAuthLoginRequest(
 )
 
 @Serializable
-data class UpdateNicknameRequest(
-    val nickname: String
+data class UpdateProfileRequest(
+    val nickname: String,
+    val profileImageUrl: String?,
+    val deleteProfileImage: Boolean
 )
 
 @Serializable

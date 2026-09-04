@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -115,79 +118,77 @@ fun MyInfoScreen(
 
     Column(
         modifier = Modifier.fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Text(
+            text = "${session?.nickname} 님.",
+            color = Color.Black,
+            fontSize = 30.sp
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "반갑습니다!",
+            color = Color.Black,
+            fontSize = 30.sp
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "고유번호: ${session?.userId ?: "-"}",
+            color = Color.Gray,
+            fontSize = 14.sp
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+        Button(
+            onClick = { onUpdateNicknameClick() },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
         ) {
             Text(
-                text = "${session?.nickname} 님.",
-                color = Color.Black,
-                fontSize = 30.sp
+                text = "프로필 설정",
+                color = Color.White
             )
-            Spacer(modifier = Modifier.height(8.dp))
+        }
+        Spacer(modifier = Modifier.height(20.dp))
+        Button(
+            onClick = { onMyPostClick() },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+        ) {
             Text(
-                text = "반갑습니다!",
-                color = Color.Black,
-                fontSize = 30.sp
+                text = "나의 게시물",
+                color = Color.White
             )
-            Spacer(modifier = Modifier.height(8.dp))
+        }
+        Spacer(modifier = Modifier.height(20.dp))
+        Button(
+            onClick = { onManageMyClick() },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+        ) {
             Text(
-                text = "고유번호: ${session?.userId ?: "-"}",
-                color = Color.Gray,
-                fontSize = 14.sp
+                text = "차단한 사용자 관리",
+                color = Color.White
             )
-            Spacer(modifier = Modifier.height(20.dp))
-            Button(
-                onClick = { onUpdateNicknameClick() },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
-            ) {
-                Text(
-                    text = "닉네임 변경",
-                    color = Color.White
-                )
-            }
-            Spacer(modifier = Modifier.height(20.dp))
-            Button(
-                onClick = { onMyPostClick() },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
-            ) {
-                Text(
-                    text = "나의 게시물",
-                    color = Color.White
-                )
-            }
-            Spacer(modifier = Modifier.height(20.dp))
-            Button(
-                onClick = { onManageMyClick() },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
-            ) {
-                Text(
-                    text = "차단한 사용자 관리",
-                    color = Color.White
-                )
-            }
-            Spacer(modifier = Modifier.height(20.dp))
-            Button(
-                onClick = { viewModel.logout(OAuthProvider.KAKAO) },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252))
-            ) {
-                Text(
-                    text = "로그아웃",
-                    color = Color.White
-                )
-            }
-            Spacer(modifier = Modifier.height(10.dp))
-            Button(
-                onClick = { withdrawClick = true },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252))
-            ) {
-                Text(
-                    text = "회원탈퇴",
-                    color = Color.White
-                )
-            }
+        }
+        Spacer(modifier = Modifier.height(20.dp))
+        Button(
+            onClick = { viewModel.logout(OAuthProvider.KAKAO) },
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252))
+        ) {
+            Text(
+                text = "로그아웃",
+                color = Color.White
+            )
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        Button(
+            onClick = { withdrawClick = true },
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252))
+        ) {
+            Text(
+                text = "회원탈퇴",
+                color = Color.White
+            )
         }
     }
 }

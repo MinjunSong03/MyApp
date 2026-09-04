@@ -8,9 +8,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -64,12 +66,12 @@ fun MainScreen() {
     val isTopLevelTab = currentRoute in bottomNavItems.map { it.route }
 
     val topBarTitle = when {
-        currentRoute == "home" -> "HEALTH"
-        currentRoute == "menu" -> "HEALTH"
-        currentRoute == "my_info" -> "HEALTH"
+        currentRoute == "home" -> "MyApp"
+        currentRoute == "menu" -> "MyApp"
+        currentRoute == "my_info" -> "MyApp"
         currentRoute == "create_post" -> "새 게시물 생성"
         currentRoute?.startsWith("edit_post") == true -> "게시물 수정"
-        currentRoute == "detail" -> "닉네임 변경"
+        currentRoute == "detail" -> "프로필 수정"
         currentRoute == "post_my" -> "나의 게시물"
         currentRoute == "manage_my" -> "차단한 사용자 관리"
         currentRoute == "licenses" -> "오픈소스 라이선스"
@@ -89,23 +91,12 @@ fun MainScreen() {
                 NavigationBar(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp)
-                        .height(70.dp)
-                        .shadow(
-                            elevation = 16.dp,
-                            shape = RoundedCornerShape(48.dp),
-                            spotColor = Color.Black.copy(alpha = 0.25f),
-                            ambientColor = Color.Black.copy(alpha = 0.15f)
-                        )
                         .border(
                             border = BorderStroke(
                                 width = 1.dp,
                                 color = Color.Black.copy(alpha = 0.1f)
                             ),
-                            shape = RoundedCornerShape(48.dp)
-                        )
-                        .clip(RoundedCornerShape(48.dp)),
-                    windowInsets = WindowInsets(0, 0, 0, 0),
+                        ),
                     containerColor = Color.White
                 ) {
                     bottomNavItems.forEach { item ->
@@ -148,7 +139,7 @@ fun MainScreen() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = innerPadding.calculateTopPadding())
+                .padding(innerPadding)
                 .background(Color(0xFFF8F9FA))
         ) {
             NavHost(

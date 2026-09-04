@@ -42,6 +42,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import org.example.myapp.auth.network.PostResponse
+import org.example.myapp.auth.viewmodel.HomeUiState
 import org.example.myapp.auth.viewmodel.MyPostUiState
 import org.example.myapp.auth.viewmodel.MyPostViewModel
 import org.example.myapp.auth.viewmodel.PostTab
@@ -77,11 +78,24 @@ fun MyPostScreen(
             val visibleItems = layoutInfo.visibleItemsInfo
             if (visibleItems.isEmpty()) null
             else {
-                val viewportCenter = (layoutInfo.viewportStartOffset + layoutInfo.viewportEndOffset) / 2
-                visibleItems.minByOrNull { item ->
-                    val itemCenter = item.offset + item.size / 2
-                    kotlin.math.abs(itemCenter - viewportCenter)
-                }?.index
+                when {
+                    !listState.canScrollBackward -> {
+                        visibleItems.firstOrNull()?.index
+                    }
+
+                    !listState.canScrollForward -> {
+                        val postsCount = (uiState as? MyPostUiState.Success)?.posts?.size ?: 0
+                        visibleItems.lastOrNull { it.index < postsCount }?.index
+                    }
+
+                    else -> {
+                        val viewportCenter = (layoutInfo.viewportStartOffset + layoutInfo.viewportEndOffset) / 2
+                        visibleItems.minByOrNull { item ->
+                            val itemCenter = item.offset + item.size / 2
+                            kotlin.math.abs(itemCenter - viewportCenter)
+                        }?.index
+                    }
+                }
             }
         }.collect { centerIndex ->
             val state = uiState
@@ -199,7 +213,7 @@ fun MyPostScreen(
                             LazyColumn(
                                 state = listState,
                                 modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(top = 8.dp, bottom = 20.dp)
+                                contentPadding = PaddingValues(vertical = 10.dp)
                             ) {
                                 items(state.posts, key = { it.id }) { post ->
                                     PostCard(

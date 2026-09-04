@@ -16,7 +16,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -72,6 +75,8 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
 
+    val navBarInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
     var reportingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
     var blockingUserId by rememberSaveable { mutableStateOf<Long?>(null) }
     var deletingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -100,15 +105,29 @@ fun HomeScreen(
             val visibleItems = layoutInfo.visibleItemsInfo
             if (visibleItems.isEmpty()) null
             else {
-                val viewportCenter = (layoutInfo.viewportStartOffset + layoutInfo.viewportEndOffset) / 2
-                visibleItems.minByOrNull { item ->
-                    val itemCenter = item.offset + item.size / 2
-                    kotlin.math.abs(itemCenter - viewportCenter)
-                }?.index
+                when {
+                    !listState.canScrollBackward -> {
+                        visibleItems.firstOrNull()?.index
+                    }
+
+                    !listState.canScrollForward -> {
+                        val postsCount = (uiState as? HomeUiState.Success)?.posts?.size ?: 0
+                        visibleItems.lastOrNull { it.index < postsCount }?.index
+                    }
+
+                    else -> {
+                        val viewportCenter = (layoutInfo.viewportStartOffset + layoutInfo.viewportEndOffset) / 2
+                        visibleItems.minByOrNull { item ->
+                            val itemCenter = item.offset + item.size / 2
+                            kotlin.math.abs(itemCenter - viewportCenter)
+                        }?.index
+                    }
+                }
             }
         }.collect { centerIndex ->
-            if (centerIndex != null && uiState is HomeUiState.Success) {
-                val posts = (uiState as HomeUiState.Success).posts
+            val state = uiState
+            if (centerIndex != null && state is HomeUiState.Success) {
+                val posts = state.posts
                 val targetPost = posts.getOrNull(centerIndex)
                 val videoUrl = targetPost?.videoUrl
                 if (!videoUrl.isNullOrEmpty() && videoManager.currentPlayingUrl.value != videoUrl) {
@@ -195,7 +214,7 @@ fun HomeScreen(
                         LazyColumn(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(top = 8.dp, bottom = 100.dp)
+                            contentPadding = PaddingValues(vertical = 10.dp)
                         ) {
                             items(state.posts, key = { it.id }) { post ->
                                 PostCard(
@@ -233,7 +252,7 @@ fun HomeScreen(
             exit = scaleOut() + fadeOut(),
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 20.dp, bottom = 110.dp)
+                .padding(end = 20.dp, bottom = navBarInset)
         ) {
             FloatingActionButton(
                 onClick = onNavigateToCreatePost,

@@ -64,58 +64,53 @@ fun ManageMyScreen(
         }
     }
 
-    Column(
+
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = { viewModel.loadMyBlockedUser(isRefresh = true) },
         modifier = Modifier.fillMaxSize()
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            PullToRefreshBox(
-                isRefreshing = isRefreshing,
-                onRefresh = { viewModel.loadMyBlockedUser(isRefresh = true) },
-                modifier = Modifier.fillMaxSize()
-            ) {
-                when (val state = uiState) {
-                    is ManageMyUiState.Loading -> {
-                        CircularProgressIndicator(
-                            color = Color.Black,
-                            modifier = Modifier.align(Alignment.Center)
+        when (val state = uiState) {
+            is ManageMyUiState.Loading -> {
+                CircularProgressIndicator(
+                    color = Color.Black,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+            is ManageMyUiState.Success -> {
+                if (state.users.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState()),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "차단한 사용자가 없습니다.",
+                            color = Color.Gray
                         )
                     }
-                    is ManageMyUiState.Success -> {
-                        if (state.users.isEmpty()) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .verticalScroll(rememberScrollState()),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "차단한 사용자가 없습니다.",
-                                    color = Color.Gray
-                                )
-                            }
-                        } else {
-                            LazyColumn(
-                                state = listState,
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(vertical = 8.dp)
-                            ) {
-                                items(state.users, key = { it.id }) { user ->
-                                    BlockedUserCard(
-                                        user = user,
-                                        onUnblockUserClick = { viewModel.unblockUser(user.id) }
-                                    )
-                                }
-                                if (!state.isLast) {
-                                    item {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(16.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            CircularProgressIndicator(color = Color.Black)
-                                        }
-                                    }
+                } else {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(vertical = 8.dp)
+                    ) {
+                        items(state.users, key = { it.id }) { user ->
+                            BlockedUserCard(
+                                user = user,
+                                onUnblockUserClick = { viewModel.unblockUser(user.id) }
+                            )
+                        }
+                        if (!state.isLast) {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(color = Color.Black)
                                 }
                             }
                         }

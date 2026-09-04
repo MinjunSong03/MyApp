@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -92,162 +94,160 @@ fun CreatePostScreen(
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp)
-        ) {
-            Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text(text = "제목(필수)") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.outline,
-                    focusedLabelColor = MaterialTheme.colorScheme.outline
-                )
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text(text = "내용(필수)") },
-                minLines = 2,
-                maxLines = 4,
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.outline,
-                    focusedLabelColor = MaterialTheme.colorScheme.outline
-                )
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "미디어 첨부 (동영상 최대 1개, 사진 최대 10장)",
-                fontSize = 14.sp,
-                color = Color.Black
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    onClick = {
-                        videoPickerLauncher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)
-                        )
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(if (selectedVideo == null) "동영상 추가" else "동영상 변경")
-                }
 
-                Button(
-                    onClick = {
-                        imagePickerLauncher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                        )
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(if (selectedImages.isEmpty()) "이미지 추가" else "이미지 다시 선택")
-                }
-            }
-            if (selectedVideo != null) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F7)),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "동영상: ${selectedVideo?.fileName}",
-                                fontSize = 13.sp,
-                                color = Color.Black
-                            )
-                            Text(
-                                text = "동영상",
-                                fontSize = 11.sp,
-                                color = Color.Gray
-                            )
-                        }
-                        TextButton(onClick = { selectedVideo = null }) {
-                            Text("삭제", color = Color.Red, fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-            if (selectedImages.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F7)),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "사진 ${selectedImages.size}장 선택됨",
-                                fontSize = 13.sp,
-                                color = Color.Black
-                            )
-                            Text(
-                                text = "이미지",
-                                fontSize = 11.sp,
-                                color = Color.Gray
-                            )
-                        }
-                        TextButton(onClick = { selectedImages = emptyList() }) {
-                            Text("전체 삭제", color = Color.Red, fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.weight(1f))
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(20.dp)
+    ) {
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedTextField(
+            value = title,
+            onValueChange = { title = it },
+            label = { Text(text = "제목(필수)") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedLabelColor = MaterialTheme.colorScheme.outline
+            )
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedTextField(
+            value = description,
+            onValueChange = { description = it },
+            label = { Text(text = "내용(필수)") },
+            minLines = 2,
+            maxLines = 4,
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedLabelColor = MaterialTheme.colorScheme.outline
+            )
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = "미디어 첨부 (동영상 최대 1개, 사진 최대 10장)",
+            fontSize = 14.sp,
+            color = Color.Black
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             Button(
                 onClick = {
-                    viewModel.createPost(
-                        title = title.trim(),
-                        description = description.trim(),
-                        video = selectedVideo,
-                        images = selectedImages
+                    videoPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)
                     )
                 },
-                enabled = isFormValid && !isLoading,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
+                modifier = Modifier.weight(1f)
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        color = Color.White,
-                        modifier = Modifier.size(24.dp)
+                Text(if (selectedVideo == null) "동영상 추가" else "동영상 변경")
+            }
+
+            Button(
+                onClick = {
+                    imagePickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                     )
-                } else {
-                    Text(
-                        text = "게시물 생성",
-                        color = Color.White,
-                        fontSize = 16.sp
-                    )
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(if (selectedImages.isEmpty()) "사진 추가" else "사진 다시 선택")
+            }
+        }
+        if (selectedVideo != null) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F7)),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "동영상: ${selectedVideo?.fileName}",
+                            fontSize = 13.sp,
+                            color = Color.Black
+                        )
+                        Text(
+                            text = "동영상",
+                            fontSize = 11.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    TextButton(onClick = { selectedVideo = null }) {
+                        Text("삭제", color = Color.Red, fontSize = 12.sp)
+                    }
                 }
+            }
+        }
+        if (selectedImages.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F7)),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "사진 ${selectedImages.size}장 선택됨",
+                            fontSize = 13.sp,
+                            color = Color.Black
+                        )
+                        Text(
+                            text = "사진",
+                            fontSize = 11.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    TextButton(onClick = { selectedImages = emptyList() }) {
+                        Text("전체 삭제", color = Color.Red, fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(30.dp))
+        Button(
+            onClick = {
+                viewModel.createPost(
+                    title = title.trim(),
+                    description = description.trim(),
+                    video = selectedVideo,
+                    images = selectedImages
+                )
+            },
+            enabled = isFormValid && !isLoading,
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            } else {
+                Text(
+                    text = "게시물 생성",
+                    color = Color.White,
+                    fontSize = 16.sp
+                )
             }
         }
     }

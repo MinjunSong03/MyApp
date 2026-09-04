@@ -97,4 +97,21 @@ class MediaRepository(
             if (e is CancellationException) throw e
         }
     }
+
+    suspend fun uploadSingleImage(image: PickedMedia): Result<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            val token = getAccessToken()
+            val presigned = mediaApiService.getImagePresignedUrl(
+                token = token,
+                request = ImagePresignedRequest(
+                    fileName = image.fileName,
+                    contentType = image.mimeType
+                )
+            )
+            mediaApiService.uploadBinaryToR2(presigned.uploadUrl, image.bytes, image.mimeType)
+            presigned.fileUrl
+        }.onFailure { e ->
+            if (e is CancellationException) throw e
+        }
+    }
 }

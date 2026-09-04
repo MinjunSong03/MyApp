@@ -16,6 +16,8 @@ import org.example.myapp.auth.model.Session
 import org.example.myapp.auth.platform.AuthService
 import org.example.myapp.auth.network.AuthApiService
 import org.example.myapp.auth.local.SessionManager
+import org.example.myapp.auth.network.UpdateProfileRequest
+
 class AuthRepositoryImpl(
     private val authService: AuthService,
     private val authApiService: AuthApiService,
@@ -95,13 +97,35 @@ class AuthRepositoryImpl(
         }
     }
 
-    override suspend fun updateNickname(nickname: String): Result<Unit> = withContext(Dispatchers.IO) {
+    override suspend fun updateProfile(
+        nickname: String,
+        profileImageUrl: String?,
+        deleteProfileImage: Boolean
+    ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             val session = sessionManager.sessionFlow.value
                 ?: throw IllegalStateException("로그인 세션이 만료되었습니다.")
 
-            authApiService.updateNickname(token = session.accessToken, nickname = nickname)
-            val updatedSession = session.copy(nickname = nickname, isNewUser = false)
+            val request = UpdateProfileRequest(
+                nickname = nickname,
+                profileImageUrl = profileImageUrl,
+                deleteProfileImage = deleteProfileImage
+            )
+
+            authApiService.updateProfile(token = session.accessToken, request)
+
+            val updatedImageUrl = when {
+                deleteProfileImage -> null
+                profileImageUrl != null -> profileImageUrl
+                else -> session.profileImageUrl
+            }
+
+            val updatedSession = session.copy(
+                nickname = nickname,
+                profileImageUrl = updatedImageUrl,
+                isNewUser = false
+            )
+
             sessionManager.saveSession(updatedSession)
         }.onFailure { e ->
             if (e is CancellationException) throw e

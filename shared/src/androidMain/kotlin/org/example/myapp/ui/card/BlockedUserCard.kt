@@ -62,7 +62,7 @@ fun BlockedUserCard(
             ) {
                 AsyncImage(
                     model = user.profileImageUrl,
-                    contentDescription = "프로필 이미지",
+                    contentDescription = "프로필 사진",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .size(36.dp)
