@@ -53,14 +53,14 @@ import coil3.compose.AsyncImage
 import org.example.myapp.auth.model.AuthState
 import org.example.myapp.auth.model.PickedMedia
 import org.example.myapp.auth.network.MediaType
-import org.example.myapp.auth.viewmodel.DetailViewModel
+import org.example.myapp.auth.viewmodel.EditProfileViewModel
 import org.example.myapp.ui.item.AppTopBar
 import org.example.myapp.util.toPickedMedia
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun DetailScreen(
-    viewModel: DetailViewModel = koinViewModel(),
+fun EditProfileScreen(
+    viewModel: EditProfileViewModel = koinViewModel(),
     onBack: () -> Unit,
 ) {
     val authState by viewModel.authState.collectAsState()

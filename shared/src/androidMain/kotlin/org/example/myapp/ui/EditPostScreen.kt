@@ -135,7 +135,7 @@ fun EditPostScreen(
                 onValueChange = { description = it },
                 label = { Text(text = "내용") },
                 minLines = 2,
-                maxLines = 4,
+                maxLines = 15,
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.outline,

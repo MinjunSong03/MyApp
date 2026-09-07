@@ -2,6 +2,7 @@ package org.example.myapp.ui.card
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -44,6 +45,7 @@ import org.example.myapp.util.VideoPlayer
 fun PostCard(
     post: PostResponse,
     videoManager: AndroidVideoPlayerManager,
+    onCardClick: (Long) -> Unit,
     onEditClick: (Long) -> Unit,
     onDeleteClick: (Long) -> Unit,
     onUnhidePostClick: (Long) -> Unit = {},
@@ -198,7 +200,7 @@ fun PostCard(
                             MediaType.IMAGE -> {
                                 AsyncImage(
                                     model = item.mediaUrl,
-                                    contentDescription = "${post.title}",
+                                    contentDescription = post.title,
                                     contentScale = ContentScale.Fit,
                                     modifier = Modifier.fillMaxSize()
                                 )
@@ -228,20 +230,16 @@ fun PostCard(
                 }
             }
 
-            Column(modifier = Modifier.padding(14.dp)) {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+                    .padding(14.dp)
+                    .clickable { onCardClick(post.id) }
+            ) {
                 Text(
                     text = post.title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = post.description,
-                    fontSize = 13.sp,
-                    color = Color.DarkGray,
-                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(8.dp))

@@ -36,13 +36,14 @@ import org.example.myapp.auth.repository.PostRepository
 import org.example.myapp.auth.repository.ReportRepository
 import org.example.myapp.auth.repository.UserBlockRepository
 import org.example.myapp.auth.viewmodel.CreatePostViewModel
-import org.example.myapp.auth.viewmodel.DetailViewModel
+import org.example.myapp.auth.viewmodel.EditProfileViewModel
 import org.example.myapp.auth.viewmodel.EditPostViewModel
 import org.example.myapp.auth.viewmodel.ManageMyViewModel
 import org.example.myapp.auth.viewmodel.MyPostViewModel
 import org.example.myapp.auth.viewmodel.HomeViewModel
 import org.example.myapp.auth.viewmodel.LoginViewModel
 import org.example.myapp.auth.viewmodel.MyInfoViewModel
+import org.example.myapp.auth.viewmodel.PostDetailViewModel
 import org.example.myapp.auth.viewmodel.ProfileSetupViewModel
 import org.koin.core.module.dsl.viewModel
 
@@ -129,7 +130,7 @@ val commonModule = module {
 
     viewModel { AppViewModel(get()) }
     viewModel { CreatePostViewModel(get(), get()) }
-    viewModel { DetailViewModel(get(), get()) }
+    viewModel { EditProfileViewModel(get(), get()) }
     viewModel { EditPostViewModel(get()) }
     viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { LoginViewModel(get()) }
@@ -137,6 +138,7 @@ val commonModule = module {
     viewModel { MyInfoViewModel(get()) }
     viewModel { MyPostViewModel(get(), get(), get()) }
     viewModel { ProfileSetupViewModel(get(), get()) }
+    viewModel { PostDetailViewModel(get(), get(),get(), get()) }
 }
 
 expect val platformModule: Module

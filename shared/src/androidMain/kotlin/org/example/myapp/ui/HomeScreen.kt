@@ -1,11 +1,6 @@
 package org.example.myapp.ui
 
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
@@ -21,12 +16,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TextButton
@@ -47,14 +39,12 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import org.example.myapp.auth.viewmodel.HomeUiState
 import org.example.myapp.auth.viewmodel.HomeViewModel
-import org.example.myapp.shared.R
 import org.example.myapp.ui.card.PostCard
 import org.koin.compose.viewmodel.koinViewModel
 import org.example.myapp.ui.dialog.ReportDialog
@@ -66,7 +56,8 @@ import org.example.myapp.util.AndroidVideoPlayerManager
 fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
     videoManager: AndroidVideoPlayerManager = koinViewModel(),
-    onNavigateToEditPost: (Long) -> Unit
+    onNavigateToEditPost: (Long) -> Unit,
+    onNavigateToPostDetail: (Long) -> Unit
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -225,8 +216,9 @@ fun HomeScreen(
                                 items(state.posts, key = { it.id }) { post ->
                                     PostCard(
                                         post = post,
+                                        onCardClick = onNavigateToPostDetail,
                                         videoManager = videoManager,
-                                        onEditClick = { onNavigateToEditPost(post.id) },
+                                        onEditClick = onNavigateToEditPost,
                                         onDeleteClick = { deletingPostId = it },
                                         onUnhidePostClick = {},
                                         onHidePostClick = { hidingPostId = it },

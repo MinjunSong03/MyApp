@@ -58,6 +58,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun MyPostScreen(
     viewModel: MyPostViewModel = koinViewModel(),
     videoManager: AndroidVideoPlayerManager = koinViewModel(),
+    onNavigateToPostDetail: (Long) -> Unit,
     onNavigateToEditPost: (Long) -> Unit,
     onBack: () -> Unit
 ) {
@@ -234,7 +235,8 @@ fun MyPostScreen(
                                         PostCard(
                                             post = post,
                                             videoManager = videoManager,
-                                            onEditClick = { onNavigateToEditPost(it) },
+                                            onCardClick = onNavigateToPostDetail,
+                                            onEditClick = onNavigateToEditPost,
                                             onDeleteClick = { deletingPostId = it },
                                             onUnhidePostClick = { unhidingPost = post },
                                             onHidePostClick = { hidingPostId = it },

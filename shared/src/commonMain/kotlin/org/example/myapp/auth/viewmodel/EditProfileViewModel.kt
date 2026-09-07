@@ -13,7 +13,7 @@ import org.example.myapp.auth.repository.AuthRepository
 import org.example.myapp.auth.repository.MediaRepository
 import kotlin.coroutines.cancellation.CancellationException
 
-class DetailViewModel(
+class EditProfileViewModel(
     private val authRepository: AuthRepository,
     private val mediaRepository: MediaRepository
 ): ViewModel() {

@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
 import org.example.myapp.auth.model.PickedMedia
 import org.example.myapp.auth.network.MediaType
@@ -134,7 +135,7 @@ fun CreatePostScreen(
                     onValueChange = { viewModel.onDescriptionChange(it) },
                     label = { Text(text = "내용(필수)") },
                     minLines = 2,
-                    maxLines = 4,
+                    maxLines = 15,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.outline,

@@ -2,10 +2,6 @@ package org.example.myapp.ui
 
 import android.app.Activity
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -29,13 +25,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -133,6 +127,9 @@ fun MainScreen() {
             ) {
                 composable("home") {
                     HomeScreen(
+                        onNavigateToPostDetail = { postId ->
+                            navController.navigate("post_detail/$postId")
+                        },
                         onNavigateToEditPost = { postId ->
                             navController.navigate("edit_post/$postId")
                         }
@@ -161,6 +158,19 @@ fun MainScreen() {
                         onBack = { navController.popBackStack() }
                     )
                 }
+                composable(
+                    route = "post_detail/{postId}",
+                    arguments = listOf(navArgument("postId") { type = NavType.LongType })
+                ) { backStackEntry ->
+                    val postId = backStackEntry.arguments?.getLong("postId") ?: return@composable
+                    PostDetailScreen(
+                        postId = postId,
+                        onBack = { navController.popBackStack() },
+                        onNavigateToEditPost = { id ->
+                            navController.navigate("edit_post/$id")
+                        }
+                    )
+                }
                 composable("my_info") {
                     MyInfoScreen(
                         onUpdateNicknameClick = { navController.navigate("detail") },
@@ -169,7 +179,7 @@ fun MainScreen() {
                     )
                 }
                 composable("detail") {
-                    DetailScreen(
+                    EditProfileScreen(
                         onBack = { navController.popBackStack() }
                     )
                 }
@@ -177,6 +187,9 @@ fun MainScreen() {
                     MyPostScreen(
                         onNavigateToEditPost = { postId ->
                             navController.navigate("edit_post/$postId") },
+                        onNavigateToPostDetail = { postId ->
+                            navController.navigate("post_detail/$postId")
+                        },
                         onBack = { navController.popBackStack() }
                     )
                 }
