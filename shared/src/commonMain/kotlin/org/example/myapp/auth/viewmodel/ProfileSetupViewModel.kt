@@ -30,13 +30,14 @@ class ProfileSetupViewModel(
         selectedImage: PickedMedia?
     ) {
         if (_isLoading.value) return
-
         viewModelScope.launch {
+            _isLoading.value = true
             try {
                 val uploadedImageUrl = if (selectedImage != null) {
                     val uploadResult = mediaRepository.uploadSingleImage(selectedImage)
                     uploadResult.getOrElse { error ->
-                        _toastEvent.send(error.message ?: "프로필 사진 업로드에 실패했습니다.")
+                        val message = error.message ?: return@launch
+                        _toastEvent.send(message)
                         return@launch
                     }
                 } else null
@@ -46,13 +47,15 @@ class ProfileSetupViewModel(
                     profileImageUrl = uploadedImageUrl,
                     deleteProfileImage = false
                 ).onSuccess {
-                    _toastEvent.send("프로필이 설정되었습니다.")
+                    _toastEvent.send("프로필 설정이 완료되었습니다.")
                 }.onFailure { error ->
-                        _toastEvent.send(error.message ?: "프로필 설정에 실패했습니다.")
+                    val message = error.message ?: return@onFailure
+                    _toastEvent.send(message)
                     }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                _toastEvent.send("프로필 설정 중 오류가 발생했습니다.")
+                val message = e.message ?: return@launch
+                _toastEvent.send(message)
             } finally {
                 _isLoading.value = false
             }

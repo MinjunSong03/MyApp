@@ -17,10 +17,22 @@ data class UpdateProfileRequest(
 @Serializable
 data class AuthResponse(
     val token: String,
+    val refreshToken: String,
     val userId: Long,
     val nickname: String,
     val profileImageUrl: String?,
     val isNewUser: Boolean
+)
+
+@Serializable
+data class RefreshTokenRequest(
+    val refreshToken: String
+)
+
+@Serializable
+data class TokenRefreshResponse(
+    val accessToken: String,
+    val refreshToken: String
 )
 
 @Serializable

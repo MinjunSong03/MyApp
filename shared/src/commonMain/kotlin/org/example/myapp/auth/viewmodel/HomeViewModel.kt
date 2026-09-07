@@ -117,35 +117,25 @@ class HomeViewModel(
                     }
                     .onFailure { error ->
                         if (error is CancellationException) return@onFailure
-
                         if (currentPostList.isEmpty()) {
                             _uiState.value = HomeUiState.Success(emptyList(), isLast = true)
                         } else {
                             _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
                         }
+                        val message = error.message ?: return@onFailure
+                        _toastEvent.send(message)
                     }
             } catch (e : Exception) {
                 if (e is CancellationException) throw e
-
-                _toastEvent.send(e.message ?: "알 수 없는 오류가 발생했습니다.")
                 _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
+                val message = e.message ?: return@launch
+                _toastEvent.send(message)
             } finally {
                 if (isRefresh) {
                     _isRefreshing.value = false
                 }
             }
         }
-    }
-
-    suspend fun getPostById(postId: Long): PostResponse? {
-        currentPostList.firstOrNull { it.id == postId }?.let { return it }
-
-        return postRepository.getPostById(postId)
-            .onFailure { error ->
-                if (error is CancellationException) return@onFailure
-                _toastEvent.send(error.message ?: "게시물 가져오기에 실패했습니다.")
-            }
-            .getOrNull()
     }
 
     fun hidePost(postId: Long) {
@@ -155,7 +145,8 @@ class HomeViewModel(
                     _toastEvent.send("게시물을 숨김 처리하였습니다.")
                 }
                 .onFailure { error ->
-                    _toastEvent.send(error.message ?: "게시물 숨김 처리에 실패했습니다.")
+                    val message = error.message ?: return@onFailure
+                    _toastEvent.send(message)
                 }
         }
     }
@@ -167,7 +158,8 @@ class HomeViewModel(
                     _toastEvent.send("게시물을 삭제하였습니다.")
                 }
                 .onFailure { error ->
-                    _toastEvent.send(error.message ?: "게시물 삭제에 실패했습니다.")
+                    val message = error.message ?: return@onFailure
+                    _toastEvent.send(message)
                 }
         }
     }
@@ -181,7 +173,8 @@ class HomeViewModel(
                     _toastEvent.send("사용자를 차단하였습니다.")
                 }
                 .onFailure { error ->
-                    _toastEvent.send(error.message ?: "사용자 차단에 실패했습니다.")
+                    val message = error.message ?: return@onFailure
+                    _toastEvent.send(message)
                 }
         }
     }
@@ -191,7 +184,8 @@ class HomeViewModel(
             reportRepository.reportPost(postId, reason, detail)
                 .onSuccess { _toastEvent.send("신고가 접수되었습니다.") }
                 .onFailure { error ->
-                    _toastEvent.send(error.message ?: "신고 처리에 실패했습니다.")
+                    val message = error.message ?: return@onFailure
+                    _toastEvent.send(message)
                 }
         }
     }

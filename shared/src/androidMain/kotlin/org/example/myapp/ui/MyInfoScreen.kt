@@ -146,7 +146,7 @@ fun MyInfoScreen(
             colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
         ) {
             Text(
-                text = "프로필 설정",
+                text = "프로필 수정",
                 color = Color.White
             )
         }

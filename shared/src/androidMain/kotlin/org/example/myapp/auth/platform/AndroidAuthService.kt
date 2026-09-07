@@ -42,7 +42,7 @@ class AndroidAuthService(private val context: Context): AuthService {
             } else if (token != null) {
                 val session = Session(
                     accessToken = token.accessToken,
-                    refreshToken = token.refreshToken,
+                    refreshToken = null,
                     userId = null,
                     nickname = null,
                     profileImageUrl = null,

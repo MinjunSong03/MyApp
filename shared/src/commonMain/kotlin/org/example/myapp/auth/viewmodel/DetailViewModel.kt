@@ -32,15 +32,17 @@ class DetailViewModel(
     fun updateProfile(
         nickname: String,
         selectedImage: PickedMedia?,
-        deleteProfileImage: Boolean = false
+        deleteProfileImage: Boolean
     ) {
         if (_isLoading.value) return
+        _isLoading.value = true
         viewModelScope.launch {
             try {
                 val uploadedImageUrl = if (selectedImage != null) {
                     val uploadResult = mediaRepository.uploadSingleImage(selectedImage)
                     uploadResult.getOrElse { error ->
-                        _toastEvent.send(error.message ?: "프로필 사진 업로드에 실패했습니다.")
+                        val message = error.message ?: return@launch
+                        _toastEvent.send(message)
                         return@launch
                     }
                 } else null
@@ -50,15 +52,17 @@ class DetailViewModel(
                     profileImageUrl = uploadedImageUrl,
                     deleteProfileImage = deleteProfileImage
                 ).onSuccess {
-                    _toastEvent.send("프로필이 변경되었습니다.")
+                    _toastEvent.send("프로필이 수정되었습니다.")
                     _updateSuccessEvent.send(Unit)
                 }
                     .onFailure { error ->
-                        _toastEvent.send(error.message ?: "프로필 변경에 실패했습니다.")
+                        val message = error.message ?: return@onFailure
+                        _toastEvent.send(message)
                     }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                _toastEvent.send("프로필 변경 중 오류가 발생했습니다.")
+                val message = e.message ?: return@launch
+                _toastEvent.send(message)
             } finally {
                 _isLoading.value = false
             }

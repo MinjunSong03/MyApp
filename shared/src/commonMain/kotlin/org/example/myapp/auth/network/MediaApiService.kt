@@ -17,12 +17,11 @@ import org.example.myapp.VideoPresignedUrlResponse
 
 class MediaApiService(
     private val client: HttpClient,
-    private val baseUrl: String = "http://10.0.2.2:8081"
+    private val baseUrl: String
 ) {
-    suspend fun getImagePresignedUrl(token: String, request: ImagePresignedRequest): PresignedUrlResponse {
+    suspend fun getImagePresignedUrl(request: ImagePresignedRequest): PresignedUrlResponse {
         val response = client.post("$baseUrl/api/media/image-presigned") {
             contentType(ContentType.Application.Json)
-            header(HttpHeaders.Authorization, "Bearer $token")
             setBody(request)
         }
         if (!response.status.isSuccess()) {
@@ -32,10 +31,9 @@ class MediaApiService(
         return response.body()
     }
 
-    suspend fun getVideoPresignedUrl(token: String, request: VideoPresignedRequest): VideoPresignedUrlResponse {
+    suspend fun getVideoPresignedUrl(request: VideoPresignedRequest): VideoPresignedUrlResponse {
         val response = client.post("$baseUrl/api/media/video-presigned") {
             contentType(ContentType.Application.Json)
-            header(HttpHeaders.Authorization, "Bearer $token")
             setBody(request)
         }
         if (!response.status.isSuccess()) {
@@ -47,7 +45,7 @@ class MediaApiService(
 
     suspend fun uploadBinaryToR2(uploadUrl: String, bytes: ByteArray, contentType: String) {
         val response = client.put(uploadUrl) {
-            header(HttpHeaders.ContentType, contentType)
+            contentType(ContentType.parse(contentType))
             setBody(bytes)
         }
         if (!response.status.isSuccess()) {

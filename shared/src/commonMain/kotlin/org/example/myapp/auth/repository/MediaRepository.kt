@@ -24,15 +24,11 @@ data class UploadedPostMediaResult(
 
 class MediaRepository(
     private val mediaApiService: MediaApiService,
-    private val sessionManager: SessionManager,
     private val thumbnailExtractor: ThumbnailExtractor = ThumbnailExtractor()
 ) {
-    private fun getAccessToken(): String =
-        sessionManager.sessionFlow.value?.accessToken ?: throw IllegalStateException("로그인이 필요합니다.")
 
-    private suspend fun uploadSingleImage(image: PickedMedia, token: String): String {
+    private suspend fun uploadImageInternal(image: PickedMedia): String {
         val presigned = mediaApiService.getImagePresignedUrl(
-            token = token,
             request = ImagePresignedRequest(
                 fileName = image.fileName,
                 contentType = image.mimeType
@@ -51,12 +47,10 @@ class MediaRepository(
                 return@runCatching UploadedPostMediaResult()
             }
 
-            val token = getAccessToken()
-
             coroutineScope {
                 val imagesDeferred = async {
                     images.take(10).map { img ->
-                        async { uploadSingleImage(img, token) }
+                        async { uploadImageInternal(img) }
                     }.awaitAll()
                 }
 
@@ -68,7 +62,6 @@ class MediaRepository(
                     val thumbFileName = "thumb_${video.fileName.substringBeforeLast(".")}.jpg"
 
                     val presigned = mediaApiService.getVideoPresignedUrl(
-                        token = token,
                         request = VideoPresignedRequest(
                             videoFileName = video.fileName,
                             videoContentType = video.mimeType,
@@ -100,16 +93,7 @@ class MediaRepository(
 
     suspend fun uploadSingleImage(image: PickedMedia): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
-            val token = getAccessToken()
-            val presigned = mediaApiService.getImagePresignedUrl(
-                token = token,
-                request = ImagePresignedRequest(
-                    fileName = image.fileName,
-                    contentType = image.mimeType
-                )
-            )
-            mediaApiService.uploadBinaryToR2(presigned.uploadUrl, image.bytes, image.mimeType)
-            presigned.fileUrl
+            uploadImageInternal(image)
         }.onFailure { e ->
             if (e is CancellationException) throw e
         }

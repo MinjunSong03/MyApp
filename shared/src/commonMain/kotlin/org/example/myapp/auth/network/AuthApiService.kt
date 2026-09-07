@@ -14,7 +14,7 @@ import io.ktor.http.isSuccess
 
 class AuthApiService(
     private val client: HttpClient,
-    private val baseUrl: String = "http://10.0.2.2:8081"
+    private val baseUrl: String
 
 ) {
     suspend fun loginWithOAuth(provider: OAuthProvider, token: String): AuthResponse {
@@ -39,7 +39,7 @@ class AuthApiService(
         return response.body()
     }
 
-    suspend fun unlinkAccount(provider: OAuthProvider, token: String) {
+    suspend fun unlinkAccount(provider: OAuthProvider) {
         val endpoint = when (provider) {
             OAuthProvider.KAKAO -> "kakao"
             OAuthProvider.NAVER -> "naver"
@@ -48,7 +48,6 @@ class AuthApiService(
         }
 
         val response = client.post("$baseUrl/api/auth/$endpoint/unlink") {
-            header(HttpHeaders.Authorization, "Bearer $token")
         }
 
         if (!response.status.isSuccess()) {
@@ -58,10 +57,9 @@ class AuthApiService(
         }
     }
 
-    suspend fun updateProfile(token: String, request: UpdateProfileRequest) {
+    suspend fun updateProfile(request: UpdateProfileRequest) {
         val response = client.patch("$baseUrl/api/user/update_profile") {
             contentType(ContentType.Application.Json)
-            header(HttpHeaders.Authorization, "Bearer $token")
             setBody(request)
         }
 

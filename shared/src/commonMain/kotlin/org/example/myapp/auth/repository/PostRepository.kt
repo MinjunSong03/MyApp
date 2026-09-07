@@ -11,8 +11,7 @@ import org.example.myapp.auth.local.SessionManager
 import org.example.myapp.auth.network.*
 
 class PostRepository(
-    private val postApiService: PostApiService,
-    private val sessionManager: SessionManager
+    private val postApiService: PostApiService
 ) {
     private val _postEditedEvent = MutableSharedFlow<PostResponse>()
     val postEditedEvent: SharedFlow<PostResponse> = _postEditedEvent.asSharedFlow()
@@ -29,11 +28,9 @@ class PostRepository(
     private val _postDeletedEvent = MutableSharedFlow<Long>()
     val postDeletedEvent: SharedFlow<Long> = _postDeletedEvent.asSharedFlow()
 
-    private fun getAccessToken(): String =
-        sessionManager.sessionFlow.value?.accessToken ?: throw IllegalStateException("로그인이 필요합니다.")
     suspend fun createPost(request: CreatePostRequest): Result<PostResponse> = withContext(Dispatchers.IO) {
         runCatching {
-            postApiService.createPost(getAccessToken(), request)
+            postApiService.createPost(request)
         }.onSuccess { createPost ->
             _createPostEvent.emit(createPost)
 
@@ -43,7 +40,7 @@ class PostRepository(
     }
     suspend fun getHomeFeed(page: Int): Result<SliceResponse<PostResponse>> = withContext(Dispatchers.IO) {
         runCatching {
-            postApiService.getHomeFeed(getAccessToken(), page)
+            postApiService.getHomeFeed(page)
         }.onFailure { e ->
             if (e is CancellationException) throw e
         }
@@ -51,7 +48,7 @@ class PostRepository(
 
     suspend fun getMyActPost(page: Int): Result<SliceResponse<PostResponse>> = withContext(Dispatchers.IO) {
         runCatching {
-            postApiService.getMyActPost(getAccessToken(), page)
+            postApiService.getMyActPost(page)
         }.onFailure { e ->
             if (e is CancellationException) throw e
         }
@@ -59,7 +56,7 @@ class PostRepository(
 
     suspend fun getMyHiddenPost(page: Int): Result<SliceResponse<PostResponse>> = withContext(Dispatchers.IO) {
         runCatching {
-            postApiService.getMyHiddenPost(getAccessToken(), page)
+            postApiService.getMyHiddenPost(page)
         }.onFailure { e ->
             if (e is CancellationException) throw e
         }
@@ -67,7 +64,7 @@ class PostRepository(
 
     suspend fun getPostById(postId: Long): Result<PostResponse> = withContext(Dispatchers.IO) {
         runCatching {
-            postApiService.getPostById(getAccessToken(), postId)
+            postApiService.getPostById(postId)
         }.onFailure { e ->
             if (e is CancellationException) throw e
         }
@@ -75,7 +72,7 @@ class PostRepository(
 
     suspend fun getPostDetail(postId: Long): Result<PostResponse> = withContext(Dispatchers.IO) {
         runCatching {
-            postApiService.getPostDetail(getAccessToken(), postId)
+            postApiService.getPostDetail(postId)
         }.onFailure { e ->
             if (e is CancellationException) throw e
         }
@@ -83,7 +80,7 @@ class PostRepository(
 
     suspend fun editPost(postId: Long, request: EditPostRequest): Result<PostResponse> = withContext(Dispatchers.IO) {
         runCatching {
-            postApiService.editPost(getAccessToken(), postId, request)
+            postApiService.editPost(postId, request)
         }.onSuccess { editedPost ->
             _postEditedEvent.emit(editedPost)
         }.onFailure { e ->
@@ -93,7 +90,7 @@ class PostRepository(
 
     suspend fun deletePost(postId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            postApiService.deletePost(getAccessToken(), postId)
+            postApiService.deletePost(postId)
         }.onSuccess {
             _postDeletedEvent.emit(postId)
         }.onFailure { e ->
@@ -103,7 +100,7 @@ class PostRepository(
 
     suspend fun hidePost(postId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching{
-            postApiService.hidePost(getAccessToken(), postId)
+            postApiService.hidePost(postId)
         }.onSuccess {
             _postHiddenEvent.emit(postId)
         }.onFailure { e ->
@@ -113,7 +110,7 @@ class PostRepository(
 
     suspend fun unhidePost(post: PostResponse): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching{
-            postApiService.unhidePost(getAccessToken(), post.id)
+            postApiService.unhidePost(post.id)
         }.onSuccess {
             _postUnhiddenEvent.emit(post.copy(isHidden = false))
         }.onFailure { e ->
@@ -123,15 +120,11 @@ class PostRepository(
 }
 
 class UserBlockRepository(
-    private val userBlockApiService: UserBlockApiService,
-    private val sessionManager: SessionManager
+    private val userBlockApiService: UserBlockApiService
 ) {
-    private fun getAccessToken(): String =
-        sessionManager.sessionFlow.value?.accessToken ?: throw IllegalStateException("로그인이 필요합니다.")
-
     suspend fun blockUser(targetUserId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            userBlockApiService.blockUser(getAccessToken(), targetUserId)
+            userBlockApiService.blockUser(targetUserId)
         }.onFailure { e ->
             if (e is CancellationException) throw e
         }
@@ -139,7 +132,7 @@ class UserBlockRepository(
 
     suspend fun unblockUser(targetUserId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            userBlockApiService.unblockUser(getAccessToken(), targetUserId)
+            userBlockApiService.unblockUser(targetUserId)
         }.onFailure { e ->
             if (e is CancellationException) throw e
         }
@@ -147,7 +140,7 @@ class UserBlockRepository(
 
     suspend fun getMyBlockedUser(page: Int): Result<SliceResponse<BlockedUserResponse>> = withContext(Dispatchers.IO) {
         runCatching {
-            userBlockApiService.getMyBlockedUser(getAccessToken(), page)
+            userBlockApiService.getMyBlockedUser(page)
         }.onFailure { e ->
             if (e is CancellationException) throw e
         }
@@ -155,15 +148,11 @@ class UserBlockRepository(
 }
 
 class ReportRepository(
-    private val reportApiService: ReportApiService,
-    private val sessionManager: SessionManager
+    private val reportApiService: ReportApiService
 ) {
-    private suspend fun getAccessToken(): String =
-        sessionManager.sessionFlow.value?.accessToken ?: throw IllegalStateException("로그인이 필요합니다.")
-
     suspend fun reportPost(postId: Long, reason: ReportReason, detail: String): Result<Unit> = withContext(Dispatchers.IO) {
             runCatching {
-                reportApiService.reportPost(getAccessToken(), postId, CreateReportRequest(reason, detail))
+                reportApiService.reportPost(postId, CreateReportRequest(reason, detail))
             }.onFailure { e ->
                 if (e is CancellationException) throw e
             }

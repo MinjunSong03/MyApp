@@ -24,7 +24,6 @@ class MyInfoViewModel(
 
     private fun executeAuthAction(action: suspend () -> Unit) {
         if (authJob?.isActive == true) return
-
         authJob = viewModelScope.launch {
             action()
         }
@@ -47,7 +46,8 @@ class MyInfoViewModel(
                     _toastEvent.send("회원탈퇴 처리 완료되었습니다.")
                 }
                 .onFailure { error ->
-                    _toastEvent.send(error.message ?: "회원탈퇴 처리에 실패했습니다.")
+                    val message = error.message ?: return@onFailure
+                    _toastEvent.send(message)
                 }
         }
     }

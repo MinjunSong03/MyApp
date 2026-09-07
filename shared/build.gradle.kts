@@ -80,6 +80,7 @@ kotlin {
             implementation(libs.navigation.compose)
             implementation("androidx.datastore:datastore-preferences-core:1.1.1")
             implementation("io.insert-koin:koin-compose-viewmodel:4.0.0")
+            implementation("io.ktor:ktor-client-auth:2.3.11")
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

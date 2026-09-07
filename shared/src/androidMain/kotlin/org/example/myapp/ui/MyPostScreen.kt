@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,6 +20,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -48,6 +50,7 @@ import org.example.myapp.auth.viewmodel.MyPostViewModel
 import org.example.myapp.auth.viewmodel.PostTab
 import org.example.myapp.ui.card.PostCard
 import org.example.myapp.ui.dialog.ReportDialog
+import org.example.myapp.ui.item.AppTopBar
 import org.example.myapp.util.AndroidVideoPlayerManager
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -56,6 +59,7 @@ fun MyPostScreen(
     viewModel: MyPostViewModel = koinViewModel(),
     videoManager: AndroidVideoPlayerManager = koinViewModel(),
     onNavigateToEditPost: (Long) -> Unit,
+    onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -151,91 +155,103 @@ fun MyPostScreen(
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Button(
-                onClick = { viewModel.switchTab(PostTab.Act) },
-                colors = ButtonDefaults.buttonColors(containerColor = if (currentTab is PostTab.Act) Color.Black else Color.LightGray)
-            ) {
-                Text(
-                    text = "활성화 게시물",
-                    color = Color.White
-                )
-            }
-            Spacer(modifier = Modifier.padding(5.dp))
-            Button(
-                onClick = { viewModel.switchTab(PostTab.Hidden) },
-                colors = ButtonDefaults.buttonColors(containerColor = if (currentTab is PostTab.Hidden) Color.Black else Color.LightGray)
-            ) {
-                Text(
-                    text = "숨긴 게시물",
-                    color = Color.White
-                )
-            }
+    Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
+        topBar = {
+            AppTopBar(
+                title = "나의 게시물",
+                onBackClick = onBack
+            )
         }
-        Box(modifier = Modifier.fillMaxSize()) {
-            PullToRefreshBox(
-                isRefreshing = isRefreshing,
-                onRefresh = {
-                    videoManager.stop()
-                    viewModel.loadMyPost(isRefresh = true)
-                            },
-                modifier = Modifier.fillMaxSize()
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier.fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                when (val state = uiState) {
-                    is MyPostUiState.Loading -> {
-                        CircularProgressIndicator(
-                            color = Color.Black,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    }
-                    is MyPostUiState.Success -> {
-                        if (state.posts.isEmpty()) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .verticalScroll(rememberScrollState()),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = if (currentTab is PostTab.Act) "활성화 게시물이 없습니다." else "숨긴 게시물이 없습니다.",
-                                    color = Color.Gray
-                                )
-                            }
-                        } else {
-                            LazyColumn(
-                                state = listState,
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(vertical = 10.dp)
-                            ) {
-                                items(state.posts, key = { it.id }) { post ->
-                                    PostCard(
-                                        post = post,
-                                        videoManager = videoManager,
-                                        onEditClick = { onNavigateToEditPost(it) },
-                                        onDeleteClick = { deletingPostId = it },
-                                        onUnhidePostClick = { unhidingPost = post },
-                                        onHidePostClick = { hidingPostId = it },
-                                        onBlockUserClick = { blockingUserId = it },
-                                        onReportPostClick = { reportingPostId = it }
+                Button(
+                    onClick = { viewModel.switchTab(PostTab.Act) },
+                    colors = ButtonDefaults.buttonColors(containerColor = if (currentTab is PostTab.Act) Color.Black else Color.LightGray)
+                ) {
+                    Text(
+                        text = "활성화 게시물",
+                        color = Color.White
+                    )
+                }
+                Spacer(modifier = Modifier.padding(5.dp))
+                Button(
+                    onClick = { viewModel.switchTab(PostTab.Hidden) },
+                    colors = ButtonDefaults.buttonColors(containerColor = if (currentTab is PostTab.Hidden) Color.Black else Color.LightGray)
+                ) {
+                    Text(
+                        text = "숨긴 게시물",
+                        color = Color.White
+                    )
+                }
+            }
+            Box(modifier = Modifier.fillMaxSize()) {
+                PullToRefreshBox(
+                    isRefreshing = isRefreshing,
+                    onRefresh = {
+                        videoManager.stop()
+                        viewModel.loadMyPost(isRefresh = true)
+                    },
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    when (val state = uiState) {
+                        is MyPostUiState.Loading -> {
+                            CircularProgressIndicator(
+                                color = Color.Black,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
+
+                        is MyPostUiState.Success -> {
+                            if (state.posts.isEmpty()) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .verticalScroll(rememberScrollState()),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = if (currentTab is PostTab.Act) "활성화 게시물이 없습니다." else "숨긴 게시물이 없습니다.",
+                                        color = Color.Gray
                                     )
                                 }
-                                if (!state.isLast) {
-                                    item {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(16.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            CircularProgressIndicator(color = Color.Black)
+                            } else {
+                                LazyColumn(
+                                    state = listState,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(vertical = 10.dp)
+                                ) {
+                                    items(state.posts, key = { it.id }) { post ->
+                                        PostCard(
+                                            post = post,
+                                            videoManager = videoManager,
+                                            onEditClick = { onNavigateToEditPost(it) },
+                                            onDeleteClick = { deletingPostId = it },
+                                            onUnhidePostClick = { unhidingPost = post },
+                                            onHidePostClick = { hidingPostId = it },
+                                            onBlockUserClick = { blockingUserId = it },
+                                            onReportPostClick = { reportingPostId = it }
+                                        )
+                                    }
+                                    if (!state.isLast) {
+                                        item {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(16.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                CircularProgressIndicator(color = Color.Black)
+                                            }
                                         }
                                     }
                                 }

@@ -17,6 +17,7 @@ import org.example.myapp.auth.platform.AuthService
 import org.example.myapp.auth.network.AuthApiService
 import org.example.myapp.auth.local.SessionManager
 import org.example.myapp.auth.network.UpdateProfileRequest
+import kotlin.math.log
 
 class AuthRepositoryImpl(
     private val authService: AuthService,
@@ -40,7 +41,7 @@ class AuthRepositoryImpl(
 
     override suspend fun checkAutoLogin(): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            val session = sessionManager.sessionFlow.value
+            val session = sessionManager.getSession()
             if (session == null) {
                 throw IllegalStateException("저장된 세션이 없습니다.")
             }
@@ -56,7 +57,7 @@ class AuthRepositoryImpl(
             val serverAuth = authApiService.loginWithOAuth(provider, oauthSession.accessToken)
             val session = Session(
                 accessToken = serverAuth.token,
-                refreshToken = null,
+                refreshToken = serverAuth.refreshToken,
                 userId = serverAuth.userId,
                 nickname = serverAuth.nickname,
                 profileImageUrl = serverAuth.profileImageUrl,
@@ -65,7 +66,6 @@ class AuthRepositoryImpl(
             sessionManager.saveSession(session)
         }.onFailure { e ->
             if (e is CancellationException) throw e
-            sessionManager.clearSession()
         }
     }
 
@@ -88,9 +88,7 @@ class AuthRepositoryImpl(
 
     override suspend fun unlink(provider: OAuthProvider): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            val session = sessionManager.sessionFlow.value
-                ?: throw IllegalStateException("유효하지 않은 Access Token입니다.")
-            authApiService.unlinkAccount(provider, session.accessToken)
+            authApiService.unlinkAccount(provider)
             sessionManager.clearSession()
         }.onFailure { e ->
             if (e is CancellationException) throw e
@@ -103,7 +101,7 @@ class AuthRepositoryImpl(
         deleteProfileImage: Boolean
     ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            val session = sessionManager.sessionFlow.value
+            val session = sessionManager.getSession()
                 ?: throw IllegalStateException("로그인 세션이 만료되었습니다.")
 
             val request = UpdateProfileRequest(
@@ -112,7 +110,7 @@ class AuthRepositoryImpl(
                 deleteProfileImage = deleteProfileImage
             )
 
-            authApiService.updateProfile(token = session.accessToken, request)
+            authApiService.updateProfile(request)
 
             val updatedImageUrl = when {
                 deleteProfileImage -> null

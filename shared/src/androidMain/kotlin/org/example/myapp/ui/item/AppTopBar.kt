@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,14 +32,14 @@ fun AppTopBar(
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     Surface(
-        color = Color.Black,
+        color = MaterialTheme.colorScheme.surface,
         modifier = modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .height(50.dp)
+                .height(64.dp)
                 .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -51,7 +52,7 @@ fun AppTopBar(
                     Icon(
                         painter = painterResource(R.drawable.ic_back),
                         contentDescription = "뒤로가기",
-                        tint = Color.White
+                        tint = Color.Black
                     )
                 }
             } else {
@@ -63,7 +64,7 @@ fun AppTopBar(
                 text = title,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.White,
+                color = Color.Black,
                 modifier = Modifier.weight(1f)
             )
 

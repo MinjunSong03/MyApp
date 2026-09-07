@@ -24,7 +24,8 @@ class EditPostViewModel(
         return postRepository.getPostById(postId)
             .onFailure { error ->
                 if (error is CancellationException) return@onFailure
-                _toastEvent.send(error.message ?: "게시물 가져오기에 실패했습니다.")
+                val message = error.message ?: return@onFailure
+                _toastEvent.send(message)
             }
             .getOrNull()
     }
@@ -52,7 +53,8 @@ class EditPostViewModel(
                 }
                 .onFailure { error ->
                     if (error is CancellationException) return@onFailure
-                    _toastEvent.send(error.message ?: "게시물 수정에 실패했습니다.")
+                    val message = error.message ?: return@onFailure
+                    _toastEvent.send(message)
                 }
         }
     }

@@ -39,7 +39,7 @@ fun App() {
 
             when (val state = authState) {
                 is AuthState.Initial, is AuthState.Loading -> {
-                    val message = (state as? AuthState.Loading)?.message ?: "로딩 중..."
+                    val message = (state as? AuthState.Loading)?.message ?: ""
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally,

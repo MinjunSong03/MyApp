@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,6 +29,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -52,6 +54,7 @@ import org.example.myapp.auth.model.AuthState
 import org.example.myapp.auth.model.PickedMedia
 import org.example.myapp.auth.network.MediaType
 import org.example.myapp.auth.viewmodel.DetailViewModel
+import org.example.myapp.ui.item.AppTopBar
 import org.example.myapp.util.toPickedMedia
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -120,140 +123,150 @@ fun DetailScreen(
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "프로필 수정",
-            fontSize = 28.sp,
-            color = Color.Black
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "프로필 사진과 닉네임을 변경할 수 있습니다.",
-            fontSize = 14.sp,
-            color = Color.Gray
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Box(
-            modifier = Modifier
-                .size(100.dp)
-                .clip(CircleShape)
-                .background(Color.LightGray)
-                .clickable {
-                    singleImagePickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            if (previewBitmap != null) {
-                Image(
-                    bitmap = previewBitmap,
-                    contentDescription = "새 프로필 사진",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            } else if (!isImageDeleted && initialProfileImageUrl != null) {
-                AsyncImage(
-                    model = initialProfileImageUrl,
-                    contentDescription = "프로필 사진",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                AsyncImage(
-                    model = null,
-                    contentDescription = "기본 프로필 사진",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-                Text(
-                    text = "사진 변경",
-                    fontSize = 12.sp,
-                    color = Color.DarkGray
-                )
-            }
+    Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
+        topBar = {
+            AppTopBar(
+                title = "프로필 수정",
+                onBackClick = onBack
+            )
         }
-
-        if (selectedImage != null) {
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier.fillMaxSize()
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "프로필 수정",
+                fontSize = 28.sp,
+                color = Color.Black
+            )
             Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Text(
+                text = "프로필 사진과 닉네임을 변경할 수 있습니다.",
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(CircleShape)
+                    .background(Color.LightGray)
+                    .clickable {
+                        singleImagePickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = selectedImage?.fileName ?: "",
-                    fontSize = 12.sp,
-                    color = Color.Gray
-                )
-                TextButton(onClick = { selectedImage = null }) {
-                    Text("선택 취소", color = Color.Red, fontSize = 12.sp)
+                if (previewBitmap != null) {
+                    Image(
+                        bitmap = previewBitmap,
+                        contentDescription = "새 프로필 사진",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else if (!isImageDeleted && initialProfileImageUrl != null) {
+                    AsyncImage(
+                        model = initialProfileImageUrl,
+                        contentDescription = "프로필 사진",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    AsyncImage(
+                        model = null,
+                        contentDescription = "기본 프로필 사진",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    Text(
+                        text = "사진 변경",
+                        fontSize = 12.sp,
+                        color = Color.DarkGray
+                    )
                 }
             }
-        } else if (initialProfileImageUrl != null) {
-            Spacer(modifier = Modifier.height(8.dp))
-            if (!isImageDeleted) {
-                TextButton(onClick = { isImageDeleted = true }) {
-                    Text("기본 사진 사용", color = Color.Black, fontSize = 12.sp)
-                }
-            } else {
+
+            if (selectedImage != null) {
+                Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    TextButton(onClick = { isImageDeleted = false }) {
-                        Text("취소", color = Color.Gray, fontSize = 12.sp)
+                    Text(
+                        text = selectedImage?.fileName ?: "",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                    TextButton(onClick = { selectedImage = null }) {
+                        Text("선택 취소", color = Color.Red, fontSize = 12.sp)
+                    }
+                }
+            } else if (initialProfileImageUrl != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                if (!isImageDeleted) {
+                    TextButton(onClick = { isImageDeleted = true }) {
+                        Text("기본 사진 사용", color = Color.Black, fontSize = 12.sp)
+                    }
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TextButton(onClick = { isImageDeleted = false }) {
+                            Text("취소", color = Color.Gray, fontSize = 12.sp)
+                        }
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = inputNickname,
-            onValueChange = { inputNickname = it },
-            label = { Text( text = "닉네임") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.Black,
-                focusedLabelColor = Color.Black,
-                cursorColor = MaterialTheme.colorScheme.outline,
-                selectionColors = TextSelectionColors(
-                    handleColor = Color.Black,
-                    backgroundColor = Color.Black.copy(alpha = 0.2f)
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedTextField(
+                value = inputNickname,
+                onValueChange = { inputNickname = it },
+                label = { Text(text = "닉네임") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Black,
+                    focusedLabelColor = Color.Black,
+                    cursorColor = MaterialTheme.colorScheme.outline,
+                    selectionColors = TextSelectionColors(
+                        handleColor = Color.Black,
+                        backgroundColor = Color.Black
+                    )
                 )
             )
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(
-            onClick = {
-                viewModel.updateProfile(
-                    nickname = inputNickname.trim(),
-                    selectedImage = selectedImage,
-                    deleteProfileImage = isImageDeleted
-                )
-            },
-            enabled = isFormChanged && inputNickname.trim().isNotBlank() && !isLoading,
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    color = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
-            } else {
-                Text(
-                    text = "변경",
-                    color = Color.White
-                )
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = {
+                    viewModel.updateProfile(
+                        nickname = inputNickname.trim(),
+                        selectedImage = selectedImage,
+                        deleteProfileImage = isImageDeleted
+                    )
+                },
+                enabled = isFormChanged && inputNickname.trim().isNotBlank() && !isLoading,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                } else {
+                    Text(
+                        text = "변경",
+                        color = Color.White
+                    )
+                }
             }
         }
     }

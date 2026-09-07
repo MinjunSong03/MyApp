@@ -16,12 +16,11 @@ import io.ktor.http.isSuccess
 
 class PostApiService(
     private val client: HttpClient,
-    private val baseUrl: String = "http://10.0.2.2:8081"
+    private val baseUrl: String
 ) {
-    suspend fun createPost(token: String, request: CreatePostRequest): PostResponse {
+    suspend fun createPost(request: CreatePostRequest): PostResponse {
         val response = client.post("$baseUrl/api/posts") {
             contentType(ContentType.Application.Json)
-            header(HttpHeaders.Authorization, "Bearer $token")
             setBody(request)
         }
 
@@ -34,9 +33,8 @@ class PostApiService(
         return response.body()
     }
 
-    suspend fun getHomeFeed(token: String, page: Int, size: Int = 10): SliceResponse<PostResponse> {
+    suspend fun getHomeFeed(page: Int, size: Int = 10): SliceResponse<PostResponse> {
         val response = client.get("$baseUrl/api/posts") {
-            header(HttpHeaders.Authorization, "Bearer $token")
             parameter("page", page)
             parameter("size", size)
         }
@@ -50,9 +48,8 @@ class PostApiService(
         return response.body()
     }
 
-    suspend fun getMyActPost(token: String, page: Int, size: Int = 10): SliceResponse<PostResponse> {
+    suspend fun getMyActPost(page: Int, size: Int = 10): SliceResponse<PostResponse> {
         val response = client.get("$baseUrl/api/posts/my_posts_act") {
-            header(HttpHeaders.Authorization, "Bearer $token")
             parameter("page", page)
             parameter("size", size)
         }
@@ -66,9 +63,8 @@ class PostApiService(
         return response.body()
     }
 
-    suspend fun getMyHiddenPost(token: String, page: Int, size: Int = 10): SliceResponse<PostResponse> {
+    suspend fun getMyHiddenPost(page: Int, size: Int = 10): SliceResponse<PostResponse> {
         val response = client.get("$baseUrl/api/posts/my_posts_hidden") {
-            header(HttpHeaders.Authorization, "Bearer $token")
             parameter("page", page)
             parameter("size", size)
         }
@@ -82,9 +78,8 @@ class PostApiService(
         return response.body()
     }
 
-    suspend fun getPostById(token: String, postId: Long): PostResponse {
+    suspend fun getPostById(postId: Long): PostResponse {
         val response = client.get("$baseUrl/api/posts/$postId/get") {
-            header(HttpHeaders.Authorization, "Bearer $token")
         }
 
         if (!response.status.isSuccess()) {
@@ -96,9 +91,8 @@ class PostApiService(
         return response.body()
     }
 
-    suspend fun getPostDetail(token: String, postId: Long): PostResponse {
+    suspend fun getPostDetail(postId: Long): PostResponse {
         val response = client.get("$baseUrl/api/posts/$postId/detail") {
-            header(HttpHeaders.Authorization, "Bearer $token")
         }
 
         if (!response.status.isSuccess()) {
@@ -110,10 +104,9 @@ class PostApiService(
         return response.body()
     }
 
-    suspend fun editPost(token: String, postId: Long, request: EditPostRequest): PostResponse {
+    suspend fun editPost(postId: Long, request: EditPostRequest): PostResponse {
         val response = client.patch("$baseUrl/api/posts/$postId/edit") {
             contentType(ContentType.Application.Json)
-            header(HttpHeaders.Authorization, "Bearer $token")
             setBody(request)
         }
 
@@ -126,9 +119,8 @@ class PostApiService(
         return response.body()
     }
 
-    suspend fun deletePost(token: String, postId: Long) {
+    suspend fun deletePost(postId: Long) {
         val response = client.delete("$baseUrl/api/posts/$postId") {
-            header(HttpHeaders.Authorization, "Bearer $token")
         }
 
         if (!response.status.isSuccess()) {
@@ -138,9 +130,8 @@ class PostApiService(
         }
     }
 
-    suspend fun hidePost(token: String, postId: Long) {
+    suspend fun hidePost(postId: Long) {
         val response = client.post("$baseUrl/api/posts/$postId/hide") {
-            header(HttpHeaders.Authorization, "Bearer $token")
         }
 
         if (!response.status.isSuccess()) {
@@ -150,9 +141,8 @@ class PostApiService(
         }
     }
 
-    suspend fun unhidePost(token: String, postId: Long) {
+    suspend fun unhidePost(postId: Long) {
         val response = client.delete("$baseUrl/api/posts/$postId/unhide") {
-            header(HttpHeaders.Authorization, "Bearer $token")
         }
 
         if (!response.status.isSuccess()) {
@@ -165,11 +155,10 @@ class PostApiService(
 
 class UserBlockApiService(
     private val client: HttpClient,
-    private val baseUrl: String = "http://10.0.2.2:8081"
+    private val baseUrl: String = "http://localhost:8081"
 ) {
-    suspend fun blockUser(token: String, targetUserId: Long) {
+    suspend fun blockUser(targetUserId: Long) {
         val response = client.post("$baseUrl/api/user/$targetUserId/block") {
-            header(HttpHeaders.Authorization, "Bearer $token")
         }
 
         if (!response.status.isSuccess()) {
@@ -179,9 +168,8 @@ class UserBlockApiService(
         }
     }
 
-    suspend fun unblockUser(token: String, targetUserId: Long) {
+    suspend fun unblockUser(targetUserId: Long) {
         val response = client.delete("$baseUrl/api/user/$targetUserId/unblock") {
-            header(HttpHeaders.Authorization, "Bearer $token")
         }
 
         if (!response.status.isSuccess()) {
@@ -191,9 +179,8 @@ class UserBlockApiService(
         }
     }
 
-    suspend fun getMyBlockedUser(token: String, page: Int, size: Int = 10): SliceResponse<BlockedUserResponse> {
+    suspend fun getMyBlockedUser(page: Int, size: Int = 10): SliceResponse<BlockedUserResponse> {
         val response = client.get("$baseUrl/api/user/my_blocked_user") {
-            header(HttpHeaders.Authorization, "Bearer $token")
             parameter("page", page)
             parameter("size", size)
         }
@@ -210,12 +197,11 @@ class UserBlockApiService(
 
 class ReportApiService(
     private val client: HttpClient,
-    private val baseUrl: String = "http://10.0.2.2:8081"
+    private val baseUrl: String = "http://localhost:8081"
 ) {
-    suspend fun reportPost(token: String, postId: Long, request: CreateReportRequest) {
+    suspend fun reportPost(postId: Long, request: CreateReportRequest) {
         val response = client.post("$baseUrl/api/posts/$postId/reports") {
             contentType(ContentType.Application.Json)
-            header(HttpHeaders.Authorization, "Bearer $token")
             setBody(request)
         }
 

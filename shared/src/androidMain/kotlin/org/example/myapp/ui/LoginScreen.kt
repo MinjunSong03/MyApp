@@ -1,5 +1,6 @@
 package org.example.myapp.ui
 
+import android.app.Activity
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -14,14 +15,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
 import org.example.myapp.auth.model.OAuthProvider
 import org.example.myapp.auth.viewmodel.LoginViewModel
 import org.example.myapp.shared.R
@@ -32,6 +36,7 @@ fun LoginScreen(
     viewModel: LoginViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
+    val view = LocalView.current
 
     LaunchedEffect(Unit) {
         viewModel.toastEvent.collect { message ->

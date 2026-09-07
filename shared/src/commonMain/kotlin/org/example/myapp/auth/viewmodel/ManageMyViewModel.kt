@@ -61,18 +61,19 @@ class ManageMyViewModel(
                 }
                     .onFailure { error ->
                         if (error is CancellationException) return@onFailure
-
                         if (currentUserList.isEmpty()) {
                             _uiState.value = ManageMyUiState.Success(emptyList(), isLast = true)
                         } else {
                             _uiState.value = ManageMyUiState.Success(currentUserList.toList(), isLastPage)
                         }
+                        val message = error.message ?: return@onFailure
+                        _toastEvent.send(message)
                     }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-
-                _toastEvent.send(e.message ?: "알 수 없는 오류가 발생했습니다.")
                 _uiState.value = ManageMyUiState.Success(currentUserList.toList(), isLastPage)
+                val message = e.message ?: return@launch
+                _toastEvent.send(message)
             } finally {
                 if (isRefresh) {
                     _isRefreshing.value = false
@@ -91,13 +92,13 @@ class ManageMyViewModel(
                 .onFailure { error ->
                     if (error is CancellationException) return@onFailure
 
-                    _toastEvent.send(error.message ?: "사용자 차단 해제에 실패했습니다.")
-
                     if (currentUserList.isEmpty()) {
                         _uiState.value = ManageMyUiState.Success(emptyList(), isLast = true)
                     } else {
                         _uiState.value = ManageMyUiState.Success(currentUserList.toList(), isLastPage)
                     }
+                    val message = error.message ?: return@onFailure
+                    _toastEvent.send(message)
                 }
         }
     }
