@@ -54,6 +54,22 @@ class PostRepository(
         }
     }
 
+    suspend fun getUserPosts(userId: Long, page: Int): Result<SliceResponse<PostResponse>> = withContext(Dispatchers.IO) {
+        runCatching {
+            postApiService.getUserPosts(userId, page)
+        }.onFailure { e ->
+            if (e is CancellationException) throw e
+        }
+    }
+
+    suspend fun getUserProfile(userId: Long): Result<UserProfileResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            postApiService.getUserProfile(userId)
+        }.onFailure { e ->
+            if (e is CancellationException) throw e
+        }
+    }
+
     suspend fun getMyHiddenPost(page: Int): Result<SliceResponse<PostResponse>> = withContext(Dispatchers.IO) {
         runCatching {
             postApiService.getMyHiddenPost(page)

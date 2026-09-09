@@ -44,6 +44,8 @@ import org.example.myapp.auth.viewmodel.HomeViewModel
 import org.example.myapp.auth.viewmodel.LoginViewModel
 import org.example.myapp.auth.viewmodel.MyInfoViewModel
 import org.example.myapp.auth.viewmodel.PostDetailViewModel
+import org.example.myapp.auth.viewmodel.ProfileClickUiState
+import org.example.myapp.auth.viewmodel.ProfileClickViewModel
 import org.example.myapp.auth.viewmodel.ProfileSetupViewModel
 import org.koin.core.module.dsl.viewModel
 
@@ -139,6 +141,7 @@ val commonModule = module {
     viewModel { MyPostViewModel(get(), get(), get()) }
     viewModel { ProfileSetupViewModel(get(), get()) }
     viewModel { PostDetailViewModel(get(), get(),get(), get()) }
+    viewModel { ProfileClickViewModel(get(), get(), get()) }
 }
 
 expect val platformModule: Module

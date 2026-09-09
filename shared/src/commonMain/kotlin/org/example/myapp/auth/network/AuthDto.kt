@@ -40,3 +40,12 @@ data class ErrorResponse(
     val message: String,
     val code: String
 )
+
+@Serializable
+data class UserProfileResponse(
+    val id: Long,
+    val nickname: String,
+    val profileImageUrl: String? = null,
+    val isDeleted: Boolean = false,
+    val isMine: Boolean = false
+)

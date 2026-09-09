@@ -3,6 +3,7 @@ package org.example.myapp.ui.card
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -46,6 +47,7 @@ fun PostCard(
     post: PostResponse,
     videoManager: AndroidVideoPlayerManager,
     onCardClick: (Long) -> Unit,
+    onProfileClick: (Long) -> Unit,
     onEditClick: (Long) -> Unit,
     onDeleteClick: (Long) -> Unit,
     onUnhidePostClick: (Long) -> Unit = {},
@@ -74,23 +76,32 @@ fun PostCard(
                     .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                AsyncImage(
-                    model = post.userProfileImageUrl,
-                    contentDescription = "프로필 사진",
-                    contentScale = ContentScale.Crop,
+                Row(
                     modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(Color.LightGray)
-                )
-                Spacer(modifier = Modifier.width(10.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = post.userNickname,
-                        fontWeight = FontWeight.Bold,
-                        color = if (post.isUserDeleted) Color.Gray else Color.Black,
-                        fontSize = 14.sp
+                        .weight(1f)
+                        .clickable(enabled = !post.isMine) {
+                            onProfileClick(post.userId)
+                        },
+                    verticalAlignment = Alignment.CenterVertically
+                ){
+                    AsyncImage(
+                        model = post.userProfileImageUrl,
+                        contentDescription = "프로필 사진",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(Color.LightGray)
                     )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = post.userNickname,
+                            fontWeight = FontWeight.Bold,
+                            color = if (post.isUserDeleted) Color.Gray else Color.Black,
+                            fontSize = 14.sp
+                        )
+                    }
                 }
 
                 Box {
@@ -243,11 +254,25 @@ fun PostCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "조회수 ${post.viewCount}회",
-                    fontSize = 11.sp,
-                    color = Color.Gray
-                )
+                HorizontalDivider(color = Color(0xFFEEEEEE))
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "조회수 ${post.viewCount}회",
+                        fontSize = 11.sp,
+                        color = Color.Gray
+                    )
+                    Text(
+                        text = post.createdAt.substringBefore("T"),
+                        fontSize = 11.sp,
+                        color = Color.Gray
+                    )
+                }
             }
         }
     }

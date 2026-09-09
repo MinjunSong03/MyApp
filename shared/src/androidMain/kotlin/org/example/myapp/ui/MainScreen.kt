@@ -132,6 +132,9 @@ fun MainScreen() {
                         },
                         onNavigateToEditPost = { postId ->
                             navController.navigate("edit_post/$postId")
+                        },
+                        onNavigateToProfileClick = { userId ->
+                            navController.navigate("profile_click/$userId")
                         }
                     )
                 }
@@ -190,7 +193,26 @@ fun MainScreen() {
                         onNavigateToPostDetail = { postId ->
                             navController.navigate("post_detail/$postId")
                         },
+                        onNavigateToProfileClick = { userId ->
+                            navController.navigate("profile_click/$userId")
+                        },
                         onBack = { navController.popBackStack() }
+                    )
+                }
+                composable(
+                    route = "profile_click/{userId}",
+                    arguments = listOf(navArgument("userId") { type = NavType.LongType })
+                ) { backStackEntry ->
+                    val userId = backStackEntry.arguments?.getLong("userId") ?: return@composable
+                    ProfileClickScreen(
+                        userId = userId,
+                        onBack = { navController.popBackStack() },
+                        onNavigateToPostDetail = { postId ->
+                            navController.navigate("post_detail/$postId")
+                        },
+                        onNavigateToEditPost = { postId ->
+                            navController.navigate("edit_post/$postId")
+                        }
                     )
                 }
                 composable("manage_my") {

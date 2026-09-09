@@ -57,7 +57,8 @@ fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
     videoManager: AndroidVideoPlayerManager = koinViewModel(),
     onNavigateToEditPost: (Long) -> Unit,
-    onNavigateToPostDetail: (Long) -> Unit
+    onNavigateToPostDetail: (Long) -> Unit,
+    onNavigateToProfileClick: (Long) -> Unit
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -217,6 +218,7 @@ fun HomeScreen(
                                     PostCard(
                                         post = post,
                                         onCardClick = onNavigateToPostDetail,
+                                        onProfileClick = onNavigateToProfileClick,
                                         videoManager = videoManager,
                                         onEditClick = onNavigateToEditPost,
                                         onDeleteClick = { deletingPostId = it },

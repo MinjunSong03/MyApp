@@ -60,6 +60,7 @@ fun MyPostScreen(
     videoManager: AndroidVideoPlayerManager = koinViewModel(),
     onNavigateToPostDetail: (Long) -> Unit,
     onNavigateToEditPost: (Long) -> Unit,
+    onNavigateToProfileClick: (Long) -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -74,7 +75,6 @@ fun MyPostScreen(
     var unhidingPost by rememberSaveable { mutableStateOf<PostResponse?>(null) }
 
     val listState = rememberLazyListState()
-
     val lifecycleOwner = LocalLifecycleOwner.current
 
     LaunchedEffect(listState, uiState) {
@@ -195,7 +195,9 @@ fun MyPostScreen(
                     )
                 }
             }
-            Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
                 PullToRefreshBox(
                     isRefreshing = isRefreshing,
                     onRefresh = {
@@ -235,6 +237,7 @@ fun MyPostScreen(
                                         PostCard(
                                             post = post,
                                             videoManager = videoManager,
+                                            onProfileClick = onNavigateToProfileClick,
                                             onCardClick = onNavigateToPostDetail,
                                             onEditClick = onNavigateToEditPost,
                                             onDeleteClick = { deletingPostId = it },

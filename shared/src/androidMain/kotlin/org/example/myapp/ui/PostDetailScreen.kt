@@ -2,6 +2,7 @@ package org.example.myapp.ui
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -222,11 +223,23 @@ fun PostDetailScreen(
                                 fontSize = 15.sp
                             )
                             Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "조회수 ${currentPost.viewCount}회",
-                                fontSize = 12.sp,
-                                color = Color.Gray
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "조회수 ${currentPost.viewCount}회",
+                                    fontSize = 12.sp,
+                                    color = Color.Gray
+                                )
+                                Text(
+                                    text = currentPost.createdAt.substringBefore("T"),
+                                    fontSize = 12.sp,
+                                    color = Color.Gray
+                                )
+                            }
                         }
 
                         Box {

@@ -63,6 +63,30 @@ class PostApiService(
         return response.body()
     }
 
+    suspend fun getUserPosts(userId: Long, page: Int, size: Int = 10): SliceResponse<PostResponse> {
+        val response = client.get("$baseUrl/api/posts/user/$userId") {
+            parameter("page", page)
+            parameter("size", size)
+        }
+
+        if (!response.status.isSuccess()) {
+            val errorBody = runCatching { response.body<ErrorResponse>() }.getOrNull()
+            val message = errorBody?.message ?: "사용자의 게시물 불러오기에 실패했습니다. (${response.status.value})"
+            throw IllegalStateException(message)
+        }
+
+        return response.body()
+    }
+
+    suspend fun getUserProfile(userId: Long): UserProfileResponse {
+        val response = client.get("$baseUrl/api/user/$userId")
+        if (!response.status.isSuccess()) {
+            val errorBody = runCatching { response.body<ErrorResponse>() }.getOrNull()
+            throw IllegalStateException(errorBody?.message ?: "사용자 정보를 불러오지 못했습니다.")
+        }
+        return response.body()
+    }
+
     suspend fun getMyHiddenPost(page: Int, size: Int = 10): SliceResponse<PostResponse> {
         val response = client.get("$baseUrl/api/posts/my_posts_hidden") {
             parameter("page", page)
