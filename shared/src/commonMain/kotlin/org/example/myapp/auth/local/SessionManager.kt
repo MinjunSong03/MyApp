@@ -32,7 +32,7 @@ class SessionManager(
     }
 
     suspend fun getAccessToken(): String? {
-        return sessionFlow.firstOrNull()?.accessToken
+        return getSession()?.accessToken
     }
 
     suspend fun getSession(): Session? {

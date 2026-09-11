@@ -173,5 +173,13 @@ class ReportRepository(
                 if (e is CancellationException) throw e
             }
         }
+
+    suspend fun reportUser(targetId: Long, reason: ReportReason, detail: String): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            reportApiService.reportUser(targetId, CreateReportRequest(reason, detail))
+        }.onFailure { e ->
+            if (e is CancellationException) throw e
+        }
+    }
 }
 

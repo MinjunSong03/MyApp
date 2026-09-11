@@ -44,12 +44,20 @@ class MediaApiService(
     }
 
     suspend fun uploadBinaryToR2(uploadUrl: String, bytes: ByteArray, contentType: String) {
-        val response = client.put(uploadUrl) {
-            contentType(ContentType.parse(contentType))
-            setBody(bytes)
+        val cleanClient = HttpClient()
+        try {
+            val response = cleanClient.put(uploadUrl) {
+                headers.clear()
+                contentType(ContentType.parse(contentType))
+                setBody(bytes)
+            }
+
+            if (!response.status.isSuccess()) {
+                throw IllegalStateException("R2 스토리지 업로드 실패: HTTP ${response.status.value}")
+            }
+        } finally {
+            cleanClient.close()
         }
-        if (!response.status.isSuccess()) {
-            throw IllegalStateException("R2 스토리지 업로드 실패: HTTP ${response.status.value}")
-        }
+
     }
 }

@@ -171,7 +171,9 @@ fun MainScreen() {
                         onBack = { navController.popBackStack() },
                         onNavigateToEditPost = { id ->
                             navController.navigate("edit_post/$id")
-                        }
+                        },
+                        onNavigateToProfileClick = {userId ->
+                            navController.navigate("profile_click/$userId")}
                     )
                 }
                 composable("my_info") {

@@ -43,6 +43,7 @@ data class PostResponse(
     val imageUrls: List<String> = emptyList(),
     val viewCount: Long,
     val createdAt: String,
+    val editedAt: String?,
     val isMine: Boolean,
     val isHidden: Boolean,
     val isUserDeleted: Boolean

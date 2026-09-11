@@ -4,14 +4,17 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.auth.Auth
+import io.ktor.client.plugins.auth.providers.BearerAuthProvider
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.plugin
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.http.encodedPath
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
@@ -24,6 +27,7 @@ import org.koin.core.module.Module
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.module
 import org.example.myapp.auth.network.AuthApiService
+import org.example.myapp.auth.network.CommentApiService
 import org.example.myapp.auth.network.ErrorResponse
 import org.example.myapp.auth.network.MediaApiService
 import org.example.myapp.auth.network.PostApiService
@@ -31,6 +35,7 @@ import org.example.myapp.auth.network.RefreshTokenRequest
 import org.example.myapp.auth.network.ReportApiService
 import org.example.myapp.auth.network.TokenRefreshResponse
 import org.example.myapp.auth.network.UserBlockApiService
+import org.example.myapp.auth.repository.CommentRepository
 import org.example.myapp.auth.repository.MediaRepository
 import org.example.myapp.auth.repository.PostRepository
 import org.example.myapp.auth.repository.ReportRepository
@@ -63,14 +68,18 @@ val commonModule = module {
             install(Auth) {
                 bearer {
                     sendWithoutRequest { request ->
-                        !request.url.host.contains("cloudflarestorage.com") &&
-                                !request.url.host.contains("amazonaws.com")
+                        val path = request.url.encodedPath
+                        val isPublicAuth = path.contains("/api/auth/kakao/login") || path.contains("/api/auth/refresh")
+                        val isBackend = request.url.host == "10.0.2.2"
+
+                        isBackend && !isPublicAuth
                     }
 
                     loadTokens {
                         val session = sessionManager.getSession()
-                        if (session?.accessToken != null && session.refreshToken != null) {
-                            BearerTokens(session.accessToken, session.refreshToken)
+                        val accessToken = session?.accessToken
+                        if (!accessToken.isNullOrBlank()) {
+                            BearerTokens(accessToken, session.refreshToken ?: "")
                         } else null
                     }
 
@@ -79,7 +88,7 @@ val commonModule = module {
                         val refreshToken = currentSession?.refreshToken ?: return@refreshTokens null
 
                         val refreshResult = runCatching {
-                            client.post("http://localhost:8081/api/auth/refresh") {
+                            client.post("http://10.0.2.2:8081/api/auth/refresh") {
                                 markAsRefreshTokenRequest()
                                 contentType(ContentType.Application.Json)
                                 setBody(RefreshTokenRequest(refreshToken))
@@ -95,6 +104,11 @@ val commonModule = module {
                             BearerTokens(refreshResult.accessToken, refreshResult.refreshToken)
                         } else {
                             sessionManager.clearSession()
+                            runCatching {
+                                client.plugin(Auth).providers
+                                    .filterIsInstance<BearerAuthProvider>()
+                                    .forEach { it.clearToken() }
+                            }
                             null
                         }
                     }
@@ -110,6 +124,11 @@ val commonModule = module {
 
                     if (isUnauthorized || isInvalidUser) {
                         sessionManager.clearSession()
+                        runCatching {
+                            response.call.client.plugin(Auth).providers
+                                .filterIsInstance<BearerAuthProvider>()
+                                .forEach { it.clearToken() }
+                        }
                         throw IllegalStateException()
                     }
                 }
@@ -117,11 +136,12 @@ val commonModule = module {
         }
     }
 
-    single { AuthApiService(get(), "http://localhost:8081") }
-    single { PostApiService(get(),"http://localhost:8081") }
-    single { UserBlockApiService(get()) }
-    single { ReportApiService(get()) }
-    single { MediaApiService(get(), "http://localhost:8081") }
+    single { AuthApiService(get(), "http://10.0.2.2:8081") }
+    single { PostApiService(get(), "http://10.0.2.2:8081") }
+    single { UserBlockApiService(get(), "http://10.0.2.2:8081") }
+    single { ReportApiService(get(), "http://10.0.2.2:8081") }
+    single { MediaApiService(get(), "http://10.0.2.2:8081") }
+    single { CommentApiService(get(), "http://10.0.2.2:8081") }
 
     single { SessionManager(get()) }
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get()) }
@@ -129,6 +149,7 @@ val commonModule = module {
     single { UserBlockRepository(get()) }
     single { ReportRepository(get()) }
     single { MediaRepository(get()) }
+    single { CommentRepository(get()) }
 
     viewModel { AppViewModel(get()) }
     viewModel { CreatePostViewModel(get(), get()) }
@@ -140,7 +161,7 @@ val commonModule = module {
     viewModel { MyInfoViewModel(get()) }
     viewModel { MyPostViewModel(get(), get(), get()) }
     viewModel { ProfileSetupViewModel(get(), get()) }
-    viewModel { PostDetailViewModel(get(), get(),get(), get()) }
+    viewModel { PostDetailViewModel(get(), get(),get(), get(), get()) }
     viewModel { ProfileClickViewModel(get(), get(), get()) }
 }
 

@@ -54,6 +54,7 @@ fun PostCard(
     onHidePostClick: (Long) -> Unit,
     onBlockUserClick: (Long) -> Unit,
     onReportPostClick: (Long) -> Unit,
+    onReportUserClick: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var isMenuExpanded by rememberSaveable { mutableStateOf(false) }
@@ -76,10 +77,11 @@ fun PostCard(
                     .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val isProfileClickable = !post.isMine && !post.isUserDeleted
                 Row(
                     modifier = Modifier
                         .weight(1f)
-                        .clickable(enabled = !post.isMine) {
+                        .clickable(enabled = isProfileClickable) {
                             onProfileClick(post.userId)
                         },
                     verticalAlignment = Alignment.CenterVertically
@@ -181,6 +183,18 @@ fun PostCard(
                                     onReportPostClick(post.id)
                                 }
                             )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = "이 사용자 신고하기",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                },
+                                onClick = {
+                                    isMenuExpanded = false
+                                    onReportUserClick(post.userId)
+                                }
+                            )
                         }
                     }
                 }
@@ -262,11 +276,19 @@ fun PostCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "조회수 ${post.viewCount}회",
-                        fontSize = 11.sp,
-                        color = Color.Gray
-                    )
+                    if (post.editedAt == null) {
+                        Text(
+                            text = "조회수 ${post.viewCount}회",
+                            fontSize = 11.sp,
+                            color = Color.Gray
+                        )
+                    } else {
+                        Text(
+                            text = "조회수 ${post.viewCount}회 · 수정됨",
+                            fontSize = 11.sp,
+                            color = Color.Gray
+                        )
+                    }
                     Text(
                         text = post.createdAt.substringBefore("T"),
                         fontSize = 11.sp,

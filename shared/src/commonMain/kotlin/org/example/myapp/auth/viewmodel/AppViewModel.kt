@@ -15,4 +15,10 @@ class AppViewModel(
             authRepository.checkAutoLogin()
         }
     }
+
+    fun cancelProfileSetup() {
+        viewModelScope.launch {
+            authRepository.logout(null)
+        }
+    }
 }

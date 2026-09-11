@@ -17,14 +17,12 @@ import org.example.myapp.auth.platform.AuthService
 import org.example.myapp.auth.network.AuthApiService
 import org.example.myapp.auth.local.SessionManager
 import org.example.myapp.auth.network.UpdateProfileRequest
-import kotlin.math.log
 
 class AuthRepositoryImpl(
     private val authService: AuthService,
     private val authApiService: AuthApiService,
     private val sessionManager: SessionManager
 ): AuthRepository {
-
     override val authState: StateFlow<AuthState> = sessionManager.sessionFlow
         .map { session ->
             if (session != null) {
@@ -64,6 +62,7 @@ class AuthRepositoryImpl(
                 isNewUser = serverAuth.isNewUser
             )
             sessionManager.saveSession(session)
+            authApiService.clearAuthTokens()
         }.onFailure { e ->
             if (e is CancellationException) throw e
         }
@@ -79,9 +78,11 @@ class AuthRepositoryImpl(
                 }
             }
             sessionManager.clearSession()
+            authApiService.clearAuthTokens()
         }.onFailure { e ->
             if (e is CancellationException) throw e
             sessionManager.clearSession()
+            authApiService.clearAuthTokens()
         }
     }
 
@@ -90,6 +91,7 @@ class AuthRepositoryImpl(
         runCatching {
             authApiService.unlinkAccount(provider)
             sessionManager.clearSession()
+            authApiService.clearAuthTokens()
         }.onFailure { e ->
             if (e is CancellationException) throw e
         }

@@ -6,6 +6,7 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.client.call.body
+import io.ktor.client.plugins.plugin
 import org.example.myapp.auth.model.OAuthProvider
 import io.ktor.client.request.header
 import io.ktor.client.request.patch
@@ -17,6 +18,13 @@ class AuthApiService(
     private val baseUrl: String
 
 ) {
+    fun clearAuthTokens() {
+        runCatching {
+            client.plugin(io.ktor.client.plugins.auth.Auth).providers
+                .filterIsInstance<io.ktor.client.plugins.auth.providers.BearerAuthProvider>()
+                .forEach { it.clearToken() }
+        }
+    }
     suspend fun loginWithOAuth(provider: OAuthProvider, token: String): AuthResponse {
         val endpoint = when (provider) {
             OAuthProvider.KAKAO -> "kakao"

@@ -65,6 +65,7 @@ fun HomeScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     var reportingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var reportingUserId by rememberSaveable { mutableStateOf<Long?>(null) }
     var blockingUserId by rememberSaveable { mutableStateOf<Long?>(null) }
     var deletingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
     var hidingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -225,7 +226,8 @@ fun HomeScreen(
                                         onUnhidePostClick = {},
                                         onHidePostClick = { hidingPostId = it },
                                         onBlockUserClick = { blockingUserId = it },
-                                        onReportPostClick = { reportingPostId = it }
+                                        onReportPostClick = { reportingPostId = it },
+                                        onReportUserClick = { reportingUserId = it }
                                     )
                                 }
                                 if (!state.isLast) {
@@ -327,6 +329,16 @@ fun HomeScreen(
                     onConfirm = { reportReason, detail ->
                         viewModel.reportPost(postId, reportReason, detail)
                         reportingPostId = null
+                    }
+                )
+            }
+
+            reportingUserId?.let { userId ->
+                ReportDialog(
+                    onDismiss = { reportingUserId = null },
+                    onConfirm = { reportReason, detail ->
+                        viewModel.reportUser(userId, reportReason, detail)
+                        reportingUserId = null
                     }
                 )
             }

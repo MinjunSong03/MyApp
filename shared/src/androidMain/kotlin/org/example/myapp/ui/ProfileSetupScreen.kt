@@ -64,7 +64,8 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun ProfileSetupScreen(
-    viewModel: ProfileSetupViewModel = koinViewModel()
+    viewModel: ProfileSetupViewModel = koinViewModel(),
+    onBack: () -> Unit
 ) {
     val authState by viewModel.authState.collectAsState()
     val context = LocalContext.current
@@ -112,7 +113,8 @@ fun ProfileSetupScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                title = "프로필 설정"
+                title = "프로필 설정",
+                onBackClick = onBack
             )
         }
     ) { innerPadding ->

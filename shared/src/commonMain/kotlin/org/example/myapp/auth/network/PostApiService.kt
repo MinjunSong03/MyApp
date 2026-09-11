@@ -179,7 +179,7 @@ class PostApiService(
 
 class UserBlockApiService(
     private val client: HttpClient,
-    private val baseUrl: String = "http://localhost:8081"
+    private val baseUrl: String
 ) {
     suspend fun blockUser(targetUserId: Long) {
         val response = client.post("$baseUrl/api/user/$targetUserId/block") {
@@ -221,7 +221,7 @@ class UserBlockApiService(
 
 class ReportApiService(
     private val client: HttpClient,
-    private val baseUrl: String = "http://localhost:8081"
+    private val baseUrl: String
 ) {
     suspend fun reportPost(postId: Long, request: CreateReportRequest) {
         val response = client.post("$baseUrl/api/posts/$postId/reports") {
@@ -232,6 +232,19 @@ class ReportApiService(
         if (!response.status.isSuccess()) {
             val errorBody = runCatching { response.body<ErrorResponse>() }.getOrNull()
             val message = errorBody?.message ?: "게시물 신고에 실패했습니다. (${response.status.value})"
+            throw IllegalStateException(message)
+        }
+    }
+
+    suspend fun reportUser(targetId: Long, request: CreateReportRequest) {
+        val response = client.post("$baseUrl/api/user/$targetId/reports") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+
+        if (!response.status.isSuccess()) {
+            val errorBody = runCatching { response.body<ErrorResponse>() }.getOrNull()
+            val message = errorBody?.message ?: "사용자 신고에 실패했습니다. (${response.status.value})"
             throw IllegalStateException(message)
         }
     }

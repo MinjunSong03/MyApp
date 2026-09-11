@@ -74,7 +74,7 @@ fun ProfileClickScreen(
     userId: Long,
     onBack: () -> Unit,
     onNavigateToPostDetail: (Long) -> Unit,
-    onNavigateToEditPost: (Long) -> Unit = {},
+    onNavigateToEditPost: (Long) -> Unit,
     videoManager: AndroidVideoPlayerManager = koinViewModel(),
     viewModel: ProfileClickViewModel = koinViewModel(),
 ) {
@@ -85,6 +85,7 @@ fun ProfileClickScreen(
     var isMenuExpanded by rememberSaveable { mutableStateOf(false) }
 
     var reportingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var reportingUserId by rememberSaveable { mutableStateOf<Long?>(null) }
     var blockingUserId by rememberSaveable { mutableStateOf<Long?>(null) }
     var deletingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
     var hidingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -242,6 +243,18 @@ fun ProfileClickScreen(
                                                 blockingUserId = user.id
                                             }
                                         )
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    text = "이 사용자 신고하기",
+                                                    color = MaterialTheme.colorScheme.error
+                                                )
+                                            },
+                                            onClick = {
+                                                isMenuExpanded = false
+                                                reportingUserId = user.id
+                                            }
+                                        )
                                     }
                                 }
                             }
@@ -290,7 +303,8 @@ fun ProfileClickScreen(
                                             onUnhidePostClick = { unhidingPost = post },
                                             onHidePostClick = { hidingPostId = it },
                                             onBlockUserClick = { blockingUserId = it },
-                                            onReportPostClick = { reportingPostId = it }
+                                            onReportPostClick = { reportingPostId = it },
+                                            onReportUserClick = { reportingUserId = it }
                                         )
                                     }
                                     if (!state.isLast) {
@@ -393,6 +407,16 @@ fun ProfileClickScreen(
                 onConfirm = { reportReason, detail ->
                     viewModel.reportPost(postId, reportReason, detail)
                     reportingPostId = null
+                }
+            )
+        }
+
+        reportingUserId?.let { userId ->
+            ReportDialog(
+                onDismiss = { reportingUserId = null },
+                onConfirm = { reportReason, detail ->
+                    viewModel.reportUser(userId, reportReason, detail)
+                    reportingUserId = null
                 }
             )
         }

@@ -58,7 +58,9 @@ fun App() {
                 }
                 is AuthState.Authenticated -> {
                     if (state.isNewUser) {
-                        ProfileSetupScreen()
+                        ProfileSetupScreen(
+                            onBack = { viewModel.cancelProfileSetup() }
+                        )
                     } else {
                         MainScreen()
                     }

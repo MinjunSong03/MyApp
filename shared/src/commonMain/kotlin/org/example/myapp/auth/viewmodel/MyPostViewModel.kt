@@ -185,4 +185,15 @@ class MyPostViewModel(
                 }
         }
     }
+
+    fun reportUser(targetId: Long, reason: ReportReason, detail: String) {
+        viewModelScope.launch {
+            reportRepository.reportUser(targetId, reason, detail)
+                .onSuccess { _toastEvent.send("신고가 접수되었습니다.") }
+                .onFailure { error ->
+                    val message = error.message ?: return@onFailure
+                    _toastEvent.send(message)
+                }
+        }
+    }
 }
