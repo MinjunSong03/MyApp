@@ -30,6 +30,7 @@ fun ReportDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = "게시물 신고") },
+        containerColor = MaterialTheme.colorScheme.surface,
         text = {
             Column {
                 ReportReason.values().forEach { reason ->

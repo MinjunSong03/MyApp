@@ -17,6 +17,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,7 +51,7 @@ fun BlockedUserCard(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -67,14 +68,14 @@ fun BlockedUserCard(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(Color.LightGray)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = user.nickname,
                         fontWeight = FontWeight.Bold,
-                        color = if (user.status == UserStatus.DELETED) Color.Gray else Color.Black,
+                        color = if (user.status == UserStatus.DELETED) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                         fontSize = 14.sp
                     )
                 }
@@ -84,12 +85,13 @@ fun BlockedUserCard(
                         Icon(
                             painterResource(R.drawable.ic_option),
                             contentDescription = "옵션",
-                            tint = Color.Gray
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     DropdownMenu(
                         expanded = isMenuExpanded,
-                        onDismissRequest = { isMenuExpanded = false }
+                        onDismissRequest = { isMenuExpanded = false },
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
                     ) {
                         DropdownMenuItem(
                             text = { Text(text = "차단 해제") },

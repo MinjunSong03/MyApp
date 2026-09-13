@@ -183,13 +183,17 @@ fun ProfileClickScreen(
         }
     ) { innerPadding ->
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .padding(innerPadding)
         ) {
             when (val state = uiState) {
                 is ProfileClickUiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Color.Black)
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 }
                 is ProfileClickUiState.Success -> {
@@ -207,14 +211,14 @@ fun ProfileClickScreen(
                                 modifier = Modifier
                                     .size(36.dp)
                                     .clip(CircleShape)
-                                    .background(Color.LightGray)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = user.nickname,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (user.isDeleted) Color.Gray else Color.Black,
+                                    color = if (user.isDeleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                                     fontSize = 14.sp
                                 )
                             }
@@ -224,13 +228,13 @@ fun ProfileClickScreen(
                                         Icon(
                                             painterResource(R.drawable.ic_option),
                                             contentDescription = "옵션",
-                                            tint = Color.Gray
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                     DropdownMenu(
                                         expanded = isMenuExpanded,
                                         onDismissRequest = { isMenuExpanded = false },
-                                        containerColor = Color.White
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
                                     ) {
                                         DropdownMenuItem(
                                             text = {
@@ -261,7 +265,7 @@ fun ProfileClickScreen(
                         }
                     }
                     Spacer(modifier = Modifier.height(14.dp))
-                    HorizontalDivider(color = Color(0xFFEEEEEE))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     Spacer(modifier = Modifier.height(14.dp))
                     Box(
                         modifier = Modifier.fillMaxSize()
@@ -283,7 +287,7 @@ fun ProfileClickScreen(
                                 ) {
                                     Text(
                                         text = "활성화 게시물이 없습니다.",
-                                        color = Color.Gray
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             } else {
@@ -315,7 +319,7 @@ fun ProfileClickScreen(
                                                     .padding(16.dp),
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                CircularProgressIndicator(color = Color.Black)
+                                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                                             }
                                         }
                                     }
@@ -330,7 +334,8 @@ fun ProfileClickScreen(
             AlertDialog(
                 onDismissRequest = { deletingPostId = null },
                 title = { Text(text = "이 게시물 삭제") },
-                text = { Text(text = "이 게시물을 삭제하시겠습니까? 게시물을 삭제 후 복구는 불가능합니다.") },
+                containerColor = MaterialTheme.colorScheme.surface,
+                text = { Text(text = "이 게시물을 삭제하시겠습니까?\n게시물을 삭제 후 복구는 불가능합니다.") },
                 confirmButton = {
                     TextButton(
                         onClick = {
@@ -338,7 +343,10 @@ fun ProfileClickScreen(
                             deletingPostId = null
                         }
                     ) {
-                        Text(text = "삭제", color = MaterialTheme.colorScheme.error)
+                        Text(
+                            text = "삭제",
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
                 },
                 dismissButton = {
@@ -353,6 +361,7 @@ fun ProfileClickScreen(
             AlertDialog(
                 onDismissRequest = { hidingPostId = null },
                 title = { Text(text = "게시물 숨기기") },
+                containerColor = MaterialTheme.colorScheme.surface,
                 text = { Text(text = "이 게시물을 숨기시겠습니까?") },
                 confirmButton = {
                     TextButton(
@@ -379,7 +388,8 @@ fun ProfileClickScreen(
             AlertDialog(
                 onDismissRequest = { blockingUserId = null },
                 title = { Text(text = "이 사용자 차단") },
-                text = { Text(text = "이 사용자를 차단하시겠습니까? 피드에서 해당 사용자의 모든 글이 즉시 숨겨집니다.") },
+                containerColor = MaterialTheme.colorScheme.surface,
+                text = { Text(text = "이 사용자를 차단하시겠습니까?\n피드에서 해당 사용자의 모든 글이 즉시 숨겨집니다.") },
                 confirmButton = {
                     TextButton(
                         onClick = {

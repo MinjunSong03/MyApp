@@ -128,20 +128,20 @@ fun ProfileSetupScreen(
             Text(
                 text = "환영합니다!",
                 fontSize = 28.sp,
-                color = Color.Black
+                color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "프로필 사진과 닉네임을 설정해 주세요.",
                 fontSize = 14.sp,
-                color = Color.Black
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(24.dp))
             Box(
                 modifier = Modifier
                     .size(100.dp)
                     .clip(CircleShape)
-                    .background(Color.LightGray)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
                     .clickable {
                         singleImagePickerLauncher.launch(
                             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
@@ -166,34 +166,26 @@ fun ProfileSetupScreen(
                     Text(
                         text = "사진 추가",
                         fontSize = 12.sp,
-                        color = Color.DarkGray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
             if (selectedImage != null) {
                 Spacer(modifier = Modifier.height(10.dp))
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F7)),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
+                    TextButton(onClick = { selectedImage = null }) {
                         Text(
-                            text = selectedImage?.fileName ?: "선택된 사진",
-                            fontSize = 12.sp,
-                            color = Color.Black,
-                            modifier = Modifier.weight(1f)
+                            text = "취소",
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 12.sp
                         )
-                        TextButton(onClick = { selectedImage = null }) {
-                            Text(text = "삭제", color = Color.Red, fontSize = 12.sp)
-                        }
                     }
                 }
+
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -209,8 +201,8 @@ fun ProfileSetupScreen(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.outline,
-                        focusedLabelColor = MaterialTheme.colorScheme.outline
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary
                     )
                 )
                 Spacer(modifier = Modifier.height(24.dp))
@@ -222,18 +214,20 @@ fun ProfileSetupScreen(
                         )
                     },
                     enabled = inputNickname.trim().isNotBlank() && !isLoading,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(24.dp)
                         )
                     } else {
                         Text(
                             text = "시작하기",
-                            color = Color.White
                         )
                     }
                 }

@@ -178,7 +178,6 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize()
                 .padding(innerPadding)
                 .nestedScroll(nestedScrollConnection)
-                .background(Color(0xFFF8F9FA))
         ) {
             PullToRefreshBox(
                 isRefreshing = isRefreshing,
@@ -191,7 +190,7 @@ fun HomeScreen(
                 when (val state = uiState) {
                     is HomeUiState.Loading -> {
                         CircularProgressIndicator(
-                            color = Color.Black,
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.align(Alignment.Center)
                         )
                     }
@@ -206,7 +205,7 @@ fun HomeScreen(
                             ) {
                                 Text(
                                     text = "아래로 스와이프하여 게시물을 로드해 보세요!",
-                                    color = Color.Gray
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         } else {
@@ -238,7 +237,7 @@ fun HomeScreen(
                                                 .padding(16.dp),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            CircularProgressIndicator(color = Color.Black)
+                                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                                         }
                                     }
                                 }
@@ -252,7 +251,8 @@ fun HomeScreen(
                 AlertDialog(
                     onDismissRequest = { deletingPostId = null },
                     title = { Text(text = "이 게시물 삭제") },
-                    text = { Text(text = "이 게시물을 삭제하시겠습니까? 게시물을 삭제 후 복구는 불가능합니다.") },
+                    text = { Text(text = "이 게시물을 삭제하시겠습니까?\n게시물을 삭제 후 복구는 불가능합니다.") },
+                    containerColor = MaterialTheme.colorScheme.surface,
                     confirmButton = {
                         TextButton(
                             onClick = {
@@ -260,7 +260,10 @@ fun HomeScreen(
                                 deletingPostId = null
                             }
                         ) {
-                            Text(text = "삭제", color = MaterialTheme.colorScheme.error)
+                            Text(
+                                text = "삭제",
+                                color = MaterialTheme.colorScheme.error
+                            )
                         }
                     },
                     dismissButton = {
@@ -276,6 +279,7 @@ fun HomeScreen(
                     onDismissRequest = { hidingPostId = null },
                     title = { Text(text = "게시물 숨기기") },
                     text = { Text(text = "이 게시물을 숨기시겠습니까?") },
+                    containerColor = MaterialTheme.colorScheme.surface,
                     confirmButton = {
                         TextButton(
                             onClick = {
@@ -301,7 +305,8 @@ fun HomeScreen(
                 AlertDialog(
                     onDismissRequest = { blockingUserId = null },
                     title = { Text(text = "이 사용자 차단") },
-                    text = { Text(text = "이 사용자를 차단하시겠습니까? 피드에서 해당 사용자의 모든 글이 즉시 숨겨집니다.") },
+                    text = { Text(text = "이 사용자를 차단하시겠습니까?\n피드에서 해당 사용자의 모든 글이 즉시 숨겨집니다.") },
+                    containerColor = MaterialTheme.colorScheme.surface,
                     confirmButton = {
                         TextButton(
                             onClick = {

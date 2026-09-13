@@ -70,7 +70,7 @@ val commonModule = module {
                     sendWithoutRequest { request ->
                         val path = request.url.encodedPath
                         val isPublicAuth = path.contains("/api/auth/kakao/login") || path.contains("/api/auth/refresh")
-                        val isBackend = request.url.host == "10.0.2.2"
+                        val isBackend = request.url.host == "192.168.0.27"
 
                         isBackend && !isPublicAuth
                     }
@@ -88,7 +88,7 @@ val commonModule = module {
                         val refreshToken = currentSession?.refreshToken ?: return@refreshTokens null
 
                         val refreshResult = runCatching {
-                            client.post("http://10.0.2.2:8081/api/auth/refresh") {
+                            client.post("http://192.168.0.27:8081/api/auth/refresh") {
                                 markAsRefreshTokenRequest()
                                 contentType(ContentType.Application.Json)
                                 setBody(RefreshTokenRequest(refreshToken))
@@ -136,12 +136,12 @@ val commonModule = module {
         }
     }
 
-    single { AuthApiService(get(), "http://10.0.2.2:8081") }
-    single { PostApiService(get(), "http://10.0.2.2:8081") }
-    single { UserBlockApiService(get(), "http://10.0.2.2:8081") }
-    single { ReportApiService(get(), "http://10.0.2.2:8081") }
-    single { MediaApiService(get(), "http://10.0.2.2:8081") }
-    single { CommentApiService(get(), "http://10.0.2.2:8081") }
+    single { AuthApiService(get(), "http://192.168.0.27:8081") }
+    single { PostApiService(get(), "http://192.168.0.27:8081") }
+    single { UserBlockApiService(get(), "http://192.168.0.27:8081") }
+    single { ReportApiService(get(), "http://192.168.0.27:8081") }
+    single { MediaApiService(get(), "http://192.168.0.27:8081") }
+    single { CommentApiService(get(), "http://192.168.0.27:8081") }
 
     single { SessionManager(get()) }
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get()) }

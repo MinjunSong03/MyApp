@@ -65,9 +65,9 @@ fun PostCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        border = BorderStroke(1.dp, Color.Black),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -77,11 +77,10 @@ fun PostCard(
                     .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val isProfileClickable = !post.isMine && !post.isUserDeleted
                 Row(
                     modifier = Modifier
                         .weight(1f)
-                        .clickable(enabled = isProfileClickable) {
+                        .clickable {
                             onProfileClick(post.userId)
                         },
                     verticalAlignment = Alignment.CenterVertically
@@ -93,14 +92,14 @@ fun PostCard(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(Color.LightGray)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = post.userNickname,
                             fontWeight = FontWeight.Bold,
-                            color = if (post.isUserDeleted) Color.Gray else Color.Black,
+                            color = if (post.isUserDeleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                             fontSize = 14.sp
                         )
                     }
@@ -111,13 +110,13 @@ fun PostCard(
                         Icon(
                             painterResource(R.drawable.ic_option),
                             contentDescription = "옵션",
-                            tint = Color.Gray
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     DropdownMenu(
                         expanded = isMenuExpanded,
                         onDismissRequest = { isMenuExpanded = false },
-                        containerColor = Color.White
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
                     ) {
                         if (post.isMine) {
                             if (post.isHidden) {
@@ -205,7 +204,7 @@ fun PostCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
-                        .background(Color(0xFFF0F0F0)),
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center
                 ) {
                     HorizontalPager(
@@ -268,7 +267,7 @@ fun PostCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                HorizontalDivider(color = Color(0xFFEEEEEE))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier
@@ -280,19 +279,19 @@ fun PostCard(
                         Text(
                             text = "조회수 ${post.viewCount}회",
                             fontSize = 11.sp,
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     } else {
                         Text(
                             text = "조회수 ${post.viewCount}회 · 수정됨",
                             fontSize = 11.sp,
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Text(
                         text = post.createdAt.substringBefore("T"),
                         fontSize = 11.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

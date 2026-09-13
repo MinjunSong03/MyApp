@@ -6,15 +6,14 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -44,7 +43,6 @@ fun MainScreen() {
     val context = LocalContext.current
     val activity = context as? Activity
     var backPressedTime by rememberSaveable { mutableStateOf(0L) }
-    val isDark = isSystemInDarkTheme()
 
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -59,7 +57,7 @@ fun MainScreen() {
     val isTopLevelTab = currentRoute in bottomNavItems.map { it.route }
 
     Scaffold(
-        containerColor = if (isDark) Color.Black else Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         bottomBar = {
             if (isTopLevelTab) {
                 NavigationBar(
@@ -68,10 +66,10 @@ fun MainScreen() {
                         .border(
                             border = BorderStroke(
                                 width = 1.dp,
-                                color = Color.Black.copy(alpha = 0.1f)
-                            ),
+                                color = MaterialTheme.colorScheme.outlineVariant
+                            )
                         ),
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ) {
                     bottomNavItems.forEach { item ->
                         val isSelected = currentRoute == item.route
@@ -98,10 +96,10 @@ fun MainScreen() {
                                 Text(text = item.title)
                             },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = Color.Black,
-                                selectedTextColor = Color.Black,
-                                unselectedIconColor = Color.Gray,
-                                unselectedTextColor = Color.Gray,
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                 indicatorColor = Color.Transparent
                             )
                         )
@@ -114,12 +112,11 @@ fun MainScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(bottom = innerPadding.calculateBottomPadding())
-                .background(if (isDark) Color.Black else Color(0xFFF8F9FA))
+                .background(MaterialTheme.colorScheme.background)
         ) {
             NavHost(
                 navController = navController,
                 startDestination = "home",
-                modifier = Modifier.background(Color(0xFFF8F9FA)),
                 enterTransition = { fadeIn(animationSpec = tween(100)) },
                 exitTransition = { fadeOut(animationSpec = tween(100)) },
                 popEnterTransition = { fadeIn(animationSpec = tween(100)) },

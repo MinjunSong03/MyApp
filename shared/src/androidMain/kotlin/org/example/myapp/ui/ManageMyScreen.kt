@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -87,7 +88,7 @@ fun ManageMyScreen(
             when (val state = uiState) {
                 is ManageMyUiState.Loading -> {
                     CircularProgressIndicator(
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
@@ -102,7 +103,7 @@ fun ManageMyScreen(
                         ) {
                             Text(
                                 text = "차단한 사용자가 없습니다.",
-                                color = Color.Gray
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     } else {
@@ -125,7 +126,7 @@ fun ManageMyScreen(
                                             .padding(16.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        CircularProgressIndicator(color = Color.Black)
+                                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                                     }
                                 }
                             }

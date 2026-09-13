@@ -143,20 +143,20 @@ fun EditProfileScreen(
             Text(
                 text = "프로필 수정",
                 fontSize = 28.sp,
-                color = Color.Black
+                color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "프로필 사진과 닉네임을 변경할 수 있습니다.",
                 fontSize = 14.sp,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(24.dp))
             Box(
                 modifier = Modifier
                     .size(100.dp)
                     .clip(CircleShape)
-                    .background(Color.LightGray)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
                     .clickable {
                         singleImagePickerLauncher.launch(
                             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
@@ -188,7 +188,7 @@ fun EditProfileScreen(
                     Text(
                         text = "사진 변경",
                         fontSize = 12.sp,
-                        color = Color.DarkGray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -202,17 +202,25 @@ fun EditProfileScreen(
                     Text(
                         text = selectedImage?.fileName ?: "",
                         fontSize = 12.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     TextButton(onClick = { selectedImage = null }) {
-                        Text("선택 취소", color = Color.Red, fontSize = 12.sp)
+                        Text(
+                            text = "선택 취소",
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 12.sp
+                        )
                     }
                 }
             } else if (initialProfileImageUrl != null) {
                 Spacer(modifier = Modifier.height(8.dp))
                 if (!isImageDeleted) {
                     TextButton(onClick = { isImageDeleted = true }) {
-                        Text("기본 사진 사용", color = Color.Black, fontSize = 12.sp)
+                        Text(
+                            text = "기본 사진 사용",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 12.sp
+                        )
                     }
                 } else {
                     Row(
@@ -220,7 +228,11 @@ fun EditProfileScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         TextButton(onClick = { isImageDeleted = false }) {
-                            Text("취소", color = Color.Gray, fontSize = 12.sp)
+                            Text(
+                                text = "취소",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp
+                            )
                         }
                     }
                 }
@@ -234,13 +246,8 @@ fun EditProfileScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Black,
-                    focusedLabelColor = Color.Black,
-                    cursorColor = MaterialTheme.colorScheme.outline,
-                    selectionColors = TextSelectionColors(
-                        handleColor = Color.Black,
-                        backgroundColor = Color.Black
-                    )
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = MaterialTheme.colorScheme.primary
                 )
             )
             Spacer(modifier = Modifier.height(24.dp))
@@ -253,18 +260,20 @@ fun EditProfileScreen(
                     )
                 },
                 enabled = isFormChanged && inputNickname.trim().isNotBlank() && !isLoading,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(24.dp)
                     )
                 } else {
                     Text(
-                        text = "변경",
-                        color = Color.White
+                        text = "변경"
                     )
                 }
             }

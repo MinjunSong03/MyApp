@@ -23,6 +23,9 @@ node_modules/
 *.apk
 *.aab
 google-services.json
+**/build/
+release/
+
 
 .artifacts/
 .artifacts

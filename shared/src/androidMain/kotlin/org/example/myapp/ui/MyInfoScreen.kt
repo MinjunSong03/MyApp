@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.getValue
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -60,6 +61,7 @@ fun MyInfoScreen(
     if (withdrawClick) {
         AlertDialog(
             onDismissRequest = { withdrawClick = false },
+            containerColor = MaterialTheme.colorScheme.surface,
             title = {
                 Text(text = "회원탈퇴")
             },
@@ -73,14 +75,20 @@ fun MyInfoScreen(
                         withdrawRecheckClick = true
                     }
                 ) {
-                    Text(text = "탈퇴", color = Color(0xFFFF5252))
+                    Text(
+                        text = "탈퇴",
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = { withdrawClick = false }
                 ) {
-                    Text(text = "취소", color = Color.Gray)
+                    Text(
+                        text = "취소",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         )
@@ -89,6 +97,7 @@ fun MyInfoScreen(
     if (withdrawRecheckClick) {
         AlertDialog(
             onDismissRequest = { withdrawRecheckClick = false },
+            containerColor = MaterialTheme.colorScheme.surface,
             title = {
                 Text(text = "회원탈퇴")
             },
@@ -102,14 +111,20 @@ fun MyInfoScreen(
                         viewModel.unlink(OAuthProvider.KAKAO)
                     }
                 ) {
-                    Text(text = "탈퇴", color = Color(0xFFFF5252))
+                    Text(
+                        text = "탈퇴",
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = { withdrawRecheckClick = false }
                 ) {
-                    Text(text = "취소", color = Color.Gray)
+                    Text(
+                        text = "취소",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         )
@@ -125,69 +140,79 @@ fun MyInfoScreen(
     ) {
         Text(
             text = "${session?.nickname} 님.",
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = 30.sp
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "반갑습니다!",
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = 30.sp
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "고유번호: ${session?.userId ?: "-"}",
-            color = Color.Gray,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 14.sp
         )
         Spacer(modifier = Modifier.height(20.dp))
         Button(
             onClick = { onUpdateNicknameClick() },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
         ) {
             Text(
-                text = "프로필 수정",
-                color = Color.White
+                text = "프로필 수정"
             )
         }
         Spacer(modifier = Modifier.height(20.dp))
         Button(
             onClick = { onMyPostClick() },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
         ) {
             Text(
-                text = "나의 게시물",
-                color = Color.White
+                text = "나의 게시물"
             )
         }
         Spacer(modifier = Modifier.height(20.dp))
         Button(
             onClick = { onManageMyClick() },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
         ) {
             Text(
-                text = "차단한 사용자 관리",
-                color = Color.White
+                text = "차단한 사용자 관리"
             )
         }
         Spacer(modifier = Modifier.height(20.dp))
         Button(
             onClick = { viewModel.logout(OAuthProvider.KAKAO) },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252))
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.onError
+            )
         ) {
             Text(
-                text = "로그아웃",
-                color = Color.White
+                text = "로그아웃"
             )
         }
         Spacer(modifier = Modifier.height(10.dp))
         Button(
             onClick = { withdrawClick = true },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252))
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.onError
+            )
         ) {
             Text(
-                text = "회원탈퇴",
-                color = Color.White
+                text = "회원탈퇴"
             )
         }
     }

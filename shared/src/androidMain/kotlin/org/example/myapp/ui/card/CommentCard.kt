@@ -47,7 +47,6 @@ fun CommentCard(
     modifier: Modifier = Modifier
 ) {
     var isMenuExpanded by rememberSaveable { mutableStateOf(false) }
-    val isProfileClickable = !comment.isMine && !comment.isUserDeleted
 
     Row(
         modifier = modifier
@@ -62,8 +61,8 @@ fun CommentCard(
             modifier = Modifier
                 .size(32.dp)
                 .clip(CircleShape)
-                .background(Color.LightGray)
-                .clickable(enabled = isProfileClickable) {
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clickable {
                     onProfileClick(comment.userId)
                 }
         )
@@ -78,8 +77,8 @@ fun CommentCard(
                     text = comment.userNickname,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp,
-                    color = if (comment.isUserDeleted) Color.Gray else Color.Black,
-                    modifier = Modifier.clickable(enabled = isProfileClickable) {
+                    color = if (comment.isUserDeleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.clickable {
                         onProfileClick(comment.userId)
                     }
                 )
@@ -91,7 +90,7 @@ fun CommentCard(
                         "${comment.createdAt.substringBefore("T")} · 수정됨"
                     },
                     fontSize = 11.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -101,7 +100,7 @@ fun CommentCard(
                 text = comment.content,
                 fontSize = 14.sp,
                 lineHeight = 20.sp,
-                color = Color(0xFF222222)
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
 
@@ -113,7 +112,7 @@ fun CommentCard(
                 Icon(
                     painter = painterResource(R.drawable.ic_option),
                     contentDescription = "댓글 옵션",
-                    tint = Color.LightGray,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -121,7 +120,7 @@ fun CommentCard(
             DropdownMenu(
                 expanded = isMenuExpanded,
                 onDismissRequest = { isMenuExpanded = false },
-                containerColor = Color.White
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
             ) {
                 if (comment.isMine) {
                     DropdownMenuItem(

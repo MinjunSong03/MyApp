@@ -178,21 +178,25 @@ fun MyPostScreen(
             ) {
                 Button(
                     onClick = { viewModel.switchTab(PostTab.Act) },
-                    colors = ButtonDefaults.buttonColors(containerColor = if (currentTab is PostTab.Act) Color.Black else Color.LightGray)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (currentTab is PostTab.Act) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (currentTab is PostTab.Act) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 ) {
                     Text(
                         text = "활성화 게시물",
-                        color = Color.White
                     )
                 }
                 Spacer(modifier = Modifier.padding(5.dp))
                 Button(
                     onClick = { viewModel.switchTab(PostTab.Hidden) },
-                    colors = ButtonDefaults.buttonColors(containerColor = if (currentTab is PostTab.Hidden) Color.Black else Color.LightGray)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (currentTab is PostTab.Hidden) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (currentTab is PostTab.Hidden) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 ) {
                     Text(
-                        text = "숨긴 게시물",
-                        color = Color.White
+                        text = "숨긴 게시물"
                     )
                 }
             }
@@ -210,7 +214,7 @@ fun MyPostScreen(
                     when (val state = uiState) {
                         is MyPostUiState.Loading -> {
                             CircularProgressIndicator(
-                                color = Color.Black,
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.align(Alignment.Center)
                             )
                         }
@@ -225,7 +229,7 @@ fun MyPostScreen(
                                 ) {
                                     Text(
                                         text = if (currentTab is PostTab.Act) "활성화 게시물이 없습니다." else "숨긴 게시물이 없습니다.",
-                                        color = Color.Gray
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             } else {
@@ -257,7 +261,7 @@ fun MyPostScreen(
                                                     .padding(16.dp),
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                CircularProgressIndicator(color = Color.Black)
+                                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                                             }
                                         }
                                     }
@@ -276,7 +280,8 @@ fun MyPostScreen(
         AlertDialog(
             onDismissRequest = { deletingPostId = null },
             title = { Text(text = "이 게시물 삭제") },
-            text = { Text(text = "이 게시물을 삭제하시겠습니까? 게시물을 삭제 후 복구는 불가능합니다.") },
+            text = { Text(text = "이 게시물을 삭제하시겠습니까?\n게시물을 삭제 후 복구는 불가능합니다.") },
+            containerColor = MaterialTheme.colorScheme.surface,
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -284,7 +289,10 @@ fun MyPostScreen(
                         deletingPostId = null
                     }
                 ) {
-                    Text(text = "삭제", color = MaterialTheme.colorScheme.error)
+                    Text(
+                        text = "삭제",
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             },
             dismissButton = {
@@ -299,6 +307,7 @@ fun MyPostScreen(
         AlertDialog(
             onDismissRequest = { hidingPostId = null },
             title = { Text(text = "게시물 숨기기") },
+            containerColor = MaterialTheme.colorScheme.surface,
             text = { Text(text = "이 게시물을 숨기시겠습니까?") },
             confirmButton = {
                 TextButton(
@@ -325,6 +334,7 @@ fun MyPostScreen(
         AlertDialog(
             onDismissRequest = { unhidingPost = null },
             title = { Text(text = "게시물 숨기기 해제") },
+            containerColor = MaterialTheme.colorScheme.surface,
             text = { Text(text = "이 게시물의 숨김 처리를 해제하시겠습니까?") },
             confirmButton = {
                 TextButton(
@@ -348,7 +358,8 @@ fun MyPostScreen(
         AlertDialog(
             onDismissRequest = { blockingUserId = null },
             title = { Text(text = "이 사용자 차단") },
-            text = { Text(text = "이 사용자를 차단하시겠습니까? 피드에서 해당 사용자의 모든 글이 즉시 숨겨집니다.") },
+            containerColor = MaterialTheme.colorScheme.surface,
+            text = { Text(text = "이 사용자를 차단하시겠습니까?\n피드에서 해당 사용자의 모든 글이 즉시 숨겨집니다.") },
             confirmButton = {
                 TextButton(
                     onClick = {

@@ -52,7 +52,7 @@ fun AppTopBar(
                     Icon(
                         painter = painterResource(R.drawable.ic_back),
                         contentDescription = "뒤로가기",
-                        tint = Color.Black
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             } else {
@@ -64,11 +64,11 @@ fun AppTopBar(
                 text = title,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.Black,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
 
-            // 3. 우측 액션 버튼들 (완료, 옵션 등)
+            // 3. 액션 버튼
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 content = actions

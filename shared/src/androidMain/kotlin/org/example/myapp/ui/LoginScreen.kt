@@ -1,6 +1,5 @@
 package org.example.myapp.ui
 
-import android.app.Activity
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -13,9 +12,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,7 +25,6 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.view.WindowCompat
 import org.example.myapp.auth.model.OAuthProvider
 import org.example.myapp.auth.viewmodel.LoginViewModel
 import org.example.myapp.shared.R
@@ -44,25 +43,30 @@ fun LoginScreen(
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
-        Text(
-            text = "MyApp",
-            fontSize = 40.sp
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-        Image(
-            painter = painterResource(id = R.drawable.ic_kakao_login),
-            contentDescription = "카카오 로그인",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.width(90.dp)
-                .height(40.dp)
-                .clickable { viewModel.login(OAuthProvider.KAKAO) }
-        )
+        Column(
+            modifier = Modifier.fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "MyApp",
+                fontSize = 40.sp
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+            Image(
+                painter = painterResource(id = R.drawable.ic_kakao_login),
+                contentDescription = "카카오 로그인",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.width(90.dp)
+                    .height(40.dp)
+                    .clickable { viewModel.login(OAuthProvider.KAKAO) }
+            )
+        }
     }
 }

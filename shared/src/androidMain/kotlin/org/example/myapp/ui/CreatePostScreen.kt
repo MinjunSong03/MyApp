@@ -125,8 +125,8 @@ fun CreatePostScreen(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.outline,
-                        focusedLabelColor = MaterialTheme.colorScheme.outline
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary
                     )
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -138,15 +138,15 @@ fun CreatePostScreen(
                     maxLines = 15,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.outline,
-                        focusedLabelColor = MaterialTheme.colorScheme.outline
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary
                     )
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = "미디어 첨부 (동영상 최대 1개, 사진 최대 10장)",
                     fontSize = 14.sp,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onBackground
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
@@ -159,7 +159,10 @@ fun CreatePostScreen(
                                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)
                             )
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(if (selectedVideo == null) "동영상 추가" else "동영상 변경")
@@ -171,7 +174,10 @@ fun CreatePostScreen(
                                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                             )
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(if (selectedImages.isEmpty()) "사진 추가" else "사진 다시 선택")
@@ -180,7 +186,7 @@ fun CreatePostScreen(
                 if (selectedVideo != null) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F7)),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -191,18 +197,22 @@ fun CreatePostScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "동영상: ${selectedVideo?.fileName}",
+                                    text = "동영상 ${selectedVideo?.fileName}",
                                     fontSize = 13.sp,
-                                    color = Color.Black
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = "동영상",
                                     fontSize = 11.sp,
-                                    color = Color.Gray
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             TextButton(onClick = { viewModel.onVideoSelect(null) }) {
-                                Text("삭제", color = Color.Red, fontSize = 12.sp)
+                                Text(
+                                    text = "삭제",
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontSize = 12.sp
+                                )
                             }
                         }
                     }
@@ -210,7 +220,7 @@ fun CreatePostScreen(
                 if (selectedImages.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F7F7)),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -223,16 +233,20 @@ fun CreatePostScreen(
                                 Text(
                                     text = "사진 ${selectedImages.size}장 선택됨",
                                     fontSize = 13.sp,
-                                    color = Color.Black
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = "사진",
                                     fontSize = 11.sp,
-                                    color = Color.Gray
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             TextButton(onClick = { viewModel.onImagesSelect(emptyList()) }) {
-                                Text("전체 삭제", color = Color.Red, fontSize = 12.sp)
+                                Text(
+                                    text = "전체 삭제",
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontSize = 12.sp
+                                )
                             }
                         }
                     }
@@ -248,20 +262,22 @@ fun CreatePostScreen(
                         )
                     },
                     enabled = isFormValid && !isLoading,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(24.dp)
                         )
                     } else {
                         Text(
                             text = "게시물 생성",
-                            color = Color.White,
                             fontSize = 16.sp
                         )
                     }

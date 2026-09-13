@@ -190,7 +190,7 @@ fun PostDetailScreen(
             if (post != null) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.surface,
                     shadowElevation = 6.dp
                 ) {
                     Row(
@@ -204,12 +204,15 @@ fun PostDetailScreen(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .background(Color(0xFFF5F5F5), RoundedCornerShape(20.dp))
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant,
+                                    RoundedCornerShape(20.dp)
+                                )
                                 .padding(horizontal = 16.dp, vertical = 10.dp)
                         ) {
                             Text(
                                 text = "댓글을 입력해 보세요!",
-                                color = Color.Gray,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 14.sp
                             )
                         }
@@ -226,7 +229,7 @@ fun PostDetailScreen(
                     .padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = Color.Black)
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else {
             val mediaItems = currentPost.mediaItems
@@ -245,14 +248,13 @@ fun PostDetailScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .background(Color.White)
             ) {
                 if (mediaItems.isNotEmpty()) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(mediaHeight)
-                            .background(Color(0xFFF0F0F0)),
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center
                     ) {
                         HorizontalPager(
@@ -309,7 +311,6 @@ fun PostDetailScreen(
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp)
                 ) {
-                    val isProfileClickable = !currentPost.isMine && !currentPost.isUserDeleted
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
@@ -318,7 +319,7 @@ fun PostDetailScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(8.dp))
-                                .clickable(enabled = isProfileClickable) {
+                                .clickable {
                                     onNavigateToProfileClick(currentPost.userId)
                                 },
                             verticalAlignment = Alignment.CenterVertically
@@ -330,14 +331,14 @@ fun PostDetailScreen(
                                 modifier = Modifier
                                     .size(40.dp)
                                     .clip(CircleShape)
-                                    .background(Color.LightGray)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
                                     text = currentPost.userNickname,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (currentPost.isUserDeleted) Color.Gray else Color.Black,
+                                    color = if (currentPost.isUserDeleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                                     fontSize = 15.sp
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
@@ -349,12 +350,12 @@ fun PostDetailScreen(
                                     Text(
                                         text = if (currentPost.editedAt == null) "조회수 ${currentPost.viewCount}회" else "조회수 ${currentPost.viewCount}회 · 수정됨",
                                         fontSize = 12.sp,
-                                        color = Color.Gray
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
                                         text = currentPost.createdAt.substringBefore("T"),
                                         fontSize = 12.sp,
-                                        color = Color.Gray
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -365,13 +366,13 @@ fun PostDetailScreen(
                                 Icon(
                                     painter = painterResource(R.drawable.ic_option),
                                     contentDescription = "옵션",
-                                    tint = Color.Gray
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             DropdownMenu(
                                 expanded = isMenuExpanded,
                                 onDismissRequest = { isMenuExpanded = false },
-                                containerColor = Color.White
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
                             ) {
                                 if (currentPost.isMine) {
                                     if (currentPost.isHidden) {
@@ -455,21 +456,21 @@ fun PostDetailScreen(
                     }
 
                     Spacer(modifier = Modifier.height(14.dp))
-                    HorizontalDivider(color = Color(0xFFEEEEEE))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     Spacer(modifier = Modifier.height(14.dp))
                     Text(
                         text = currentPost.title,
                         maxLines = 3,
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
-                        color = Color.Black
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = currentPost.description,
                         fontSize = 14.sp,
                         lineHeight = 22.sp,
-                        color = Color(0xFF333333)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -478,7 +479,7 @@ fun PostDetailScreen(
                 ModalBottomSheet(
                     onDismissRequest = { isCommentSheetOpen = false },
                     sheetState = sheetState,
-                    containerColor = Color.White,
+                    containerColor = MaterialTheme.colorScheme.surface,
                     dragHandle = { BottomSheetDefaults.DragHandle() },
                     shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
                 ) {
@@ -500,10 +501,11 @@ fun PostDetailScreen(
                             text = "댓글 ${commentCount}개",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                         )
 
-                        HorizontalDivider(color = Color(0xFFEEEEEE))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                         when (val state = commentUiState) {
                             is CommentUiState.Loading -> {
@@ -512,7 +514,7 @@ fun PostDetailScreen(
                                         .weight(1f),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    CircularProgressIndicator(color = Color.Black)
+                                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                                 }
                             }
                             is CommentUiState.Success -> {
@@ -523,14 +525,15 @@ fun PostDetailScreen(
                                     ) {
                                         Text(
                                             text = "첫 번째 댓글을 남겨보세요!",
-                                            color = Color.Gray,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             fontSize = 14.sp
                                         )
                                     }
                                 } else {
                                     LazyColumn(
                                         state = commentListState,
-                                        modifier = Modifier.fillMaxWidth().weight(1f)
+                                        modifier = Modifier.fillMaxWidth()
+                                            .weight(1f)
                                     ) {
                                         items(state.comments, key = { it.id }) { comment ->
                                             CommentCard(
@@ -552,7 +555,7 @@ fun PostDetailScreen(
                                                 }
                                             )
                                             HorizontalDivider(
-                                                color = Color(0xFFF9F9F9),
+                                                color = MaterialTheme.colorScheme.outlineVariant,
                                                 modifier = Modifier.padding(horizontal = 16.dp)
                                             )
                                         }
@@ -566,7 +569,7 @@ fun PostDetailScreen(
                                                     contentAlignment = Alignment.Center
                                                 ) {
                                                     CircularProgressIndicator(
-                                                        color = Color.Black,
+                                                        color = MaterialTheme.colorScheme.primary,
                                                         modifier = Modifier.size(24.dp),
                                                         strokeWidth = 2.dp
                                                     )
@@ -582,7 +585,7 @@ fun PostDetailScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color(0xFFF0F0F0))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
                                     .padding(horizontal = 16.dp, vertical = 4.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
@@ -590,7 +593,7 @@ fun PostDetailScreen(
                                 Text(
                                     text = "댓글 수정 중...",
                                     fontSize = 12.sp,
-                                    color = Color.DarkGray
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 TextButton(
                                     onClick = {
@@ -602,7 +605,7 @@ fun PostDetailScreen(
                                     Text(
                                         text = "취소",
                                         fontSize = 12.sp,
-                                        color = Color.Red
+                                        color = MaterialTheme.colorScheme.error
                                     )
                                 }
                             }
@@ -610,7 +613,7 @@ fun PostDetailScreen(
 
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.surface,
                             shadowElevation = 4.dp
                         ) {
                             Row(
@@ -624,14 +627,23 @@ fun PostDetailScreen(
                                     onValueChange = { commentText = it },
                                     modifier = Modifier
                                         .weight(1f)
-                                        .background(Color(0xFFF5F5F5), RoundedCornerShape(20.dp))
-                                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                                    textStyle = TextStyle(fontSize = 14.sp, color = Color.Black),
+                                        .background(
+                                            MaterialTheme.colorScheme.surfaceVariant,
+                                            RoundedCornerShape(20.dp)
+                                        )
+                                        .padding(
+                                            horizontal = 14.dp,
+                                            vertical = 10.dp
+                                        ),
+                                    textStyle = TextStyle(
+                                        fontSize = 14.sp,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    ),
                                     decorationBox = { innerTextField ->
                                         if (commentText.isEmpty()) {
                                             Text(
                                                 text = "댓글을 입력해 보세요!",
-                                                color = Color.Gray,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 fontSize = 14.sp
                                             )
                                         }
@@ -668,7 +680,7 @@ fun PostDetailScreen(
                                     Icon(
                                         painter = painterResource(R.drawable.ic_send),
                                         contentDescription = "전송",
-                                        tint = if (commentText.isNotBlank()) MaterialTheme.colorScheme.primary else Color.LightGray
+                                        tint = if (commentText.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
                                     )
                                 }
                             }
@@ -677,12 +689,12 @@ fun PostDetailScreen(
                 }
             }
 
-            // 게시물 삭제 확인 다이얼로그
             deletingPostId?.let { targetPostId ->
                 AlertDialog(
                     onDismissRequest = { deletingPostId = null },
                     title = { Text(text = "이 게시물 삭제") },
-                    text = { Text(text = "이 게시물을 삭제하시겠습니까? 게시물을 삭제 후 복구는 불가능합니다.") },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    text = { Text(text = "이 게시물을 삭제하시겠습니까?\n게시물을 삭제 후 복구는 불가능합니다.") },
                     confirmButton = {
                         TextButton(
                             onClick = {
@@ -691,7 +703,10 @@ fun PostDetailScreen(
                                 onBack()
                             }
                         ) {
-                            Text(text = "삭제", color = MaterialTheme.colorScheme.error)
+                            Text(
+                                text = "삭제",
+                                color = MaterialTheme.colorScheme.error
+                            )
                         }
                     },
                     dismissButton = {
@@ -702,11 +717,11 @@ fun PostDetailScreen(
                 )
             }
 
-            // 게시물 숨기기 확인 다이얼로그
             hidingPostId?.let { targetPostId ->
                 AlertDialog(
                     onDismissRequest = { hidingPostId = null },
                     title = { Text(text = "게시물 숨기기") },
+                    containerColor = MaterialTheme.colorScheme.surface,
                     text = { Text(text = "이 게시물을 숨기시겠습니까?") },
                     confirmButton = {
                         TextButton(
@@ -730,12 +745,12 @@ fun PostDetailScreen(
                 )
             }
 
-            // 사용자 차단 확인 다이얼로그
             blockingUserId?.let { targetId ->
                 AlertDialog(
                     onDismissRequest = { blockingUserId = null },
                     title = { Text(text = "이 사용자 차단") },
-                    text = { Text(text = "이 사용자를 차단하시겠습니까? 피드에서 해당 사용자의 모든 글이 즉시 숨겨집니다.") },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    text = { Text(text = "이 사용자를 차단하시겠습니까?\n피드에서 해당 사용자의 모든 글이 즉시 숨겨집니다.") },
                     confirmButton = {
                         TextButton(
                             onClick = {
@@ -758,12 +773,12 @@ fun PostDetailScreen(
                 )
             }
 
-            // 댓글 삭제 확인 다이얼로그
             deletingCommentId?.let { targetCommentId ->
                 AlertDialog(
                     onDismissRequest = { deletingCommentId = null },
                     title = { Text(text = "댓글 삭제") },
-                    text = { Text(text = "이 댓글을 삭제하시겠습니까? 삭제 후 복구는 불가능합니다.") },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    text = { Text(text = "이 댓글을 삭제하시겠습니까?\n삭제 후 복구는 불가능합니다.") },
                     confirmButton = {
                         TextButton(
                             onClick = {
@@ -771,7 +786,10 @@ fun PostDetailScreen(
                                 deletingCommentId = null
                             }
                         ) {
-                            Text(text = "삭제", color = MaterialTheme.colorScheme.error)
+                            Text(
+                                text = "삭제",
+                                color = MaterialTheme.colorScheme.error
+                            )
                         }
                     },
                     dismissButton = {
@@ -782,7 +800,6 @@ fun PostDetailScreen(
                 )
             }
 
-            // 게시물 신고 다이얼로그
             reportingPostId?.let { targetPostId ->
                 ReportDialog(
                     onDismiss = { reportingPostId = null },
@@ -793,7 +810,6 @@ fun PostDetailScreen(
                 )
             }
 
-            // 사용자 신고 다이얼로그
             reportingUserId?.let { targetUserId ->
                 ReportDialog(
                     onDismiss = { reportingUserId = null },
@@ -804,7 +820,6 @@ fun PostDetailScreen(
                 )
             }
 
-            // 댓글 신고 다이얼로그
             reportingCommentId?.let { targetCommentId ->
                 ReportDialog(
                     onDismiss = { reportingCommentId = null },
