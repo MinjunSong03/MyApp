@@ -5,6 +5,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeCompiler)
+    id("com.mikepenz.aboutlibraries.plugin")
 }
 
 kotlin {
@@ -14,12 +15,9 @@ kotlin {
 }
 dependencies {
     implementation(project(":shared"))
-
     implementation(libs.androidx.activity.compose)
-
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)
-
     implementation(libs.koin.android)
     implementation(libs.kakao.user)
 }

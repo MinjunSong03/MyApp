@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
+    id("com.mikepenz.aboutlibraries.plugin")
 }
 
 kotlin {
@@ -57,6 +58,8 @@ kotlin {
             implementation("androidx.media3:media3-exoplayer:1.4.1")
             implementation("androidx.media3:media3-ui:1.4.1")
             implementation("androidx.media3:media3-datasource-okhttp:1.4.1")
+
+            implementation("com.mikepenz:aboutlibraries-compose-m3:11.2.3")
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)

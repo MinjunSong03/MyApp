@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.withContext
-import org.example.myapp.auth.local.SessionManager
 import org.example.myapp.auth.network.*
 
 class PostRepository(
@@ -54,6 +53,14 @@ class PostRepository(
         }
     }
 
+    suspend fun getMyHiddenPost(page: Int): Result<SliceResponse<PostResponse>> = withContext(Dispatchers.IO) {
+        runCatching {
+            postApiService.getMyHiddenPost(page)
+        }.onFailure { e ->
+            if (e is CancellationException) throw e
+        }
+    }
+
     suspend fun getUserPosts(userId: Long, page: Int): Result<SliceResponse<PostResponse>> = withContext(Dispatchers.IO) {
         runCatching {
             postApiService.getUserPosts(userId, page)
@@ -65,14 +72,6 @@ class PostRepository(
     suspend fun getUserProfile(userId: Long): Result<UserProfileResponse> = withContext(Dispatchers.IO) {
         runCatching {
             postApiService.getUserProfile(userId)
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
-    }
-
-    suspend fun getMyHiddenPost(page: Int): Result<SliceResponse<PostResponse>> = withContext(Dispatchers.IO) {
-        runCatching {
-            postApiService.getMyHiddenPost(page)
         }.onFailure { e ->
             if (e is CancellationException) throw e
         }

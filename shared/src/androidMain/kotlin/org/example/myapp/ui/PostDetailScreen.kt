@@ -59,7 +59,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -72,7 +71,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.example.myapp.auth.network.CommentResponse
 import org.example.myapp.auth.network.MediaType
@@ -99,7 +97,7 @@ fun PostDetailScreen(
 ) {
     val configuration = LocalConfiguration.current
     val mediaHeight = (configuration.screenHeightDp / 4).dp
-    val commentSheetHeight = (configuration.screenHeightDp * 0.5f).dp
+    val commentSheetHeight = (configuration.screenHeightDp * 0.6f).dp
 
     val context = LocalContext.current
     var reportingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -311,6 +309,8 @@ fun PostDetailScreen(
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp)
                 ) {
+
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
@@ -624,7 +624,7 @@ fun PostDetailScreen(
                             ) {
                                 BasicTextField(
                                     value = commentText,
-                                    onValueChange = { commentText = it },
+                                    onValueChange = { if (it.length <= 500) commentText = it },
                                     modifier = Modifier
                                         .weight(1f)
                                         .background(

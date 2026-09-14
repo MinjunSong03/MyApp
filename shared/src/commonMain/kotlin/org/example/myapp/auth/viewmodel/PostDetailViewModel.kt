@@ -25,7 +25,7 @@ sealed class CommentUiState {
 }
 
 class PostDetailViewModel(
-    private val authRepository: AuthRepository,
+    authRepository: AuthRepository,
     private val postRepository: PostRepository,
     private val userBlockRepository: UserBlockRepository,
     private val reportRepository: ReportRepository,

@@ -8,9 +8,7 @@ import io.ktor.http.contentType
 import io.ktor.client.call.body
 import io.ktor.client.plugins.plugin
 import org.example.myapp.auth.model.OAuthProvider
-import io.ktor.client.request.header
 import io.ktor.client.request.patch
-import io.ktor.http.HttpHeaders
 import io.ktor.http.isSuccess
 
 class AuthApiService(

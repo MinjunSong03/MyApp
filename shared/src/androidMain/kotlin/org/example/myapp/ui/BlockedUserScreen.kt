@@ -2,7 +2,6 @@ package org.example.myapp.ui
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,7 +16,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -26,17 +24,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import org.example.myapp.auth.viewmodel.ManageMyUiState
 import org.example.myapp.auth.viewmodel.ManageMyViewModel
 import org.koin.compose.viewmodel.koinViewModel
 import org.example.myapp.ui.card.BlockedUserCard
+import org.example.myapp.ui.item.AppPullToRefreshBox
 import org.example.myapp.ui.item.AppTopBar
 
 @Composable
-fun ManageMyScreen(
+fun BlockedUserScreen(
     viewModel: ManageMyViewModel= koinViewModel(),
     onBack: () -> Unit
 ) {
@@ -79,7 +77,7 @@ fun ManageMyScreen(
             )
         }
     ) { innerPadding ->
-        PullToRefreshBox(
+        AppPullToRefreshBox(
             isRefreshing = isRefreshing,
             onRefresh = { viewModel.loadMyBlockedUser(isRefresh = true) },
             modifier = Modifier.fillMaxSize()

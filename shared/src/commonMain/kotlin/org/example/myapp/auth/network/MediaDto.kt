@@ -1,4 +1,4 @@
-package org.example.myapp
+package org.example.myapp.auth.network
 
 import kotlinx.serialization.Serializable
 

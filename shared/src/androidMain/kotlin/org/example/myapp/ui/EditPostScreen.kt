@@ -61,6 +61,10 @@ fun EditPostScreen(
     val configuration = LocalConfiguration.current
     val mediaHeight = (configuration.screenHeightDp / 4).dp
 
+
+    var initialTitle by rememberSaveable { mutableStateOf("") }
+    var initialDescription by rememberSaveable { mutableStateOf("") }
+
     var post by remember { mutableStateOf<PostResponse?>(null) }
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
@@ -73,6 +77,9 @@ fun EditPostScreen(
         if (!isInitialDataLoaded) {
             val existingPost = viewModel.getPostById(postId)
             if (existingPost != null) {
+                initialTitle = existingPost.title
+                initialDescription = existingPost.description
+
                 post = existingPost
                 title = existingPost.title
                 description = existingPost.description
@@ -112,7 +119,8 @@ fun EditPostScreen(
         return
     }
 
-    val isFormValid = title.isNotBlank() && description.isNotBlank()
+    val isContentChanged = (title.trim() != initialTitle.trim()) || (description.trim() != initialDescription.trim())
+    val isFormValid = title.isNotBlank() && description.isNotBlank() && isContentChanged
     val mediaItems = currentPost.mediaItems
     val pagerState = rememberPagerState(pageCount = { mediaItems.size })
 
@@ -193,9 +201,10 @@ fun EditPostScreen(
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = title,
-                    onValueChange = { title = it },
+                    onValueChange = { if (it.length <= 100) title = it },
                     label = { Text(text = "제목") },
-                    singleLine = true,
+                    minLines = 1,
+                    maxLines = 3,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -205,7 +214,7 @@ fun EditPostScreen(
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = description,
-                    onValueChange = { description = it },
+                    onValueChange = { if (it.length <= 3000) description = it },
                     label = { Text(text = "내용") },
                     minLines = 2,
                     maxLines = 15,

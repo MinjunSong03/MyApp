@@ -103,18 +103,6 @@ class MyPostViewModel(
         }
     }
 
-    suspend fun getPostById(postId: Long): PostResponse? {
-        currentPostList.firstOrNull { it.id == postId }?.let { return it }
-
-        return postRepository.getPostById(postId)
-            .onFailure { error ->
-                if (error is CancellationException) return@onFailure
-                val message = error.message ?: return@onFailure
-                _toastEvent.send(message)
-            }
-            .getOrNull()
-    }
-
     fun hidePost(postId: Long) {
         viewModelScope.launch {
             postRepository.hidePost(postId)

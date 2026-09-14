@@ -21,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,7 +34,6 @@ fun LoginScreen(
     viewModel: LoginViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
-    val view = LocalView.current
 
     LaunchedEffect(Unit) {
         viewModel.toastEvent.collect { message ->

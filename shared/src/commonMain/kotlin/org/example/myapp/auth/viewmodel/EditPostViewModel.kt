@@ -6,7 +6,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import org.example.myapp.auth.network.EditPostRequest
-import org.example.myapp.auth.network.MediaType
 import org.example.myapp.auth.network.PostResponse
 import org.example.myapp.auth.repository.PostRepository
 import kotlin.coroutines.cancellation.CancellationException

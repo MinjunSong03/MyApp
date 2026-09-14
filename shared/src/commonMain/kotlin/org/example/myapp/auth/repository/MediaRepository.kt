@@ -6,12 +6,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
-import org.example.myapp.ImagePresignedRequest
-import org.example.myapp.VideoPresignedRequest
-import org.example.myapp.auth.local.SessionManager
 import org.example.myapp.auth.model.PickedMedia
+import org.example.myapp.auth.network.ImagePresignedRequest
 import org.example.myapp.auth.network.MediaApiService
-import org.example.myapp.auth.network.MediaType
+import org.example.myapp.auth.network.VideoPresignedRequest
 import org.example.myapp.auth.platform.FastStartUtil
 import org.example.myapp.auth.platform.ThumbnailExtractor
 import kotlin.coroutines.cancellation.CancellationException

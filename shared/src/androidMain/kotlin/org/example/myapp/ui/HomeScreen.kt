@@ -1,7 +1,6 @@
 package org.example.myapp.ui
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
@@ -22,7 +21,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -34,7 +32,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -48,6 +45,7 @@ import org.example.myapp.auth.viewmodel.HomeViewModel
 import org.example.myapp.ui.card.PostCard
 import org.koin.compose.viewmodel.koinViewModel
 import org.example.myapp.ui.dialog.ReportDialog
+import org.example.myapp.ui.item.AppPullToRefreshBox
 import org.example.myapp.ui.item.AppTopBar
 import org.example.myapp.util.AndroidVideoPlayerManager
 
@@ -179,18 +177,18 @@ fun HomeScreen(
                 .padding(innerPadding)
                 .nestedScroll(nestedScrollConnection)
         ) {
-            PullToRefreshBox(
+            AppPullToRefreshBox(
                 isRefreshing = isRefreshing,
                 onRefresh = {
                     videoManager.stop()
                     viewModel.loadHomeFeed(isRefresh = true)
-                },
+                            },
                 modifier = Modifier.fillMaxSize()
             ) {
                 when (val state = uiState) {
                     is HomeUiState.Loading -> {
                         CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.background,
                             modifier = Modifier.align(Alignment.Center)
                         )
                     }

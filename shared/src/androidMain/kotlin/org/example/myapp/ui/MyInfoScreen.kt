@@ -1,7 +1,9 @@
 package org.example.myapp.ui
 
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +20,6 @@ import androidx.compose.runtime.collectAsState
 import org.example.myapp.auth.model.AuthState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.getValue
 import androidx.compose.material3.AlertDialog
@@ -29,9 +30,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextDecoration
 import org.example.myapp.auth.model.OAuthProvider
 import org.example.myapp.auth.viewmodel.MyInfoViewModel
-import org.example.myapp.ui.item.AutoScrollingImage
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -40,6 +41,7 @@ fun MyInfoScreen(
     onUpdateNicknameClick: () -> Unit,
     onMyPostClick: () -> Unit,
     onManageMyClick: () -> Unit,
+    onLicenseClick: () -> Unit
 ) {
     val authState by viewModel.authState.collectAsState()
     val context = LocalContext.current
@@ -131,89 +133,104 @@ fun MyInfoScreen(
     }
 
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp)
     ) {
+        Column(
+            modifier = Modifier.fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "${session?.nickname} 님.",
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 30.sp
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "반갑습니다!",
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 30.sp
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "고유번호: ${session?.userId ?: "-"}",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 14.sp
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+            Button(
+                onClick = { onUpdateNicknameClick() },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text(
+                    text = "프로필 수정"
+                )
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+            Button(
+                onClick = { onMyPostClick() },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text(
+                    text = "나의 게시물"
+                )
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+            Button(
+                onClick = { onManageMyClick() },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text(
+                    text = "차단한 사용자 관리"
+                )
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+            Button(
+                onClick = { viewModel.logout(OAuthProvider.KAKAO) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
+                )
+            ) {
+                Text(
+                    text = "로그아웃"
+                )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Button(
+                onClick = { withdrawClick = true },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
+                )
+            ) {
+                Text(
+                    text = "회원탈퇴"
+                )
+            }
+        }
         Text(
-            text = "${session?.nickname} 님.",
-            color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 30.sp
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "반갑습니다!",
-            color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 30.sp
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "고유번호: ${session?.userId ?: "-"}",
+            text = "오픈소스 라이선스",
+            fontSize = 12.sp,
+            textDecoration = TextDecoration.Underline,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 14.sp
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .clickable { onLicenseClick() }
         )
-        Spacer(modifier = Modifier.height(20.dp))
-        Button(
-            onClick = { onUpdateNicknameClick() },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            )
-        ) {
-            Text(
-                text = "프로필 수정"
-            )
-        }
-        Spacer(modifier = Modifier.height(20.dp))
-        Button(
-            onClick = { onMyPostClick() },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            )
-        ) {
-            Text(
-                text = "나의 게시물"
-            )
-        }
-        Spacer(modifier = Modifier.height(20.dp))
-        Button(
-            onClick = { onManageMyClick() },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            )
-        ) {
-            Text(
-                text = "차단한 사용자 관리"
-            )
-        }
-        Spacer(modifier = Modifier.height(20.dp))
-        Button(
-            onClick = { viewModel.logout(OAuthProvider.KAKAO) },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.error,
-                contentColor = MaterialTheme.colorScheme.onError
-            )
-        ) {
-            Text(
-                text = "로그아웃"
-            )
-        }
-        Spacer(modifier = Modifier.height(10.dp))
-        Button(
-            onClick = { withdrawClick = true },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.error,
-                contentColor = MaterialTheme.colorScheme.onError
-            )
-        ) {
-            Text(
-                text = "회원탈퇴"
-            )
-        }
     }
 }

@@ -49,7 +49,6 @@ import org.example.myapp.auth.viewmodel.HomeViewModel
 import org.example.myapp.auth.viewmodel.LoginViewModel
 import org.example.myapp.auth.viewmodel.MyInfoViewModel
 import org.example.myapp.auth.viewmodel.PostDetailViewModel
-import org.example.myapp.auth.viewmodel.ProfileClickUiState
 import org.example.myapp.auth.viewmodel.ProfileClickViewModel
 import org.example.myapp.auth.viewmodel.ProfileSetupViewModel
 import org.koin.core.module.dsl.viewModel

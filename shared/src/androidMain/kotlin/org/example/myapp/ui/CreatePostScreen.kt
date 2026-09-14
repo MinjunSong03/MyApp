@@ -5,7 +5,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,18 +22,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
-import org.example.myapp.auth.model.PickedMedia
 import org.example.myapp.auth.network.MediaType
 import org.example.myapp.auth.viewmodel.CreatePostViewModel
 import org.example.myapp.ui.item.AppTopBar
@@ -120,9 +112,10 @@ fun CreatePostScreen(
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = title,
-                    onValueChange = { viewModel.onTitleChange(it) },
+                    onValueChange = { if (it.length <= 100 ) viewModel.onTitleChange(it) },
                     label = { Text(text = "제목(필수)") },
-                    singleLine = true,
+                    minLines = 1,
+                    maxLines = 3,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -132,7 +125,7 @@ fun CreatePostScreen(
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = description,
-                    onValueChange = { viewModel.onDescriptionChange(it) },
+                    onValueChange = { if (it.length <= 3000) viewModel.onDescriptionChange(it) },
                     label = { Text(text = "내용(필수)") },
                     minLines = 2,
                     maxLines = 15,
@@ -197,7 +190,7 @@ fun CreatePostScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "동영상 ${selectedVideo?.fileName}",
+                                    text = "동영상 1개 선택됨",
                                     fontSize = 13.sp,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )

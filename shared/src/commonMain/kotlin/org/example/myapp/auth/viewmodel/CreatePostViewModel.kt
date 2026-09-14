@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import org.example.myapp.auth.model.PickedMedia
 import org.example.myapp.auth.network.CreatePostRequest
-import org.example.myapp.auth.network.MediaType
 import org.example.myapp.auth.repository.MediaRepository
 import org.example.myapp.auth.repository.PostRepository
 import kotlin.coroutines.cancellation.CancellationException

@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -43,7 +42,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -199,11 +197,6 @@ fun EditProfileScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = selectedImage?.fileName ?: "",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                     TextButton(onClick = { selectedImage = null }) {
                         Text(
                             text = "선택 취소",
@@ -241,7 +234,7 @@ fun EditProfileScreen(
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(
                 value = inputNickname,
-                onValueChange = { inputNickname = it },
+                onValueChange = { if (it.length <= 10) inputNickname = it },
                 label = { Text(text = "닉네임") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),

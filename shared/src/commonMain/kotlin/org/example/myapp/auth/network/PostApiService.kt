@@ -4,13 +4,11 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
-import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 
@@ -63,6 +61,21 @@ class PostApiService(
         return response.body()
     }
 
+    suspend fun getMyHiddenPost(page: Int, size: Int = 10): SliceResponse<PostResponse> {
+        val response = client.get("$baseUrl/api/posts/my_posts_hidden") {
+            parameter("page", page)
+            parameter("size", size)
+        }
+
+        if (!response.status.isSuccess()) {
+            val errorBody = runCatching { response.body<ErrorResponse>() }.getOrNull()
+            val message = errorBody?.message ?: "나의 숨겨진 게시물 불러오기에 실패했습니다. (${response.status.value})"
+            throw IllegalStateException(message)
+        }
+
+        return response.body()
+    }
+
     suspend fun getUserPosts(userId: Long, page: Int, size: Int = 10): SliceResponse<PostResponse> {
         val response = client.get("$baseUrl/api/posts/user/$userId") {
             parameter("page", page)
@@ -84,21 +97,6 @@ class PostApiService(
             val errorBody = runCatching { response.body<ErrorResponse>() }.getOrNull()
             throw IllegalStateException(errorBody?.message ?: "사용자 정보를 불러오지 못했습니다.")
         }
-        return response.body()
-    }
-
-    suspend fun getMyHiddenPost(page: Int, size: Int = 10): SliceResponse<PostResponse> {
-        val response = client.get("$baseUrl/api/posts/my_posts_hidden") {
-            parameter("page", page)
-            parameter("size", size)
-        }
-
-        if (!response.status.isSuccess()) {
-            val errorBody = runCatching { response.body<ErrorResponse>() }.getOrNull()
-            val message = errorBody?.message ?: "나의 숨겨진 게시물 불러오기에 실패했습니다. (${response.status.value})"
-            throw IllegalStateException(message)
-        }
-
         return response.body()
     }
 

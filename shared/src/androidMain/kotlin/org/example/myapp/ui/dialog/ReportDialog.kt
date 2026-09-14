@@ -59,7 +59,7 @@ fun ReportDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = detail,
-                    onValueChange = { detail = it },
+                    onValueChange = { if (it.length <= 500) detail = it },
                     label = { Text(text = "상세 사유 (필수)") },
                     placeholder = { Text(text = "구체적인 신고 사유를 작성해주세요.") },
                     singleLine = false,
@@ -68,7 +68,7 @@ fun ReportDialog(
                     supportingText = {
                         if (detail.isBlank()) {
                             Text(
-                                text = "상세 사유를 반드시 입력해야 합니다.",
+                                text = "상세 사유를 반드시 입력해야 합니다. (최대 500자 입력 가능)",
                                 color = MaterialTheme.colorScheme.error
                             )
                         }

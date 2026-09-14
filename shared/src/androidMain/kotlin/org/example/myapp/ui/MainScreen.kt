@@ -177,7 +177,8 @@ fun MainScreen() {
                     MyInfoScreen(
                         onUpdateNicknameClick = { navController.navigate("detail") },
                         onMyPostClick = { navController.navigate("post_my") },
-                        onManageMyClick = { navController.navigate("manage_my")}
+                        onManageMyClick = { navController.navigate("manage_my")},
+                        onLicenseClick = { navController.navigate("license")}
                     )
                 }
                 composable("detail") {
@@ -215,7 +216,12 @@ fun MainScreen() {
                     )
                 }
                 composable("manage_my") {
-                    ManageMyScreen(
+                    BlockedUserScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+                composable("license") {
+                    LicenseScreen(
                         onBack = { navController.popBackStack() }
                     )
                 }
