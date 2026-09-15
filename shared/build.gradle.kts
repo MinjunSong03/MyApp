@@ -58,7 +58,6 @@ kotlin {
             implementation("androidx.media3:media3-exoplayer:1.4.1")
             implementation("androidx.media3:media3-ui:1.4.1")
             implementation("androidx.media3:media3-datasource-okhttp:1.4.1")
-
             implementation("com.mikepenz:aboutlibraries-compose-m3:11.2.3")
         }
         commonMain.dependencies {
@@ -83,7 +82,7 @@ kotlin {
             implementation(libs.navigation.compose)
             implementation("androidx.datastore:datastore-preferences-core:1.1.1")
             implementation("io.insert-koin:koin-compose-viewmodel:4.0.0")
-            implementation("io.ktor:ktor-client-auth:2.3.11")
+            implementation(libs.ktor.client.auth)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

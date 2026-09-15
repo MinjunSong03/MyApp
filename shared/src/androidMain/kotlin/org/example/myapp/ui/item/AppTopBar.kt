@@ -17,6 +17,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -25,6 +27,7 @@ import org.example.myapp.shared.R
 
 @Composable
 fun AppTopBar(
+    iconPainter: Painter? = null,
     title: String,
     modifier: Modifier = Modifier,
     onBackClick: (() -> Unit)? = null,
@@ -42,7 +45,7 @@ fun AppTopBar(
                 .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 1. 좌측 뒤로가기 버튼
+            // 좌측 뒤로가기 버튼
             if (onBackClick != null) {
                 IconButton(
                     onClick = onBackClick,
@@ -58,7 +61,18 @@ fun AppTopBar(
                 Spacer(modifier = Modifier.width(8.dp))
             }
 
-            // 2. 중앙 타이틀
+            // 앱 아이콘
+            if (iconPainter != null) {
+                Icon(
+                    painter = iconPainter,
+                    contentDescription = null,
+                    modifier = Modifier.size(28.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+
+            // 중앙 타이틀
             Text(
                 text = title,
                 fontSize = 16.sp,
@@ -67,7 +81,7 @@ fun AppTopBar(
                 modifier = Modifier.weight(1f)
             )
 
-            // 3. 액션 버튼
+            // 액션 버튼
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 content = actions

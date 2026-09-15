@@ -66,9 +66,6 @@ fun MyPostScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val currentTab by viewModel.currentTab.collectAsState()
 
-    var reportingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var reportingUserId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var blockingUserId by rememberSaveable { mutableStateOf<Long?>(null) }
     var deletingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
     var hidingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
     var unhidingPost by rememberSaveable { mutableStateOf<PostResponse?>(null) }
@@ -140,7 +137,6 @@ fun MyPostScreen(
 
     LaunchedEffect(currentTab) {
         videoManager.stop()
-        viewModel.loadMyPost(isRefresh = true)
     }
 
     LaunchedEffect(shouldLoadMore) {
@@ -246,9 +242,9 @@ fun MyPostScreen(
                                             onDeleteClick = { deletingPostId = it },
                                             onUnhidePostClick = { unhidingPost = post },
                                             onHidePostClick = { hidingPostId = it },
-                                            onBlockUserClick = { blockingUserId = it },
-                                            onReportPostClick = { reportingPostId = it },
-                                            onReportUserClick = { reportingUserId = it }
+                                            onBlockUserClick = { },
+                                            onReportPostClick = { },
+                                            onReportUserClick = { }
                                         )
                                     }
                                     if (!state.isLast) {
@@ -348,53 +344,6 @@ fun MyPostScreen(
                 TextButton(onClick = { unhidingPost = null }) {
                     Text(text = "취소")
                 }
-            }
-        )
-    }
-
-    blockingUserId?.let { targetId ->
-        AlertDialog(
-            onDismissRequest = { blockingUserId = null },
-            title = { Text(text = "이 사용자 차단") },
-            containerColor = MaterialTheme.colorScheme.surface,
-            text = { Text(text = "이 사용자를 차단하시겠습니까?\n피드에서 해당 사용자의 모든 글이 즉시 숨겨집니다.") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.blockUser(targetId)
-                        blockingUserId = null
-                    }
-                ) {
-                    Text(
-                        text = "차단",
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { blockingUserId = null }) {
-                    Text(text = "취소")
-                }
-            }
-        )
-    }
-
-    reportingPostId?.let { postId ->
-        ReportDialog(
-            onDismiss = { reportingPostId = null },
-            onConfirm = { reportReason, detail ->
-                viewModel.reportPost(postId, reportReason, detail)
-                reportingPostId = null
-            }
-        )
-    }
-
-    reportingUserId?.let { userId ->
-        ReportDialog(
-            onDismiss = { reportingUserId = null },
-            onConfirm = { reportReason, detail ->
-                viewModel.reportUser(userId, reportReason, detail)
-                reportingUserId = null
             }
         )
     }

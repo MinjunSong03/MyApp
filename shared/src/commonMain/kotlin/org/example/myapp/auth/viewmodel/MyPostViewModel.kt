@@ -27,9 +27,7 @@ sealed interface PostTab {
 }
 
 class MyPostViewModel(
-    private val postRepository: PostRepository,
-    private val userBlockRepository: UserBlockRepository,
-    private val reportRepository: ReportRepository
+    private val postRepository: PostRepository
 ): ViewModel() {
     private val _uiState = MutableStateFlow<MyPostUiState>(MyPostUiState.Loading)
     val uiState: StateFlow<MyPostUiState> = _uiState.asStateFlow()
@@ -43,56 +41,107 @@ class MyPostViewModel(
     private val _currentTab = MutableStateFlow<PostTab>(PostTab.Act)
     val currentTab: StateFlow<PostTab> = _currentTab.asStateFlow()
 
-    private var currentPage = 0
-    private var isLastPage = false
-    private val currentPostList = mutableListOf<PostResponse>()
-
     private var feedJob: Job? = null
+
+    private var actPage = 0
+    private var isActLast = false
+    private var isActLoaded = false
+
+    private var hiddenPage = 0
+    private var isHiddenLast = false
+    private var isHiddenLoaded = false
+
+    init {
+        viewModelScope.launch {
+            postRepository.myActPosts.collect { posts ->
+                if (_currentTab.value is PostTab.Act && isActLoaded) {
+                    _uiState.value = MyPostUiState.Success(posts, isActLast)
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            postRepository.myHiddenPosts.collect { posts ->
+                if (_currentTab.value is PostTab.Hidden && isHiddenLoaded) {
+                    _uiState.value = MyPostUiState.Success(posts, isHiddenLast)
+                }
+            }
+        }
+
+        loadMyPost(tab = PostTab.Act, isRefresh = false)
+    }
 
     fun switchTab(tab: PostTab) {
         if (_currentTab.value == tab) return
         _currentTab.value = tab
+
+        val isTargetLoaded = if (tab is PostTab.Act) isActLoaded else isHiddenLoaded
+        val targetPosts = if (tab is PostTab.Act) postRepository.myActPosts.value else postRepository.myHiddenPosts.value
+        val targetIsLast = if (tab is PostTab.Act) isActLast else isHiddenLast
+
+        if (isTargetLoaded) {
+            _uiState.value = MyPostUiState.Success(targetPosts.toList(), targetIsLast)
+        } else {
+            _uiState.value = MyPostUiState.Loading
+            loadMyPost(tab = tab, isRefresh = false)
+        }
     }
 
-    fun loadMyPost(isRefresh: Boolean = false) {
+    fun loadMyPost(tab: PostTab = _currentTab.value, isRefresh: Boolean = false) {
+        val isTargetLast = if (tab is PostTab.Act) isActLast else isHiddenLast
+        val targetPosts = if (tab is PostTab.Act) postRepository.myActPosts.value else postRepository.myHiddenPosts.value
 
         if (isRefresh) {
             feedJob?.cancel()
             _isRefreshing.value = true
-            currentPage = 0
-            isLastPage = false
-            currentPostList.clear()
-            _uiState.value = MyPostUiState.Loading
         } else {
-            if (isLastPage || feedJob?.isActive == true) return
+            if (isTargetLast || feedJob?.isActive == true) return
+            if (targetPosts.isEmpty()) {
+                _uiState.value = MyPostUiState.Loading
+            }
+        }
+
+        val targetPage = if (isRefresh) 0 else {
+            if (tab is PostTab.Act) actPage else hiddenPage
         }
 
         feedJob = viewModelScope.launch {
             try {
-                val result = when (_currentTab.value) {
-                    PostTab.Act -> postRepository.getMyActPost(currentPage)
-                    PostTab.Hidden -> postRepository.getMyHiddenPost(currentPage)
+                val result = when (tab) {
+                    PostTab.Act -> postRepository.getMyActPost(targetPage, isRefresh)
+                    PostTab.Hidden -> postRepository.getMyHiddenPost(targetPage, isRefresh)
                 }
                 result.onSuccess { slice ->
-                    if (isRefresh) currentPostList.clear()
-                    currentPostList.addAll(slice.content)
-                    isLastPage = slice.last
-                    currentPage++
-                    _uiState.value = MyPostUiState.Success(currentPostList.toList(), isLastPage)
+                    if (tab is PostTab.Act) {
+                        if (isRefresh) actPage = 0
+                        isActLast = slice.last
+                        actPage++
+                        isActLoaded = true
+                    } else {
+                        if (isRefresh) hiddenPage = 0
+                        isHiddenLast = slice.last
+                        hiddenPage++
+                        isHiddenLoaded = true
+                    }
+                    if (_currentTab.value == tab) {
+                        val currentList = if (tab is PostTab.Act) postRepository.myActPosts.value else postRepository.myHiddenPosts.value
+                        val currentLast = if (tab is PostTab.Act) isActLast else isHiddenLast
+                        _uiState.value = MyPostUiState.Success(currentList, currentLast)
+                    }
                 }
                 .onFailure { error ->
                     if (error is CancellationException) return@onFailure
-                    if (currentPostList.isEmpty()) {
+                    if (_uiState.value !is MyPostUiState.Success) {
                         _uiState.value = MyPostUiState.Success(emptyList(), isLast = true)
-                    } else {
-                        _uiState.value = MyPostUiState.Success(currentPostList.toList(), isLastPage)
                     }
                     val message = error.message ?: return@onFailure
                     _toastEvent.send(message)
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                _uiState.value = MyPostUiState.Success(currentPostList.toList(), isLastPage)
+                if (_uiState.value !is MyPostUiState.Success) {
+                    _uiState.value = MyPostUiState.Success(emptyList(), isLast = true)
+                }
                 val message = e.message ?: return@launch
                 _toastEvent.send(message)
             } finally {
@@ -107,8 +156,6 @@ class MyPostViewModel(
         viewModelScope.launch {
             postRepository.hidePost(postId)
                 .onSuccess {
-                    currentPostList.removeAll { it.id == postId }
-                    _uiState.value = MyPostUiState.Success(currentPostList.toList(), isLastPage)
                     _toastEvent.send("게시물을 숨김 처리하였습니다.")
                 }
                 .onFailure { error ->
@@ -122,8 +169,6 @@ class MyPostViewModel(
         viewModelScope.launch {
             postRepository.unhidePost(post)
                 .onSuccess {
-                    currentPostList.removeAll { it.id == post.id }
-                    _uiState.value = MyPostUiState.Success(currentPostList.toList(), isLastPage)
                     _toastEvent.send("게시물 숨김을 해제하였습니다.")
                 }
                 .onFailure { error ->
@@ -137,8 +182,6 @@ class MyPostViewModel(
         viewModelScope.launch {
             postRepository.deletePost(postId)
                 .onSuccess {
-                    currentPostList.removeAll { it.id == postId }
-                    _uiState.value = MyPostUiState.Success(currentPostList.toList(), isLastPage)
                     _toastEvent.send("게시물을 삭제하였습니다.")
                 }
                 .onFailure { error ->
@@ -148,40 +191,5 @@ class MyPostViewModel(
         }
     }
 
-    fun blockUser(targetUserId: Long) {
-        viewModelScope.launch {
-            userBlockRepository.blockUser(targetUserId)
-                .onSuccess {
-                    currentPostList.removeAll { it.userId == targetUserId }
-                    _uiState.value = MyPostUiState.Success(currentPostList.toList(), isLastPage)
-                    _toastEvent.send("사용자를 차단하였습니다.")
-                }
-                .onFailure { error ->
-                    val message = error.message ?: return@onFailure
-                    _toastEvent.send(message)
-                }
-        }
-    }
 
-    fun reportPost(postId: Long, reason: ReportReason, detail: String) {
-        viewModelScope.launch {
-            reportRepository.reportPost(postId, reason, detail)
-                .onSuccess { _toastEvent.send("신고가 접수되었습니다.") }
-                .onFailure { error ->
-                    val message = error.message ?: return@onFailure
-                    _toastEvent.send(message)
-                }
-        }
-    }
-
-    fun reportUser(targetId: Long, reason: ReportReason, detail: String) {
-        viewModelScope.launch {
-            reportRepository.reportUser(targetId, reason, detail)
-                .onSuccess { _toastEvent.send("신고가 접수되었습니다.") }
-                .onFailure { error ->
-                    val message = error.message ?: return@onFailure
-                    _toastEvent.send(message)
-                }
-        }
-    }
 }

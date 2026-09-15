@@ -36,6 +36,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -48,6 +49,7 @@ import org.example.myapp.ui.dialog.ReportDialog
 import org.example.myapp.ui.item.AppPullToRefreshBox
 import org.example.myapp.ui.item.AppTopBar
 import org.example.myapp.util.AndroidVideoPlayerManager
+import org.example.myapp.shared.R
 
 
 @Composable
@@ -154,10 +156,6 @@ fun HomeScreen(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.loadHomeFeed(isRefresh = true)
-    }
-
-    LaunchedEffect(Unit) {
         viewModel.toastEvent.collect { message ->
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
@@ -167,7 +165,8 @@ fun HomeScreen(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             AppTopBar(
-                title = "MyApp",
+                iconPainter = painterResource(R.drawable.ic_launcher_foreground),
+                title = "----",
                 onBackClick = null
             )
         }

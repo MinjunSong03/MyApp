@@ -144,7 +144,7 @@ val commonModule = module {
 
     single { SessionManager(get()) }
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get()) }
-    single { PostRepository(get()) }
+    single { PostRepository(get(), get()) }
     single { UserBlockRepository(get()) }
     single { ReportRepository(get()) }
     single { MediaRepository(get()) }
@@ -158,7 +158,7 @@ val commonModule = module {
     viewModel { LoginViewModel(get()) }
     viewModel { ManageMyViewModel(get()) }
     viewModel { MyInfoViewModel(get()) }
-    viewModel { MyPostViewModel(get(), get(), get()) }
+    viewModel { MyPostViewModel(get()) }
     viewModel { ProfileSetupViewModel(get(), get()) }
     viewModel { PostDetailViewModel(get(), get(),get(), get(), get()) }
     viewModel { ProfileClickViewModel(get(), get(), get()) }

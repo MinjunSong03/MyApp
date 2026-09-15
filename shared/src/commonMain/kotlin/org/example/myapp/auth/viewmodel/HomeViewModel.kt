@@ -43,53 +43,13 @@ class HomeViewModel(
 
     init {
         viewModelScope.launch {
-            postRepository.postEditedEvent.collect { editedPost ->
-                val index = currentPostList.indexOfFirst { it.id == editedPost.id }
-                if (index != -1) {
-                    currentPostList[index] = editedPost
-                    _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
+            postRepository.homePosts.collect { posts ->
+                if (_uiState.value !is HomeUiState.Loading || posts.isNotEmpty()) {
+                    _uiState.value = HomeUiState.Success(posts, isLastPage)
                 }
             }
         }
-    }
-
-    init {
-        viewModelScope.launch {
-            postRepository.createPostEvent.collect { newPost ->
-                currentPostList.add(0, newPost)
-                _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
-            }
-        }
-    }
-
-    init {
-        viewModelScope.launch {
-            postRepository.postHiddenEvent.collect { hiddenId ->
-                currentPostList.removeAll { it.id == hiddenId }
-                _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
-            }
-        }
-        viewModelScope.launch {
-            postRepository.postDeletedEvent.collect { deletedId ->
-                currentPostList.removeAll { it.id == deletedId }
-                _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
-            }
-        }
-
-        viewModelScope.launch {
-            postRepository.postUnhiddenEvent.collect { unhiddenPost ->
-                if (currentPostList.any { it.id == unhiddenPost.id }) return@collect
-
-                val targetIndex = currentPostList.indexOfFirst { it.createdAt < unhiddenPost.createdAt }
-                if (targetIndex != -1) {
-                    currentPostList.add(targetIndex, unhiddenPost)
-                    _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
-                } else if (isLastPage) {
-                    currentPostList.add(unhiddenPost)
-                    _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
-                }
-            }
-        }
+        loadHomeFeed(isRefresh = false)
     }
 
     fun loadHomeFeed(isRefresh: Boolean = false) {
@@ -99,35 +59,34 @@ class HomeViewModel(
             _isRefreshing.value = true
             currentPage = 0
             isLastPage = false
-            currentPostList.clear()
-            _uiState.value = HomeUiState.Loading
         } else {
             if (isLastPage || feedJob?.isActive == true) return
+            if (currentPostList.isEmpty()) {
+                _uiState.value = HomeUiState.Loading
+            }
         }
+
+        val targetPage = if (isRefresh) 0 else currentPage
 
         feedJob = viewModelScope.launch {
             try {
-                postRepository.getHomeFeed(currentPage)
+                postRepository.getHomeFeed(targetPage, isRefresh)
                     .onSuccess { slice ->
-                        if (isRefresh) currentPostList.clear()
-                        currentPostList.addAll(slice.content)
                         isLastPage = slice.last
                         currentPage++
-                        _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
+                        _uiState.value = HomeUiState.Success(postRepository.homePosts.value, isLastPage)
                     }
                     .onFailure { error ->
                         if (error is CancellationException) return@onFailure
-                        if (currentPostList.isEmpty()) {
+                        if (_uiState.value !is HomeUiState.Success) {
                             _uiState.value = HomeUiState.Success(emptyList(), isLast = true)
-                        } else {
-                            _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
                         }
                         val message = error.message ?: return@onFailure
                         _toastEvent.send(message)
                     }
             } catch (e : Exception) {
                 if (e is CancellationException) throw e
-                _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
+                _uiState.value = HomeUiState.Success(postRepository.homePosts.value, isLastPage)
                 val message = e.message ?: return@launch
                 _toastEvent.send(message)
             } finally {
@@ -168,8 +127,7 @@ class HomeViewModel(
         viewModelScope.launch {
             userBlockRepository.blockUser(targetUserId)
                 .onSuccess {
-                    currentPostList.removeAll { it.userId == targetUserId }
-                    _uiState.value = HomeUiState.Success(currentPostList.toList(), isLastPage)
+                    postRepository.removePostsByUserId(targetUserId)
                     _toastEvent.send("사용자를 차단하였습니다.")
                 }
                 .onFailure { error ->
