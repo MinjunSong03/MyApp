@@ -309,19 +309,13 @@ fun PostDetailScreen(
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp)
                 ) {
-
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
                             modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable {
-                                    onNavigateToProfileClick(currentPost.userId)
-                                },
+                                .clickable { onNavigateToProfileClick(currentPost.userId) },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             AsyncImage(
@@ -334,33 +328,14 @@ fun PostDetailScreen(
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
                             )
                             Spacer(modifier = Modifier.width(10.dp))
-                            Column {
-                                Text(
-                                    text = currentPost.userNickname,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (currentPost.isUserDeleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                                    fontSize = 15.sp
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = if (currentPost.editedAt == null) "조회수 ${currentPost.viewCount}회" else "조회수 ${currentPost.viewCount}회 · 수정됨",
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Text(
-                                        text = currentPost.createdAt.substringBefore("T"),
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
+                            Text(
+                                text = currentPost.userNickname,
+                                fontWeight = FontWeight.Bold,
+                                color = if (currentPost.isUserDeleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                                fontSize = 15.sp
+                            )
                         }
-
+                        Spacer(modifier = Modifier.weight(1f))
                         Box {
                             IconButton(onClick = { isMenuExpanded = true }) {
                                 Icon(
@@ -456,6 +431,25 @@ fun PostDetailScreen(
                     }
 
                     Spacer(modifier = Modifier.height(14.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Spacer(modifier = Modifier.height(7.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (currentPost.editedAt == null) "조회수 ${currentPost.viewCount}회" else "조회수 ${currentPost.viewCount}회 · 수정됨",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = currentPost.createdAt.substringBefore("T"),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(7.dp))
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     Spacer(modifier = Modifier.height(14.dp))
                     Text(

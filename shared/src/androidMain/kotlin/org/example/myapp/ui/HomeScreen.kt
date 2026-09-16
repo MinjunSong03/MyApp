@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -21,13 +21,12 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -39,8 +38,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.myapp.auth.viewmodel.HomeUiState
 import org.example.myapp.auth.viewmodel.HomeViewModel
 import org.example.myapp.ui.card.PostCard
@@ -56,13 +55,14 @@ import org.example.myapp.shared.R
 fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
     videoManager: AndroidVideoPlayerManager = koinViewModel(),
+    listState: LazyListState,
     onNavigateToEditPost: (Long) -> Unit,
     onNavigateToPostDetail: (Long) -> Unit,
     onNavigateToProfileClick: (Long) -> Unit
 ) {
     val context = LocalContext.current
-    val uiState by viewModel.uiState.collectAsState()
-    val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
     var reportingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
     var reportingUserId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -70,8 +70,7 @@ fun HomeScreen(
     var deletingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
     var hidingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
 
-    val listState = rememberLazyListState()
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val currentUiState by rememberUpdatedState(uiState)
 
     var isFloatingVisible by rememberSaveable { mutableStateOf(true) }
     val nestedScrollConnection = remember {
@@ -87,7 +86,7 @@ fun HomeScreen(
         }
     }
 
-    LaunchedEffect(listState, uiState) {
+    LaunchedEffect(listState) {
         snapshotFlow {
             val layoutInfo = listState.layoutInfo
             val visibleItems = layoutInfo.visibleItemsInfo
@@ -113,7 +112,7 @@ fun HomeScreen(
                 }
             }
         }.collect { centerIndex ->
-            val state = uiState
+            val state = currentUiState
             if (centerIndex != null && state is HomeUiState.Success) {
                 val posts = state.posts
                 val targetPost = posts.getOrNull(centerIndex)
@@ -127,18 +126,12 @@ fun HomeScreen(
         }
     }
 
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
-                videoManager.pause()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
+    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) {
+        videoManager.pause()
+    }
 
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-            videoManager.pause()
-        }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        videoManager.pause()
     }
 
     val shouldLoadMore by remember {

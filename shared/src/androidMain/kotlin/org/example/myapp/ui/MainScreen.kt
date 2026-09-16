@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -23,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,6 +38,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import kotlinx.coroutines.launch
 import org.example.myapp.ui.item.BottomNavItem
 
 @Composable
@@ -43,6 +46,9 @@ fun MainScreen() {
     val context = LocalContext.current
     val activity = context as? Activity
     var backPressedTime by rememberSaveable { mutableStateOf(0L) }
+
+    val homeListState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
 
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -76,7 +82,13 @@ fun MainScreen() {
                         NavigationBarItem(
                             selected = isSelected,
                             onClick = {
-                                if (currentRoute != item.route) {
+                                if (isSelected) {
+                                    if (item.route == "home") {
+                                        coroutineScope.launch {
+                                            homeListState.animateScrollToItem(0)
+                                        }
+                                    }
+                                } else {
                                     navController.navigate(item.route) {
                                         popUpTo(navController.graph.findStartDestination().id) {
                                             saveState = true
@@ -124,6 +136,7 @@ fun MainScreen() {
             ) {
                 composable("home") {
                     HomeScreen(
+                        listState = homeListState,
                         onNavigateToPostDetail = { postId ->
                             navController.navigate("post_detail/$postId")
                         },
@@ -138,13 +151,7 @@ fun MainScreen() {
                 composable("create_post") {
                     CreatePostScreen(
                         onCreatePostClick = {
-                            navController.navigate("home") {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
+                            navController.popBackStack()
                         }
                     )
                 }

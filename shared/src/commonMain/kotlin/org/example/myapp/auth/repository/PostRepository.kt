@@ -17,6 +17,7 @@ class PostRepository(
     private val sessionManager: SessionManager
 ) {
     private val mutex = Mutex()
+
     private val _homePosts = MutableStateFlow<List<PostResponse>>(emptyList())
     val homePosts: StateFlow<List<PostResponse>> = _homePosts.asStateFlow()
 
@@ -172,7 +173,6 @@ class PostRepository(
                 val target = _homePosts.value.firstOrNull { it.id == postId }
                     ?: _myActPosts.value.firstOrNull { it.id == postId }
 
-
                 _homePosts.value = _homePosts.value.filterNot { it.id == postId }
                 _myActPosts.value = _myActPosts.value.filterNot { it.id == postId }
 
@@ -194,8 +194,8 @@ class PostRepository(
                 val unhiddenItem = post.copy(isHidden = false)
                 _myHiddenPosts.value = _myHiddenPosts.value.filterNot { it.id == post.id }
                 _myActPosts.value = insertSorted(_myActPosts.value, unhiddenItem)
-                if (_homePosts.value.isNotEmpty()) {
-                    _homePosts.value = insertSorted(_homePosts.value, unhiddenItem)
+                _homePosts.value?.let { currentList ->
+                    _homePosts.value = insertSorted(currentList, unhiddenItem)
                 }
             }
         }.onFailure { e ->

@@ -79,10 +79,7 @@ fun PostCard(
             ) {
                 Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .clickable {
-                            onProfileClick(post.userId)
-                        },
+                        .clickable { onProfileClick(post.userId) },
                     verticalAlignment = Alignment.CenterVertically
                 ){
                     AsyncImage(
@@ -95,16 +92,14 @@ fun PostCard(
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = post.userNickname,
-                            fontWeight = FontWeight.Bold,
-                            color = if (post.isUserDeleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                            fontSize = 14.sp
-                        )
-                    }
+                    Text(
+                        text = post.userNickname,
+                        fontWeight = FontWeight.Bold,
+                        color = if (post.isUserDeleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                        fontSize = 14.sp
+                    )
                 }
-
+                Spacer(modifier = Modifier.weight(1f))
                 Box {
                     IconButton(onClick = { isMenuExpanded = true }) {
                         Icon(
@@ -271,8 +266,7 @@ fun PostCard(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {

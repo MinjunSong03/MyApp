@@ -261,9 +261,11 @@ fun ProfileClickScreen(
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(14.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(7.dp))
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant)
+                    Spacer(modifier = Modifier.height(7.dp))
                     Box(
                         modifier = Modifier.fillMaxSize()
                     ) {
@@ -290,8 +292,7 @@ fun ProfileClickScreen(
                             } else {
                                 LazyColumn(
                                     state = listState,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentPadding = PaddingValues(vertical = 10.dp)
+                                    modifier = Modifier.fillMaxSize()
                                 ) {
                                     items(state.posts, key = { it.id }) { post ->
                                         PostCard(
