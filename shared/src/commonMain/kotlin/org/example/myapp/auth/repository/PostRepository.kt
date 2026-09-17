@@ -39,6 +39,11 @@ class PostRepository(
         return mutable
     }
 
+    fun clearCache() {
+        _homePosts.value = emptyList()
+        _myActPosts.value = emptyList()
+        _myHiddenPosts.value = emptyList()
+    }
     suspend fun createPost(request: CreatePostRequest): Result<PostResponse> = withContext(Dispatchers.IO) {
         runCatching {
             postApiService.createPost(request)
