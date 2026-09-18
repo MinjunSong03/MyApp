@@ -25,13 +25,8 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,59 +36,36 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import org.example.myapp.auth.network.MediaType
-import org.example.myapp.auth.network.PostResponse
 import org.example.myapp.auth.viewmodel.EditPostViewModel
 import org.example.myapp.ui.item.AppTopBar
 import org.example.myapp.util.AndroidVideoPlayerManager
 import org.example.myapp.util.VideoPlayer
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Composable
 fun EditPostScreen(
     postId: Long,
-    viewModel: EditPostViewModel = koinViewModel(),
+    viewModel: EditPostViewModel = koinViewModel(key = postId.toString()) { parametersOf(postId) },
     videoManager: AndroidVideoPlayerManager = koinViewModel(),
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val mediaHeight = (configuration.screenHeightDp / 4).dp
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-
-    var initialTitle by rememberSaveable { mutableStateOf("") }
-    var initialDescription by rememberSaveable { mutableStateOf("") }
-
-    var post by remember { mutableStateOf<PostResponse?>(null) }
-    var title by rememberSaveable { mutableStateOf("") }
-    var description by rememberSaveable { mutableStateOf("") }
-
-    var isLoading by rememberSaveable { mutableStateOf(false) }
-    var isInitialDataLoaded by rememberSaveable { mutableStateOf(false) }
-
-
-    LaunchedEffect(postId) {
-        if (!isInitialDataLoaded) {
-            val existingPost = viewModel.getPostById(postId)
-            if (existingPost != null) {
-                initialTitle = existingPost.title
-                initialDescription = existingPost.description
-
-                post = existingPost
-                title = existingPost.title
-                description = existingPost.description
-                isInitialDataLoaded = true
-            } else {
-                onBack()
-            }
-        }
+    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) {
+        videoManager.pause()
     }
 
-    DisposableEffect(Unit) {
-        onDispose {
-            videoManager.pause()
-        }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        videoManager.pause()
     }
 
     LaunchedEffect(Unit) {
@@ -103,13 +75,12 @@ fun EditPostScreen(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.updateSuccessEvent.collect {
+        viewModel.navigateBackEvent.collect {
             onBack()
         }
     }
 
-    val currentPost = post
-    if (!isInitialDataLoaded || currentPost == null) {
+    if (!uiState.isInitialDataLoaded || uiState.post == null) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -119,8 +90,7 @@ fun EditPostScreen(
         return
     }
 
-    val isContentChanged = (title.trim() != initialTitle.trim()) || (description.trim() != initialDescription.trim())
-    val isFormValid = title.isNotBlank() && description.isNotBlank() && isContentChanged
+    val currentPost = uiState.post!!
     val mediaItems = currentPost.mediaItems
     val pagerState = rememberPagerState(pageCount = { mediaItems.size })
 
@@ -162,7 +132,7 @@ fun EditPostScreen(
                             MediaType.IMAGE -> {
                                 AsyncImage(
                                     model = item.mediaUrl,
-                                    contentDescription = title,
+                                    contentDescription = "사진",
                                     contentScale = ContentScale.Fit,
                                     modifier = Modifier.fillMaxSize()
                                 )
@@ -196,12 +166,11 @@ fun EditPostScreen(
                     .fillMaxSize()
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(20.dp)
+                    .padding(16.dp)
             ) {
-                Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
-                    value = title,
-                    onValueChange = { if (it.length <= 100) title = it },
+                    value = uiState.title,
+                    onValueChange = { if (it.length <= 100) viewModel.onTitleChange(it) },
                     label = { Text(text = "제목") },
                     minLines = 1,
                     maxLines = 3,
@@ -211,10 +180,10 @@ fun EditPostScreen(
                         focusedLabelColor = MaterialTheme.colorScheme.primary
                     )
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(
-                    value = description,
-                    onValueChange = { if (it.length <= 3000) description = it },
+                    value = uiState.description,
+                    onValueChange = { if (it.length <= 3000) viewModel.onDescriptionChange(it) },
                     label = { Text(text = "내용") },
                     minLines = 2,
                     maxLines = 15,
@@ -224,37 +193,24 @@ fun EditPostScreen(
                         focusedLabelColor = MaterialTheme.colorScheme.primary
                     )
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 Button(
-                    onClick = {
-                        isLoading = true
-                        viewModel.editPost(
-                            postId = postId,
-                            title = title.trim(),
-                            description = description.trim(),
-                            videoUrl = currentPost.videoUrl,
-                            videoThumbnailUrl = currentPost.videoThumbnailUrl,
-                            imageUrls = currentPost.imageUrls
-                        )
-                    },
-                    enabled = isFormValid && !isLoading,
+                    onClick = { viewModel.editPost() },
+                    enabled = uiState.isFormValid && !uiState.isLoading,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    if (isLoading) {
+                    if (uiState.isLoading) {
                         CircularProgressIndicator(
                             color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(24.dp)
                         )
                     } else {
                         Text(
-                            text = "게시물 수정",
-                            fontSize = 16.sp
+                            text = "게시물 수정"
                         )
                     }
                 }

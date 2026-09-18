@@ -43,7 +43,7 @@ import org.example.myapp.auth.repository.UserBlockRepository
 import org.example.myapp.auth.viewmodel.CreatePostViewModel
 import org.example.myapp.auth.viewmodel.EditProfileViewModel
 import org.example.myapp.auth.viewmodel.EditPostViewModel
-import org.example.myapp.auth.viewmodel.ManageMyViewModel
+import org.example.myapp.auth.viewmodel.BlockedUserViewModel
 import org.example.myapp.auth.viewmodel.MyPostViewModel
 import org.example.myapp.auth.viewmodel.HomeViewModel
 import org.example.myapp.auth.viewmodel.LoginViewModel
@@ -153,10 +153,10 @@ val commonModule = module {
     viewModel { AppViewModel(get()) }
     viewModel { CreatePostViewModel(get(), get()) }
     viewModel { EditProfileViewModel(get(), get()) }
-    viewModel { EditPostViewModel(get()) }
+    viewModel { EditPostViewModel(get(), get()) }
     viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { LoginViewModel(get()) }
-    viewModel { ManageMyViewModel(get()) }
+    viewModel { BlockedUserViewModel(get()) }
     viewModel { MyInfoViewModel(get()) }
     viewModel { MyPostViewModel(get()) }
     viewModel { ProfileSetupViewModel(get(), get()) }

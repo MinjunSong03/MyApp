@@ -16,8 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.collectAsState
-import org.example.myapp.auth.model.AuthState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.ui.unit.dp
@@ -27,13 +25,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.myapp.auth.model.OAuthProvider
 import org.example.myapp.auth.viewmodel.MyInfoViewModel
 import org.koin.compose.viewmodel.koinViewModel
+
+private enum class WithdrawStep { NONE, STEP_1, STEP_2 }
 
 @Composable
 fun MyInfoScreen(
@@ -43,16 +44,10 @@ fun MyInfoScreen(
     onManageMyClick: () -> Unit,
     onLicenseClick: () -> Unit
 ) {
-    val authState by viewModel.authState.collectAsState()
     val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    var withdrawClick by rememberSaveable { mutableStateOf(false) }
-    var withdrawRecheckClick by rememberSaveable { mutableStateOf(false) }
-
-    val session = when (val state = authState) {
-        is AuthState.Authenticated -> state.session
-        else -> null
-    }
+    var withdrawStep by remember { mutableStateOf(WithdrawStep.NONE) }
 
     LaunchedEffect(Unit) {
         viewModel.toastEvent.collect { message ->
@@ -60,9 +55,9 @@ fun MyInfoScreen(
         }
     }
 
-    if (withdrawClick) {
+    if (withdrawStep == WithdrawStep.STEP_1) {
         AlertDialog(
-            onDismissRequest = { withdrawClick = false },
+            onDismissRequest = { withdrawStep = WithdrawStep.NONE },
             containerColor = MaterialTheme.colorScheme.surface,
             title = {
                 Text(text = "회원탈퇴")
@@ -72,10 +67,7 @@ fun MyInfoScreen(
             },
             confirmButton = {
                 TextButton(
-                    onClick = {
-                        withdrawClick = false
-                        withdrawRecheckClick = true
-                    }
+                    onClick = { withdrawStep = WithdrawStep.STEP_2 }
                 ) {
                     Text(
                         text = "탈퇴",
@@ -85,7 +77,7 @@ fun MyInfoScreen(
             },
             dismissButton = {
                 TextButton(
-                    onClick = { withdrawClick = false }
+                    onClick = { withdrawStep = WithdrawStep.NONE }
                 ) {
                     Text(
                         text = "취소",
@@ -96,9 +88,9 @@ fun MyInfoScreen(
         )
     }
 
-    if (withdrawRecheckClick) {
+    if (withdrawStep == WithdrawStep.STEP_2) {
         AlertDialog(
-            onDismissRequest = { withdrawRecheckClick = false },
+            onDismissRequest = { withdrawStep = WithdrawStep.NONE },
             containerColor = MaterialTheme.colorScheme.surface,
             title = {
                 Text(text = "회원탈퇴")
@@ -109,7 +101,7 @@ fun MyInfoScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        withdrawRecheckClick = false
+                        withdrawStep = WithdrawStep.NONE
                         viewModel.unlink(OAuthProvider.KAKAO)
                     }
                 ) {
@@ -121,7 +113,7 @@ fun MyInfoScreen(
             },
             dismissButton = {
                 TextButton(
-                    onClick = { withdrawRecheckClick = false }
+                    onClick = { withdrawStep = WithdrawStep.NONE }
                 ) {
                     Text(
                         text = "취소",
@@ -139,14 +131,15 @@ fun MyInfoScreen(
             .padding(24.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "${session?.nickname} 님.",
+                text = "${uiState.nickname} 님.",
                 color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 30.sp
             )
@@ -158,7 +151,7 @@ fun MyInfoScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "고유번호: ${session?.userId ?: "-"}",
+                text = "고유번호: ${uiState.userId ?: "-"}",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 14.sp
             )
@@ -212,7 +205,7 @@ fun MyInfoScreen(
             }
             Spacer(modifier = Modifier.height(10.dp))
             Button(
-                onClick = { withdrawClick = true },
+                onClick = { withdrawStep = WithdrawStep.STEP_1 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.error,
                     contentColor = MaterialTheme.colorScheme.onError

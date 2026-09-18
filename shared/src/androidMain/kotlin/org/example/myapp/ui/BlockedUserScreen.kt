@@ -26,8 +26,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import org.example.myapp.auth.viewmodel.ManageMyUiState
-import org.example.myapp.auth.viewmodel.ManageMyViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.example.myapp.auth.viewmodel.BlockedUserUiState
+import org.example.myapp.auth.viewmodel.BlockedUserViewModel
 import org.koin.compose.viewmodel.koinViewModel
 import org.example.myapp.ui.card.BlockedUserCard
 import org.example.myapp.ui.item.AppPullToRefreshBox
@@ -35,13 +36,11 @@ import org.example.myapp.ui.item.AppTopBar
 
 @Composable
 fun BlockedUserScreen(
-    viewModel: ManageMyViewModel= koinViewModel(),
+    viewModel: BlockedUserViewModel= koinViewModel(),
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val uiState by viewModel.uiState.collectAsState()
-    val isRefreshing by viewModel.isRefreshing.collectAsState()
-
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     val shouldLoadMore by remember {
         derivedStateOf {
@@ -50,10 +49,10 @@ fun BlockedUserScreen(
             totalItems > 0 && lastVisibleIndex >= totalItems - 2
         }
     }
+
     LaunchedEffect(Unit) {
         viewModel.loadMyBlockedUser(isRefresh = true)
     }
-
 
     LaunchedEffect(shouldLoadMore) {
         if (shouldLoadMore) {
@@ -67,7 +66,6 @@ fun BlockedUserScreen(
         }
     }
 
-
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
@@ -78,54 +76,55 @@ fun BlockedUserScreen(
         }
     ) { innerPadding ->
         AppPullToRefreshBox(
-            isRefreshing = isRefreshing,
+            isRefreshing = uiState.isRefreshing,
             onRefresh = { viewModel.loadMyBlockedUser(isRefresh = true) },
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            when (val state = uiState) {
-                is ManageMyUiState.Loading -> {
+            when {
+                uiState.isInitialLoading && uiState.users.isEmpty() -> {
                     CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.align(Alignment.Center)
+                        modifier = Modifier.align(Alignment.Center),
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
 
-                is ManageMyUiState.Success -> {
-                    if (state.users.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .verticalScroll(rememberScrollState()),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "차단한 사용자가 없습니다.",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                uiState.isEmpty -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState()),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "차단한 사용자가 없습니다.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                else -> {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(vertical = 8.dp)
+                    ) {
+                        items(uiState.users, key = { it.id }) { user ->
+                            BlockedUserCard(
+                                user = user,
+                                onUnblockUserClick = { viewModel.unblockUser(user.id) }
                             )
                         }
-                    } else {
-                        LazyColumn(
-                            state = listState,
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(vertical = 8.dp)
-                        ) {
-                            items(state.users, key = { it.id }) { user ->
-                                BlockedUserCard(
-                                    user = user,
-                                    onUnblockUserClick = { viewModel.unblockUser(user.id) }
-                                )
-                            }
-                            if (!state.isLast) {
-                                item {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                                    }
+                        if (!uiState.isLast) {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }

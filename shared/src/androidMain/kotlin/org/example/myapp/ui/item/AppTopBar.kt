@@ -28,14 +28,13 @@ import org.example.myapp.shared.R
 @Composable
 fun AppTopBar(
     iconPainter: Painter? = null,
-    title: String,
-    modifier: Modifier = Modifier,
     onBackClick: (() -> Unit)? = null,
+    title: String,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
-        modifier = modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
@@ -57,8 +56,6 @@ fun AppTopBar(
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
-            } else {
-                Spacer(modifier = Modifier.width(8.dp))
             }
 
             // 앱 아이콘
@@ -66,7 +63,7 @@ fun AppTopBar(
                 Icon(
                     painter = iconPainter,
                     contentDescription = null,
-                    modifier = Modifier.size(28.dp),
+                    modifier = Modifier.size(48.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.width(8.dp))

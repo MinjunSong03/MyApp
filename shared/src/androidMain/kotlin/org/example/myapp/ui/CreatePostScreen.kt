@@ -20,13 +20,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.myapp.auth.network.MediaType
 import org.example.myapp.auth.viewmodel.CreatePostViewModel
 import org.example.myapp.ui.item.AppTopBar
@@ -40,14 +40,12 @@ fun CreatePostScreen(
     onCreatePostClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val title = viewModel.title
-    val description = viewModel.description
-    val selectedVideo = viewModel.selectedVideo
-    val selectedImages = viewModel.selectedImages
-
-    val isLoading by viewModel.isLoading.collectAsState()
-    val isFormValid = title.isNotBlank() && description.isNotBlank()
+    val title = uiState.title
+    val description = uiState.description
+    val selectedVideo = uiState.selectedVideo
+    val selectedImages = uiState.selectedImages
 
     val videoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -63,7 +61,6 @@ fun CreatePostScreen(
             }
         }
     }
-
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 10)
     ) { uris ->
@@ -90,7 +87,6 @@ fun CreatePostScreen(
         }
     }
 
-
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
@@ -100,16 +96,16 @@ fun CreatePostScreen(
         }
     ) { innerPadding ->
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .padding(innerPadding)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(20.dp)
+                    .padding(16.dp)
             ) {
-                Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = title,
                     onValueChange = { if (it.length <= 100 ) viewModel.onTitleChange(it) },
@@ -122,7 +118,7 @@ fun CreatePostScreen(
                         focusedLabelColor = MaterialTheme.colorScheme.primary
                     )
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(
                     value = description,
                     onValueChange = { if (it.length <= 3000) viewModel.onDescriptionChange(it) },
@@ -135,7 +131,7 @@ fun CreatePostScreen(
                         focusedLabelColor = MaterialTheme.colorScheme.primary
                     )
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "미디어 첨부 (동영상 최대 1개, 사진 최대 10장)",
                     fontSize = 14.sp,
@@ -160,7 +156,6 @@ fun CreatePostScreen(
                     ) {
                         Text(if (selectedVideo == null) "동영상 추가" else "동영상 변경")
                     }
-
                     Button(
                         onClick = {
                             imagePickerLauncher.launch(
@@ -177,7 +172,7 @@ fun CreatePostScreen(
                     }
                 }
                 if (selectedVideo != null) {
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     Card(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         shape = RoundedCornerShape(8.dp),
@@ -190,13 +185,13 @@ fun CreatePostScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "동영상 1개 선택됨",
-                                    fontSize = 13.sp,
+                                    text = "1개 선택됨",
+                                    fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = "동영상",
-                                    fontSize = 11.sp,
+                                    fontSize = 10.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -211,7 +206,7 @@ fun CreatePostScreen(
                     }
                 }
                 if (selectedImages.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     Card(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         shape = RoundedCornerShape(8.dp),
@@ -224,19 +219,19 @@ fun CreatePostScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "사진 ${selectedImages.size}장 선택됨",
-                                    fontSize = 13.sp,
+                                    text = "${selectedImages.size}장 선택됨",
+                                    fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = "사진",
-                                    fontSize = 11.sp,
+                                    fontSize = 10.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             TextButton(onClick = { viewModel.onImagesSelect(emptyList()) }) {
                                 Text(
-                                    text = "전체 삭제",
+                                    text = "삭제",
                                     color = MaterialTheme.colorScheme.error,
                                     fontSize = 12.sp
                                 )
@@ -244,26 +239,21 @@ fun CreatePostScreen(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(30.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = {
-                        viewModel.createPost(
-                            title = title.trim(),
-                            description = description.trim(),
-                            video = selectedVideo,
-                            images = selectedImages
-                        )
+                        viewModel.createPost()
                     },
-                    enabled = isFormValid && !isLoading,
+                    enabled = uiState.isFormValid && !uiState.isLoading,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp)
+                        .height(48.dp)
                 ) {
-                    if (isLoading) {
+                    if (uiState.isLoading) {
                         CircularProgressIndicator(
                             color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(24.dp)

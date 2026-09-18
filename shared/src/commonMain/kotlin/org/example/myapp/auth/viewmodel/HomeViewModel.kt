@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.myapp.auth.network.PostResponse
 import org.example.myapp.auth.network.ReportReason
@@ -16,9 +17,14 @@ import org.example.myapp.auth.repository.ReportRepository
 import org.example.myapp.auth.repository.UserBlockRepository
 import kotlin.coroutines.cancellation.CancellationException
 
-sealed class HomeUiState {
-    object Loading: HomeUiState()
-    data class Success(val posts: List<PostResponse>, val isLast: Boolean): HomeUiState()
+data class HomeUiState(
+    val posts: List<PostResponse> = emptyList(),
+    val isInitialLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
+    val isLast: Boolean = false
+) {
+    val isEmpty: Boolean
+        get() = !isInitialLoading && posts.isEmpty()
 }
 
 class HomeViewModel(
@@ -26,43 +32,35 @@ class HomeViewModel(
     private val userBlockRepository: UserBlockRepository,
     private val reportRepository: ReportRepository
 ): ViewModel() {
-    private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
+    private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
-
-    private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
     private val _toastEvent = Channel<String>(Channel.BUFFERED)
     val toastEvent = _toastEvent.receiveAsFlow()
 
     private var currentPage = 0
     private var isLastPage = false
-    private val currentPostList = mutableListOf<PostResponse>()
-
     private var feedJob: Job? = null
 
     init {
         viewModelScope.launch {
             postRepository.homePosts.collect { posts ->
-                if (_uiState.value !is HomeUiState.Loading || posts.isNotEmpty()) {
-                    _uiState.value = HomeUiState.Success(posts, isLastPage)
-                }
+                _uiState.update { it.copy(posts = posts) }
             }
         }
         loadHomeFeed(isRefresh = false)
     }
 
-    fun loadHomeFeed(isRefresh: Boolean = false) {
-
+    fun loadHomeFeed(isRefresh: Boolean) {
         if (isRefresh) {
             feedJob?.cancel()
-            _isRefreshing.value = true
+            _uiState.update { it.copy(isRefreshing = true) }
             currentPage = 0
             isLastPage = false
         } else {
             if (isLastPage || feedJob?.isActive == true) return
-            if (currentPostList.isEmpty()) {
-                _uiState.value = HomeUiState.Loading
+            if (_uiState.value.posts.isEmpty()) {
+                _uiState.update { it.copy(isInitialLoading = true) }
             }
         }
 
@@ -74,24 +72,23 @@ class HomeViewModel(
                     .onSuccess { slice ->
                         isLastPage = slice.last
                         currentPage++
-                        _uiState.value = HomeUiState.Success(postRepository.homePosts.value, isLastPage)
+                        _uiState.update { it.copy(isLast = isLastPage) }
                     }
                     .onFailure { error ->
                         if (error is CancellationException) return@onFailure
-                        if (_uiState.value !is HomeUiState.Success) {
-                            _uiState.value = HomeUiState.Success(emptyList(), isLast = true)
-                        }
                         val message = error.message ?: return@onFailure
                         _toastEvent.send(message)
                     }
             } catch (e : Exception) {
                 if (e is CancellationException) throw e
-                _uiState.value = HomeUiState.Success(postRepository.homePosts.value, isLastPage)
                 val message = e.message ?: return@launch
                 _toastEvent.send(message)
             } finally {
-                if (isRefresh) {
-                    _isRefreshing.value = false
+                _uiState.update {
+                    it.copy(
+                        isInitialLoading = false,
+                        isRefreshing = false
+                    )
                 }
             }
         }

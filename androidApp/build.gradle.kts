@@ -42,6 +42,7 @@ android {
         versionName = "1.0"
         buildConfigField("String", "KAKAO_APP_KEY", "\"$kakaoAppKey\"")
         manifestPlaceholders["kakaoAppKey"] = kakaoAppKey
+
     }
     packaging {
         resources {
@@ -50,7 +51,9 @@ android {
     }
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

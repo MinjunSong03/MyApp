@@ -40,13 +40,12 @@ import org.example.myapp.shared.R
 @Composable
 fun BlockedUserCard(
     user: BlockedUserResponse,
-    onUnblockUserClick: (Long) -> Unit,
-    modifier: Modifier = Modifier
+    onUnblockUserClick: (Long) -> Unit
 ) {
     var isMenuExpanded by rememberSaveable { mutableStateOf(false) }
 
     Card(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         shape = RoundedCornerShape(16.dp),
@@ -70,15 +69,17 @@ fun BlockedUserCard(
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = user.nickname,
-                        fontWeight = FontWeight.Bold,
-                        color = if (user.status == UserStatus.DELETED) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 14.sp
-                    )
-                }
-
+                Text(
+                    text = user.nickname,
+                    fontWeight = FontWeight.Bold,
+                    color = if (user.status == UserStatus.DELETED) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                    fontSize = 14.sp
+                )
+                Spacer(modifier = Modifier.weight(1f))
                 Box {
                     IconButton(onClick = { isMenuExpanded = true }) {
                         Icon(

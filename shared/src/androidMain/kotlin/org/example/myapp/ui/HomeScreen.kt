@@ -50,6 +50,13 @@ import org.example.myapp.ui.item.AppTopBar
 import org.example.myapp.util.AndroidVideoPlayerManager
 import org.example.myapp.shared.R
 
+private sealed interface HomeDialog {
+    data class DeletePost(val postId: Long): HomeDialog
+    data class HidePost(val postId: Long): HomeDialog
+    data class BlockUser(val userId: Long): HomeDialog
+    data class ReportPost(val postId: Long): HomeDialog
+    data class ReportUser(val userId: Long): HomeDialog
+}
 
 @Composable
 fun HomeScreen(
@@ -62,29 +69,9 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
-    var reportingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var reportingUserId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var blockingUserId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var deletingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var hidingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
-
+    var activeDialog by remember { mutableStateOf<HomeDialog?>(null) }
     val currentUiState by rememberUpdatedState(uiState)
-
-    var isFloatingVisible by rememberSaveable { mutableStateOf(true) }
-    val nestedScrollConnection = remember {
-        object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (available.y < -10f) {
-                    isFloatingVisible = false
-                } else if (available.y > 10f) {
-                    isFloatingVisible = true
-                }
-                return Offset.Zero
-            }
-        }
-    }
 
     LaunchedEffect(listState) {
         snapshotFlow {
@@ -98,7 +85,7 @@ fun HomeScreen(
                     }
 
                     !listState.canScrollForward -> {
-                        val postsCount = (uiState as? HomeUiState.Success)?.posts?.size ?: 0
+                        val postsCount = currentUiState.posts.size
                         visibleItems.lastOrNull { it.index < postsCount }?.index
                     }
 
@@ -113,7 +100,7 @@ fun HomeScreen(
             }
         }.collect { centerIndex ->
             val state = currentUiState
-            if (centerIndex != null && state is HomeUiState.Success) {
+            if (centerIndex != null && state.posts.isNotEmpty()) {
                 val posts = state.posts
                 val targetPost = posts.getOrNull(centerIndex)
                 val videoUrl = targetPost?.videoUrl
@@ -126,13 +113,8 @@ fun HomeScreen(
         }
     }
 
-    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) {
-        videoManager.pause()
-    }
-
-    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
-        videoManager.pause()
-    }
+    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { videoManager.pause() }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { videoManager.pause() }
 
     val shouldLoadMore by remember {
         derivedStateOf {
@@ -165,70 +147,70 @@ fun HomeScreen(
         }
     ) { innerPadding ->
         Box(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .padding(innerPadding)
-                .nestedScroll(nestedScrollConnection)
         ) {
             AppPullToRefreshBox(
-                isRefreshing = isRefreshing,
+                isRefreshing = uiState.isRefreshing,
                 onRefresh = {
                     videoManager.stop()
                     viewModel.loadHomeFeed(isRefresh = true)
                             },
                 modifier = Modifier.fillMaxSize()
             ) {
-                when (val state = uiState) {
-                    is HomeUiState.Loading -> {
+                when {
+                    uiState.isInitialLoading && uiState.posts.isEmpty() -> {
                         CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.background,
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.align(Alignment.Center)
                         )
                     }
 
-                    is HomeUiState.Success -> {
-                        if (state.posts.isEmpty()) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .verticalScroll(rememberScrollState()),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "아래로 스와이프하여 게시물을 로드해 보세요!",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    uiState.isEmpty -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState()),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "아래로 스와이프하여 게시물을 로드해 보세요!",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    else -> {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(vertical = 8.dp)
+                        ) {
+                            items(uiState.posts, key = { it.id }) { post ->
+                                PostCard(
+                                    post = post,
+                                    onCardClick = onNavigateToPostDetail,
+                                    onProfileClick = onNavigateToProfileClick,
+                                    videoManager = videoManager,
+                                    onEditClick = onNavigateToEditPost,
+                                    onDeleteClick = { activeDialog = HomeDialog.DeletePost(it) },
+                                    onUnhidePostClick = {},
+                                    onHidePostClick = { activeDialog = HomeDialog.HidePost(it) },
+                                    onBlockUserClick = { activeDialog = HomeDialog.BlockUser(it) },
+                                    onReportPostClick = { activeDialog = HomeDialog.ReportPost(it) },
+                                    onReportUserClick = { activeDialog = HomeDialog.ReportUser(it) }
                                 )
                             }
-                        } else {
-                            LazyColumn(
-                                state = listState,
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(vertical = 10.dp)
-                            ) {
-                                items(state.posts, key = { it.id }) { post ->
-                                    PostCard(
-                                        post = post,
-                                        onCardClick = onNavigateToPostDetail,
-                                        onProfileClick = onNavigateToProfileClick,
-                                        videoManager = videoManager,
-                                        onEditClick = onNavigateToEditPost,
-                                        onDeleteClick = { deletingPostId = it },
-                                        onUnhidePostClick = {},
-                                        onHidePostClick = { hidingPostId = it },
-                                        onBlockUserClick = { blockingUserId = it },
-                                        onReportPostClick = { reportingPostId = it },
-                                        onReportUserClick = { reportingUserId = it }
-                                    )
-                                }
-                                if (!state.isLast) {
-                                    item {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(16.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                                        }
+                            if (!uiState.isLast) {
+                                item {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                                     }
                                 }
                             }
@@ -237,105 +219,105 @@ fun HomeScreen(
                 }
             }
 
-            deletingPostId?.let { postId ->
-                AlertDialog(
-                    onDismissRequest = { deletingPostId = null },
-                    title = { Text(text = "이 게시물 삭제") },
-                    text = { Text(text = "이 게시물을 삭제하시겠습니까?\n게시물을 삭제 후 복구는 불가능합니다.") },
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                viewModel.deletePost(postId)
-                                deletingPostId = null
+            when(val dialog = activeDialog) {
+                is HomeDialog.DeletePost -> {
+                    AlertDialog(
+                        onDismissRequest = { activeDialog = null },
+                        title = { Text(text = "이 게시물 삭제") },
+                        text = { Text(text = "이 게시물을 삭제하시겠습니까?\n게시물을 삭제 후 복구는 불가능합니다.") },
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    viewModel.deletePost(dialog.postId)
+                                    activeDialog = null
+                                }
+                            ) {
+                                Text(
+                                    text = "삭제",
+                                    color = MaterialTheme.colorScheme.error
+                                )
                             }
-                        ) {
-                            Text(
-                                text = "삭제",
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { deletingPostId = null }) {
-                            Text(text = "취소")
-                        }
-                    }
-                )
-            }
-
-            hidingPostId?.let { postId ->
-                AlertDialog(
-                    onDismissRequest = { hidingPostId = null },
-                    title = { Text(text = "게시물 숨기기") },
-                    text = { Text(text = "이 게시물을 숨기시겠습니까?") },
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                viewModel.hidePost(postId)
-                                hidingPostId = null
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { activeDialog = null }) {
+                                Text(text = "취소")
                             }
-                        ) {
-                            Text(
-                                text = "숨기기",
-                                color = MaterialTheme.colorScheme.error
-                            )
                         }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { hidingPostId = null }) {
-                            Text(text = "취소")
-                        }
-                    }
-                )
-            }
+                    )
+                }
 
-            blockingUserId?.let { targetId ->
-                AlertDialog(
-                    onDismissRequest = { blockingUserId = null },
-                    title = { Text(text = "이 사용자 차단") },
-                    text = { Text(text = "이 사용자를 차단하시겠습니까?\n피드에서 해당 사용자의 모든 글이 즉시 숨겨집니다.") },
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                viewModel.blockUser(targetId)
-                                blockingUserId = null
+                is HomeDialog.HidePost -> {
+                    AlertDialog(
+                        onDismissRequest = { activeDialog = null },
+                        title = { Text(text = "게시물 숨기기") },
+                        text = { Text(text = "이 게시물을 숨기시겠습니까?") },
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    viewModel.hidePost(dialog.postId)
+                                    activeDialog = null
+                                }
+                            ) {
+                                Text(
+                                    text = "숨기기",
+                                    color = MaterialTheme.colorScheme.error
+                                )
                             }
-                        ) {
-                            Text(
-                                text = "차단",
-                                color = MaterialTheme.colorScheme.error
-                            )
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { activeDialog = null }) {
+                                Text(text = "취소")
+                            }
                         }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { blockingUserId = null }) {
-                            Text(text = "취소")
+                    )
+                }
+                is HomeDialog.BlockUser -> {
+                    AlertDialog(
+                        onDismissRequest = { activeDialog = null },
+                        title = { Text(text = "이 사용자 차단") },
+                        text = { Text(text = "이 사용자를 차단하시겠습니까?\n피드에서 해당 사용자의 모든 글이 즉시 숨겨집니다.") },
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    viewModel.blockUser(dialog.userId)
+                                    activeDialog = null
+                                }
+                            ) {
+                                Text(
+                                    text = "차단",
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { activeDialog = null }) {
+                                Text(text = "취소")
+                            }
                         }
-                    }
-                )
-            }
-
-            reportingPostId?.let { postId ->
-                ReportDialog(
-                    onDismiss = { reportingPostId = null },
-                    onConfirm = { reportReason, detail ->
-                        viewModel.reportPost(postId, reportReason, detail)
-                        reportingPostId = null
-                    }
-                )
-            }
-
-            reportingUserId?.let { userId ->
-                ReportDialog(
-                    onDismiss = { reportingUserId = null },
-                    onConfirm = { reportReason, detail ->
-                        viewModel.reportUser(userId, reportReason, detail)
-                        reportingUserId = null
-                    }
-                )
+                    )
+                }
+                is HomeDialog.ReportPost -> {
+                    ReportDialog(
+                        onDismiss = { activeDialog = null },
+                        onConfirm = { reportReason, detail ->
+                            viewModel.reportPost(dialog.postId, reportReason, detail)
+                            activeDialog = null
+                        }
+                    )
+                }
+                is HomeDialog.ReportUser -> {
+                    ReportDialog(
+                        onDismiss = { activeDialog = null },
+                        onConfirm = { reportReason, detail ->
+                            viewModel.reportUser(dialog.userId, reportReason, detail)
+                            activeDialog = null
+                        }
+                    )
+                }
+                null -> Unit
             }
         }
     }

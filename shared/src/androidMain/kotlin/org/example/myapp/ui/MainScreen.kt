@@ -134,18 +134,9 @@ fun MainScreen() {
                 popEnterTransition = { fadeIn(animationSpec = tween(100)) },
                 popExitTransition = { fadeOut(animationSpec = tween(100)) }
             ) {
-                composable("home") {
-                    HomeScreen(
-                        listState = homeListState,
-                        onNavigateToPostDetail = { postId ->
-                            navController.navigate("post_detail/$postId")
-                        },
-                        onNavigateToEditPost = { postId ->
-                            navController.navigate("edit_post/$postId")
-                        },
-                        onNavigateToProfileClick = { userId ->
-                            navController.navigate("profile_click/$userId")
-                        }
+                composable("blocked_user") {
+                    BlockedUserScreen(
+                        onBack = { navController.popBackStack() }
                     )
                 }
                 composable("create_post") {
@@ -165,6 +156,25 @@ fun MainScreen() {
                         onBack = { navController.popBackStack() }
                     )
                 }
+                composable("edit_profile") {
+                    EditProfileScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+                composable("home") {
+                    HomeScreen(
+                        listState = homeListState,
+                        onNavigateToPostDetail = { postId ->
+                            navController.navigate("post_detail/$postId")
+                        },
+                        onNavigateToEditPost = { postId ->
+                            navController.navigate("edit_post/$postId")
+                        },
+                        onNavigateToProfileClick = { userId ->
+                            navController.navigate("profile_click/$userId")
+                        }
+                    )
+                }
                 composable(
                     route = "post_detail/{postId}",
                     arguments = listOf(navArgument("postId") { type = NavType.LongType })
@@ -182,15 +192,10 @@ fun MainScreen() {
                 }
                 composable("my_info") {
                     MyInfoScreen(
-                        onUpdateNicknameClick = { navController.navigate("detail") },
+                        onUpdateNicknameClick = { navController.navigate("edit_profile") },
                         onMyPostClick = { navController.navigate("post_my") },
-                        onManageMyClick = { navController.navigate("manage_my")},
+                        onManageMyClick = { navController.navigate("blocked_user")},
                         onLicenseClick = { navController.navigate("license")}
-                    )
-                }
-                composable("detail") {
-                    EditProfileScreen(
-                        onBack = { navController.popBackStack() }
                     )
                 }
                 composable("post_my") {
@@ -220,11 +225,6 @@ fun MainScreen() {
                         onNavigateToEditPost = { postId ->
                             navController.navigate("edit_post/$postId")
                         }
-                    )
-                }
-                composable("manage_my") {
-                    BlockedUserScreen(
-                        onBack = { navController.popBackStack() }
                     )
                 }
                 composable("license") {

@@ -47,6 +47,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import org.example.myapp.auth.model.AuthState
 import org.example.myapp.auth.model.PickedMedia
@@ -61,10 +62,8 @@ fun EditProfileScreen(
     viewModel: EditProfileViewModel = koinViewModel(),
     onBack: () -> Unit,
 ) {
-    val authState by viewModel.authState.collectAsState()
     val context = LocalContext.current
-
-    val isLoading by viewModel.isLoading.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.updateSuccessEvent.collect {
@@ -78,29 +77,13 @@ fun EditProfileScreen(
         }
     }
 
-    val state = authState
-
-    val initialNickname = if (state is AuthState.Authenticated) {
-        state.session.nickname ?: ""
-    } else ""
-
-    val initialProfileImageUrl = if (state is AuthState.Authenticated) {
-        state.session.profileImageUrl
-    } else null
-
-    var inputNickname by rememberSaveable { mutableStateOf(initialNickname) }
-
-    var selectedImage by remember { mutableStateOf<PickedMedia?>(null) }
-    var isImageDeleted by rememberSaveable { mutableStateOf(false) }
-
     val singleImagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
             val media = uri.toPickedMedia(context)
             if (media != null && media.mediaType == MediaType.IMAGE) {
-                selectedImage = media
-                isImageDeleted = false
+                viewModel.onImageChange(media)
             } else if (media != null) {
                 Toast.makeText(context, "사진 파일만 선택할 수 있습니다.", Toast.LENGTH_SHORT).show()
             } else {
@@ -109,12 +92,8 @@ fun EditProfileScreen(
         }
     }
 
-    val isNicknameChanged = inputNickname.trim().isNotBlank() && inputNickname.trim() != initialNickname
-    val isImageChanged = selectedImage != null || (isImageDeleted && initialProfileImageUrl != null)
-    val isFormChanged = isNicknameChanged || isImageChanged
-
-    val previewBitmap = remember(selectedImage) {
-        selectedImage?.let {
+    val previewBitmap = remember(uiState.selectedImage) {
+        uiState.selectedImage?.let {
             runCatching {
                 BitmapFactory.decodeByteArray(it.bytes, 0, it.bytes.size)?.asImageBitmap()
             }.getOrNull()
@@ -131,10 +110,11 @@ fun EditProfileScreen(
         }
     ) { innerPadding ->
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -143,13 +123,13 @@ fun EditProfileScreen(
                 fontSize = 28.sp,
                 color = MaterialTheme.colorScheme.onBackground
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "프로필 사진과 닉네임을 변경할 수 있습니다.",
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Box(
                 modifier = Modifier
                     .size(100.dp)
@@ -169,9 +149,9 @@ fun EditProfileScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
-                } else if (!isImageDeleted && initialProfileImageUrl != null) {
+                } else if (!uiState.isImageDeleted && uiState.initialProfileImageUrl != null) {
                     AsyncImage(
-                        model = initialProfileImageUrl,
+                        model = uiState.initialProfileImageUrl,
                         contentDescription = "프로필 사진",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -191,13 +171,12 @@ fun EditProfileScreen(
                 }
             }
 
-            if (selectedImage != null) {
+            if (uiState.selectedImage != null) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = { selectedImage = null }) {
+                    TextButton(onClick = { viewModel.onImageChange(null) }) {
                         Text(
                             text = "선택 취소",
                             color = MaterialTheme.colorScheme.error,
@@ -205,22 +184,25 @@ fun EditProfileScreen(
                         )
                     }
                 }
-            } else if (initialProfileImageUrl != null) {
+            } else if (uiState.initialProfileImageUrl != null) {
                 Spacer(modifier = Modifier.height(8.dp))
-                if (!isImageDeleted) {
-                    TextButton(onClick = { isImageDeleted = true }) {
-                        Text(
-                            text = "기본 사진 사용",
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 12.sp
-                        )
+                if (!uiState.isImageDeleted) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(onClick = { viewModel.onDeleteImageClick() }) {
+                            Text(
+                                text = "기본 사진 사용",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 12.sp
+                            )
+                        }
                     }
                 } else {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        TextButton(onClick = { isImageDeleted = false }) {
+                        TextButton(onClick = { viewModel.onRestoreImageClick() }) {
                             Text(
                                 text = "취소",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -233,8 +215,8 @@ fun EditProfileScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(
-                value = inputNickname,
-                onValueChange = { if (it.length <= 10) inputNickname = it },
+                value = uiState.selectedNickname,
+                onValueChange = { if (it.length <= 10 ) viewModel.onNicknameChange(it) },
                 label = { Text(text = "닉네임") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -246,20 +228,16 @@ fun EditProfileScreen(
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = {
-                    viewModel.updateProfile(
-                        nickname = inputNickname.trim(),
-                        selectedImage = selectedImage,
-                        deleteProfileImage = isImageDeleted
-                    )
+                    viewModel.updateProfile()
                 },
-                enabled = isFormChanged && inputNickname.trim().isNotBlank() && !isLoading,
+                enabled = uiState.isFormValid && !uiState.isLoading,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                if (isLoading) {
+                if (uiState.isLoading) {
                     CircularProgressIndicator(
                         color = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(24.dp)
