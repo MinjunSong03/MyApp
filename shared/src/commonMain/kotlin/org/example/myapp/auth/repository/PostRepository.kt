@@ -3,106 +3,98 @@ package org.example.myapp.auth.repository
 import io.ktor.utils.io.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import org.example.myapp.auth.local.SessionManager
+import org.example.myapp.auth.local.Post
+import org.example.myapp.auth.local.PostDao
 import org.example.myapp.auth.network.*
+
+object FeedType {
+    const val HOME = "HOME"
+    const val MY_ACT = "MY_ACT"
+    const val MY_HIDDEN = "MY_HIDDEN"
+}
 
 class PostRepository(
     private val postApiService: PostApiService,
-    private val sessionManager: SessionManager
+    private val postDao: PostDao
 ) {
-    private val mutex = Mutex()
-
-    private val _homePosts = MutableStateFlow<List<PostResponse>>(emptyList())
-    val homePosts: StateFlow<List<PostResponse>> = _homePosts.asStateFlow()
-
-    private val _myActPosts = MutableStateFlow<List<PostResponse>>(emptyList())
-    val myActPosts: StateFlow<List<PostResponse>> = _myActPosts.asStateFlow()
-
-    private val _myHiddenPosts = MutableStateFlow<List<PostResponse>>(emptyList())
-    val myHiddenPosts: StateFlow<List<PostResponse>> = _myHiddenPosts.asStateFlow()
-
-    private fun insertSorted(list: List<PostResponse>, newItem: PostResponse): List<PostResponse> {
-        val mutable = list.toMutableList()
-        mutable.removeAll { it.id == newItem.id }
-        val targetIndex = mutable.indexOfFirst { it.id < newItem.id }
-        if (targetIndex != -1) {
-            mutable.add(targetIndex, newItem)
-        } else {
-            mutable.add(newItem)
+    fun getFeedStream(feedType: String): Flow<List<PostResponse>> {
+        return postDao.getFeed(feedType).map { entities ->
+            entities.map { it.toResponse() }
         }
-        return mutable
     }
 
-    fun clearCache() {
-        _homePosts.value = emptyList()
-        _myActPosts.value = emptyList()
-        _myHiddenPosts.value = emptyList()
+    suspend fun fetchFeed(feedType: String, page: Int, isRefresh: Boolean): Result<Boolean> = withContext(Dispatchers.IO) {
+        runCatching {
+            val response = when (feedType) {
+                FeedType.HOME -> postApiService.getHomeFeed(page)
+                FeedType.MY_ACT -> postApiService.getMyActPost(page)
+                FeedType.MY_HIDDEN -> postApiService.getMyHiddenPost(page)
+                else -> error("정의되지 않은 FeedType: $feedType")
+            }
+            postDao.saveFeedPage(
+                feedType = feedType,
+                posts = response.content.map { it.toEntity() },
+                isRefresh = isRefresh
+            )
+            response.last
+        }.onFailure { if (it is CancellationException) throw it }
     }
+
     suspend fun createPost(request: CreatePostRequest): Result<PostResponse> = withContext(Dispatchers.IO) {
         runCatching {
-            postApiService.createPost(request)
-        }.onSuccess { newPost ->
-            mutex.withLock {
-                _homePosts.value = insertSorted(_homePosts.value, newPost)
-                _myActPosts.value = insertSorted(_myActPosts.value, newPost)
-            }
+            val created = postApiService.createPost(request)
+            postDao.saveFeedPage(FeedType.HOME, listOf(created.toEntity()), isRefresh = false)
+            postDao.saveFeedPage(FeedType.MY_ACT, listOf(created.toEntity()), isRefresh = false)
+            created
         }.onFailure { e ->
             if (e is CancellationException) throw e
         }
     }
-    suspend fun getHomeFeed(page: Int, isRefresh: Boolean): Result<SliceResponse<PostResponse>> = withContext(Dispatchers.IO) {
+
+    suspend fun editPost(postId: Long, request: EditPostRequest): Result<PostResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            val updated = postApiService.editPost(postId, request)
+            postDao.upsertPosts(listOf(updated.toEntity()))
+            updated
+        }.onFailure { e ->
+            if (e is CancellationException) throw e
+        }
+    }
+
+    suspend fun deletePost(postId: Long): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            postApiService.deletePost(postId)
+            postDao.deletePost(postId)
+        }.onFailure { e ->
+            if (e is CancellationException) throw e
+        }
+    }
+
+    suspend fun hidePost(postId: Long): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching{
+            postApiService.hidePost(postId)
+            postDao.removePostFromFeed(FeedType.HOME, postId)
+            postDao.removePostFromFeed(FeedType.MY_ACT, postId)
+        }.onFailure { e ->
+            if (e is CancellationException) throw e
+        }
+    }
+
+    suspend fun unhidePost(postId: Long): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching{
+            val updated = postApiService.unhidePost(postId)
+            postDao.removePostFromFeed(FeedType.MY_HIDDEN, postId)
+            postDao.saveFeedPage(FeedType.MY_ACT, listOf(updated.toEntity()), isRefresh = false)
+        }.onFailure { e ->
+            if (e is CancellationException) throw e
+        }
+    }
+    suspend fun getHomeFeed(page: Int): Result<SliceResponse<PostResponse>> = withContext(Dispatchers.IO) {
         runCatching {
             postApiService.getHomeFeed(page)
-        }.onSuccess { slice ->
-            mutex.withLock {
-                if (isRefresh) {
-                    _homePosts.value = slice.content
-                } else {
-                    _homePosts.value = (_homePosts.value + slice.content).distinctBy { it.id }
-                }
-            }
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
-    }
-
-    suspend fun getMyActPost(page: Int, isRefresh: Boolean): Result<SliceResponse<PostResponse>> = withContext(Dispatchers.IO) {
-        runCatching {
-            postApiService.getMyActPost(page)
-        }.onSuccess { slice ->
-            mutex.withLock {
-                if (isRefresh) {
-                    _myActPosts.value = slice.content
-                } else {
-                    _myActPosts.value = (_myActPosts.value + slice.content).distinctBy { it.id }
-                }
-            }
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
-    }
-
-    fun removePostsByUserId(userId: Long) {
-        _homePosts.value = _homePosts.value.filterNot { it.userId == userId }
-    }
-
-    suspend fun getMyHiddenPost(page: Int, isRefresh: Boolean): Result<SliceResponse<PostResponse>> = withContext(Dispatchers.IO) {
-        runCatching {
-            postApiService.getMyHiddenPost(page)
-        }.onSuccess { slice ->
-            mutex.withLock {
-                if (isRefresh) {
-                    _myHiddenPosts.value = slice.content
-                } else {
-                    _myHiddenPosts.value = (_myHiddenPosts.value + slice.content).distinctBy { it.id }
-                }
-            }
         }.onFailure { e ->
             if (e is CancellationException) throw e
         }
@@ -140,81 +132,51 @@ class PostRepository(
         }
     }
 
-    suspend fun editPost(postId: Long, request: EditPostRequest): Result<PostResponse> = withContext(Dispatchers.IO) {
-        runCatching {
-            postApiService.editPost(postId, request)
-        }.onSuccess { editedPost ->
-            mutex.withLock {
-                _homePosts.value = _homePosts.value.map { if (it.id == postId) editedPost else it }
-                _myActPosts.value = _myActPosts.value.map { if (it.id == postId) editedPost else it }
-                _myHiddenPosts.value = _myHiddenPosts.value.map { if (it.id == postId) editedPost else it }
-            }
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
-    }
+    private fun PostResponse.toEntity() = Post(
+        id = id,
+        userId = userId,
+        userNickname = userNickname,
+        userProfileImageUrl = userProfileImageUrl,
+        title = title,
+        description = description,
+        videoUrl = videoUrl,
+        videoThumbnailUrl = videoThumbnailUrl,
+        imageUrls = imageUrls.joinToString("|||"),
+        viewCount = viewCount,
+        createdAt = createdAt,
+        editedAt = editedAt,
+        isMine = isMine,
+        isHidden = isHidden,
+        isUserDeleted = isUserDeleted
+    )
 
-    suspend fun deletePost(postId: Long): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching {
-            postApiService.deletePost(postId)
-        }.onSuccess {
-            mutex.withLock {
-                _homePosts.value = _homePosts.value.filterNot { it.id == postId }
-                _myActPosts.value = _myActPosts.value.filterNot { it.id == postId }
-                _myHiddenPosts.value = _myHiddenPosts.value.filterNot { it.id == postId }
-            }
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
-    }
-
-    suspend fun hidePost(postId: Long): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching{
-            postApiService.hidePost(postId)
-        }.onSuccess {
-            mutex.withLock {
-                val currentUserId = sessionManager.getSession()?.userId
-
-                val target = _homePosts.value.firstOrNull { it.id == postId }
-                    ?: _myActPosts.value.firstOrNull { it.id == postId }
-
-                _homePosts.value = _homePosts.value.filterNot { it.id == postId }
-                _myActPosts.value = _myActPosts.value.filterNot { it.id == postId }
-
-                if (target != null && target.userId == currentUserId) {
-                    val hiddenItem = target.copy(isHidden = true)
-                    _myHiddenPosts.value = insertSorted(_myHiddenPosts.value, hiddenItem)
-                }
-            }
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
-    }
-
-    suspend fun unhidePost(post: PostResponse): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching{
-            postApiService.unhidePost(post.id)
-        }.onSuccess {
-            mutex.withLock {
-                val unhiddenItem = post.copy(isHidden = false)
-                _myHiddenPosts.value = _myHiddenPosts.value.filterNot { it.id == post.id }
-                _myActPosts.value = insertSorted(_myActPosts.value, unhiddenItem)
-                _homePosts.value?.let { currentList ->
-                    _homePosts.value = insertSorted(currentList, unhiddenItem)
-                }
-            }
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
-    }
+    private fun Post.toResponse() = PostResponse(
+        id = id,
+        userId = userId,
+        userNickname = userNickname,
+        userProfileImageUrl = userProfileImageUrl,
+        title = title,
+        description = description,
+        videoUrl = videoUrl,
+        videoThumbnailUrl = videoThumbnailUrl,
+        imageUrls = if (imageUrls.isBlank()) emptyList() else imageUrls.split("|||"),
+        viewCount = viewCount,
+        createdAt = createdAt,
+        editedAt = editedAt,
+        isMine = isMine,
+        isHidden = isHidden,
+        isUserDeleted = isUserDeleted
+    )
 }
 
 class UserBlockRepository(
-    private val userBlockApiService: UserBlockApiService
+    private val userBlockApiService: UserBlockApiService,
+    private val postDao: PostDao
 ) {
     suspend fun blockUser(targetUserId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             userBlockApiService.blockUser(targetUserId)
+            postDao.deletePostsByUserId(targetUserId)
         }.onFailure { e ->
             if (e is CancellationException) throw e
         }

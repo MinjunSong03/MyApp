@@ -6,5 +6,5 @@ plugins {
     alias(libs.plugins.composeMultiplatform) apply false
     alias(libs.plugins.composeCompiler) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
-    id("com.mikepenz.aboutlibraries.plugin") version "11.2.3" apply false
+    alias(libs.plugins.aboutLibraries) apply false
 }

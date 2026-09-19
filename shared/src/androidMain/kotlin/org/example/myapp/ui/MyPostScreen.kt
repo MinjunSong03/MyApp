@@ -1,56 +1,42 @@
 package org.example.myapp.ui
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import org.example.myapp.auth.network.PostResponse
-import org.example.myapp.auth.viewmodel.MyPostUiState
+import androidx.lifecycle.compose.LifecycleEventEffect
+import kotlinx.coroutines.launch
 import org.example.myapp.auth.viewmodel.MyPostViewModel
-import org.example.myapp.auth.viewmodel.PostTab
-import org.example.myapp.ui.card.PostCard
-import org.example.myapp.ui.dialog.ReportDialog
-import org.example.myapp.ui.item.AppPullToRefreshBox
 import org.example.myapp.ui.item.AppTopBar
+import org.example.myapp.ui.item.PostFeedList
 import org.example.myapp.util.AndroidVideoPlayerManager
 import org.koin.compose.viewmodel.koinViewModel
+
+private sealed interface MyPostDialog {
+    data class DeletePost(val postId: Long) : MyPostDialog
+    data class HidePost(val postId: Long) : MyPostDialog
+    data class UnhidePost(val postId: Long) : MyPostDialog
+}
 
 @Composable
 fun MyPostScreen(
@@ -63,86 +49,15 @@ fun MyPostScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
-    val isRefreshing by viewModel.isRefreshing.collectAsState()
-    val currentTab by viewModel.currentTab.collectAsState()
+    val pagerState = rememberPagerState(pageCount = { 2 })
+    val coroutineScope = rememberCoroutineScope()
+    var activeDialog by remember { mutableStateOf<MyPostDialog?>(null) }
 
-    var deletingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var hidingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var unhidingPost by rememberSaveable { mutableStateOf<PostResponse?>(null) }
-
-    val listState = rememberLazyListState()
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    LaunchedEffect(listState, uiState) {
-        snapshotFlow {
-            val layoutInfo = listState.layoutInfo
-            val visibleItems = layoutInfo.visibleItemsInfo
-            if (visibleItems.isEmpty()) null
-            else {
-                when {
-                    !listState.canScrollBackward -> {
-                        visibleItems.firstOrNull()?.index
-                    }
-
-                    !listState.canScrollForward -> {
-                        val postsCount = (uiState as? MyPostUiState.Success)?.posts?.size ?: 0
-                        visibleItems.lastOrNull { it.index < postsCount }?.index
-                    }
-
-                    else -> {
-                        val viewportCenter = (layoutInfo.viewportStartOffset + layoutInfo.viewportEndOffset) / 2
-                        visibleItems.minByOrNull { item ->
-                            val itemCenter = item.offset + item.size / 2
-                            kotlin.math.abs(itemCenter - viewportCenter)
-                        }?.index
-                    }
-                }
-            }
-        }.collect { centerIndex ->
-            val state = uiState
-            if (centerIndex != null && state is MyPostUiState.Success) {
-                val posts = state.posts
-                val targetPost = posts.getOrNull(centerIndex)
-                val videoUrl = targetPost?.videoUrl
-                if (!videoUrl.isNullOrEmpty() && videoManager.currentPlayingUrl.value != videoUrl) {
-                    videoManager.play(videoUrl)
-                } else if (videoUrl.isNullOrEmpty()) {
-                    videoManager.pause()
-                }
-            }
-        }
+    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) {
+        videoManager.pause()
     }
-
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
-                videoManager.pause()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-            videoManager.pause()
-        }
-    }
-
-    val shouldLoadMore by remember {
-        derivedStateOf {
-            val totalItems = listState.layoutInfo.totalItemsCount
-            val lastVisibleIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            totalItems > 0 && lastVisibleIndex >= totalItems - 2
-        }
-    }
-
-    LaunchedEffect(currentTab) {
-        videoManager.stop()
-    }
-
-    LaunchedEffect(shouldLoadMore) {
-        if (shouldLoadMore) {
-            viewModel.loadMyPost(isRefresh = false)
-        }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        videoManager.pause()
     }
 
     LaunchedEffect(Unit) {
@@ -152,7 +67,6 @@ fun MyPostScreen(
     }
 
     Scaffold(
-        contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             AppTopBar(
                 title = "나의 게시물",
@@ -161,190 +75,105 @@ fun MyPostScreen(
         }
     ) { innerPadding ->
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Button(
-                    onClick = { viewModel.switchTab(PostTab.Act) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (currentTab is PostTab.Act) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = if (currentTab is PostTab.Act) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                ) {
-                    Text(
-                        text = "활성화 게시물",
-                    )
-                }
-                Spacer(modifier = Modifier.padding(5.dp))
-                Button(
-                    onClick = { viewModel.switchTab(PostTab.Hidden) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (currentTab is PostTab.Hidden) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = if (currentTab is PostTab.Hidden) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                ) {
-                    Text(
-                        text = "숨긴 게시물"
-                    )
-                }
+            TabRow(selectedTabIndex = pagerState.currentPage) {
+                Tab(
+                    selected = pagerState.currentPage == 0,
+                    onClick = { coroutineScope.launch { pagerState.animateScrollToPage(0) } },
+                    text = { Text("활성화 게시물") }
+                )
+                Tab(
+                    selected = pagerState.currentPage == 1,
+                    onClick = { coroutineScope.launch { pagerState.animateScrollToPage(1) } },
+                    text = { Text("숨긴 게시물") }
+                )
             }
-            Box(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                AppPullToRefreshBox(
-                    isRefreshing = isRefreshing,
-                    onRefresh = {
-                        videoManager.stop()
-                        viewModel.loadMyPost(isRefresh = true)
-                    },
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    when (val state = uiState) {
-                        is MyPostUiState.Loading -> {
-                            CircularProgressIndicator(
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.align(Alignment.Center)
-                            )
-                        }
 
-                        is MyPostUiState.Success -> {
-                            if (state.posts.isEmpty()) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .verticalScroll(rememberScrollState()),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = if (currentTab is PostTab.Act) "활성화 게시물이 없습니다." else "숨긴 게시물이 없습니다.",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            } else {
-                                LazyColumn(
-                                    state = listState,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentPadding = PaddingValues(vertical = 10.dp)
-                                ) {
-                                    items(state.posts, key = { it.id }) { post ->
-                                        PostCard(
-                                            post = post,
-                                            videoManager = videoManager,
-                                            onProfileClick = onNavigateToProfileClick,
-                                            onCardClick = onNavigateToPostDetail,
-                                            onEditClick = onNavigateToEditPost,
-                                            onDeleteClick = { deletingPostId = it },
-                                            onUnhidePostClick = { unhidingPost = post },
-                                            onHidePostClick = { hidingPostId = it },
-                                            onBlockUserClick = { },
-                                            onReportPostClick = { },
-                                            onReportUserClick = { }
-                                        )
-                                    }
-                                    if (!state.isLast) {
-                                        item {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(16.dp),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                if (page == 0) {
+                    PostFeedList(
+                        posts = uiState.actFeed.posts,
+                        isInitialLoading = uiState.actFeed.isInitialLoading,
+                        isRefreshing = uiState.actFeed.isRefreshing,
+                        isLast = uiState.actFeed.isLast,
+                        emptyMessage = "활성화된 게시물이 없습니다.",
+                        videoManager = videoManager,
+                        onRefresh = { viewModel.loadActFeed(isRefresh = true) },
+                        onLoadMore = { viewModel.loadActFeed(isRefresh = false) },
+                        onCardClick = onNavigateToPostDetail,
+                        onProfileClick = onNavigateToProfileClick,
+                        onEditClick = onNavigateToEditPost,
+                        onDeleteClick = { activeDialog = MyPostDialog.DeletePost(it) },
+                        onHideClick = { activeDialog = MyPostDialog.HidePost(it) }
+                    )
+                } else {
+                    PostFeedList(
+                        posts = uiState.hiddenFeed.posts,
+                        isInitialLoading = uiState.hiddenFeed.isInitialLoading,
+                        isRefreshing = uiState.hiddenFeed.isRefreshing,
+                        isLast = uiState.hiddenFeed.isLast,
+                        emptyMessage = "숨긴 게시물이 없습니다.",
+                        videoManager = videoManager,
+                        onRefresh = { viewModel.loadHiddenFeed(isRefresh = true) },
+                        onLoadMore = { viewModel.loadHiddenFeed(isRefresh = false) },
+                        onCardClick = onNavigateToPostDetail,
+                        onProfileClick = onNavigateToProfileClick,
+                        onEditClick = onNavigateToEditPost,
+                        onDeleteClick = { activeDialog = MyPostDialog.DeletePost(it) },
+                        onHideClick = { },
+                        onUnhideClick = { activeDialog = MyPostDialog.UnhidePost(it) }
+                    )
                 }
             }
         }
     }
 
-
-
-    deletingPostId?.let { postId ->
-        AlertDialog(
-            onDismissRequest = { deletingPostId = null },
-            title = { Text(text = "이 게시물 삭제") },
-            text = { Text(text = "이 게시물을 삭제하시겠습니까?\n게시물을 삭제 후 복구는 불가능합니다.") },
-            containerColor = MaterialTheme.colorScheme.surface,
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.deletePost(postId)
-                        deletingPostId = null
+    when (val dialog = activeDialog) {
+        is MyPostDialog.DeletePost -> {
+            AlertDialog(
+                onDismissRequest = { activeDialog = null },
+                title = { Text("이 게시물 삭제") },
+                text = { Text("이 게시물을 삭제하시겠습니까?\n삭제 후 복구는 불가능합니다.") },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.deletePost(dialog.postId); activeDialog = null }) {
+                        Text("삭제", color = MaterialTheme.colorScheme.error)
                     }
-                ) {
-                    Text(
-                        text = "삭제",
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { deletingPostId = null }) {
-                    Text(text = "취소")
-                }
-            }
-        )
-    }
-
-    hidingPostId?.let { postId ->
-        AlertDialog(
-            onDismissRequest = { hidingPostId = null },
-            title = { Text(text = "게시물 숨기기") },
-            containerColor = MaterialTheme.colorScheme.surface,
-            text = { Text(text = "이 게시물을 숨기시겠습니까?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.hidePost(postId)
-                        hidingPostId = null
+                },
+                dismissButton = { TextButton(onClick = { activeDialog = null }) { Text("취소") } }
+            )
+        }
+        is MyPostDialog.HidePost -> {
+            AlertDialog(
+                onDismissRequest = { activeDialog = null },
+                title = { Text("게시물 숨기기") },
+                text = { Text("이 게시물을 숨기시겠습니까?") },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.hidePost(dialog.postId); activeDialog = null }) {
+                        Text("숨기기", color = MaterialTheme.colorScheme.error)
                     }
-                ) {
-                    Text(
-                        text = "숨기기",
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { hidingPostId = null }) {
-                    Text(text = "취소")
-                }
-            }
-        )
-    }
-
-    unhidingPost?.let { targetPost ->
-        AlertDialog(
-            onDismissRequest = { unhidingPost = null },
-            title = { Text(text = "게시물 숨기기 해제") },
-            containerColor = MaterialTheme.colorScheme.surface,
-            text = { Text(text = "이 게시물의 숨김 처리를 해제하시겠습니까?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.unhidePost(targetPost)
-                        unhidingPost = null
+                },
+                dismissButton = { TextButton(onClick = { activeDialog = null }) { Text("취소") } }
+            )
+        }
+        is MyPostDialog.UnhidePost -> {
+            AlertDialog(
+                onDismissRequest = { activeDialog = null },
+                title = { Text("게시물 숨기기 해제") },
+                text = { Text("이 게시물의 숨김 처리를 해제하시겠습니까?") },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.unhidePost(dialog.postId); activeDialog = null }) {
+                        Text("해제")
                     }
-                ) {
-                    Text(text = "해제")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { unhidingPost = null }) {
-                    Text(text = "취소")
-                }
-            }
-        )
+                },
+                dismissButton = { TextButton(onClick = { activeDialog = null }) { Text("취소") } }
+            )
+        }
+        null -> Unit
     }
 }

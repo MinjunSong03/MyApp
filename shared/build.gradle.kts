@@ -6,7 +6,9 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
-    id("com.mikepenz.aboutlibraries.plugin")
+    alias(libs.plugins.aboutLibraries)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.androidx.room3)
 }
 
 kotlin {
@@ -46,19 +48,18 @@ kotlin {
             implementation(libs.androidx.material3)
             implementation(libs.androidx.runtime)
             implementation(libs.androidx.runtime.saveable)
+            implementation(libs.androidx.media3.exoplayer)
+            implementation(libs.androidx.media3.ui)
+            implementation(libs.androidx.media3.datasource.okhttp)
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
-
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.okhttp)
+            implementation(libs.coil.gif)
             implementation(libs.koin.android)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.kakao.user)
-            implementation("io.coil-kt.coil3:coil-compose:3.0.4")
-            implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.4")
-            implementation("io.coil-kt.coil3:coil-gif:3.0.4")
-            implementation("androidx.media3:media3-exoplayer:1.4.1")
-            implementation("androidx.media3:media3-ui:1.4.1")
-            implementation("androidx.media3:media3-datasource-okhttp:1.4.1")
-            implementation("com.mikepenz:aboutlibraries-compose-m3:11.2.3")
+            implementation(libs.aboutlibraries.compose.m3)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -78,11 +79,12 @@ kotlin {
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.ktor.client.logging)
-            implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.navigation.compose)
-            implementation("androidx.datastore:datastore-preferences-core:1.1.1")
-            implementation("io.insert-koin:koin-compose-viewmodel:4.0.0")
+            implementation(libs.androidx.datastore.preferences.core)
+            implementation(libs.koin.compose.viewmodel)
             implementation(libs.ktor.client.auth)
+            implementation(libs.androidx.room3.runtime)
+            implementation(libs.androidx.sqlite.bundled)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -95,4 +97,14 @@ kotlin {
 
 dependencies {
     androidRuntimeClasspath(libs.compose.uiTooling)
+}
+
+dependencies {
+    add("kspAndroid", libs.androidx.room3.compiler)
+    add("kspIosSimulatorArm64", libs.androidx.room3.compiler)
+    add("kspIosArm64", libs.androidx.room3.compiler)
+}
+
+room3 {
+    schemaDirectory("$projectDir/schemas")
 }

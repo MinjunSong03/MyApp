@@ -78,12 +78,10 @@ class AuthRepositoryImpl(
                     println("SDK Logout Failure: ${e.message}")
                 }
             }
-            postRepository.clearCache()
             sessionManager.clearSession()
             authApiService.clearAuthTokens()
         }.onFailure { e ->
             if (e is CancellationException) throw e
-            postRepository.clearCache()
             sessionManager.clearSession()
             authApiService.clearAuthTokens()
         }
@@ -93,7 +91,6 @@ class AuthRepositoryImpl(
     override suspend fun unlink(provider: OAuthProvider): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             authApiService.unlinkAccount(provider)
-            postRepository.clearCache()
             sessionManager.clearSession()
             authApiService.clearAuthTokens()
         }.onFailure { e ->

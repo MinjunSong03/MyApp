@@ -8,147 +8,125 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.myapp.auth.network.PostResponse
-import org.example.myapp.auth.network.ReportReason
+import org.example.myapp.auth.network.SliceResponse
+import org.example.myapp.auth.repository.FeedType
 import org.example.myapp.auth.repository.PostRepository
-import org.example.myapp.auth.repository.ReportRepository
-import org.example.myapp.auth.repository.UserBlockRepository
 import kotlin.coroutines.cancellation.CancellationException
 
-sealed class MyPostUiState {
-    object Loading: MyPostUiState()
-    data class Success(val posts: List<PostResponse>, val isLast: Boolean): MyPostUiState()
-}
+data class FeedTabState(
+    val posts: List<PostResponse> = emptyList(),
+    val isInitialLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
+    val isLast: Boolean = false,
+    val page: Int = 0,
+    val isLoaded: Boolean = false
+)
 
-sealed interface PostTab {
-    object Act : PostTab
-    object Hidden : PostTab
-}
+data class MyPostUiState(
+    val actFeed: FeedTabState = FeedTabState(),
+    val hiddenFeed: FeedTabState = FeedTabState()
+)
 
 class MyPostViewModel(
     private val postRepository: PostRepository
 ): ViewModel() {
-    private val _uiState = MutableStateFlow<MyPostUiState>(MyPostUiState.Loading)
+    private val _uiState = MutableStateFlow(MyPostUiState())
     val uiState: StateFlow<MyPostUiState> = _uiState.asStateFlow()
-
-    private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
     private val _toastEvent = Channel<String>(Channel.BUFFERED)
     val toastEvent = _toastEvent.receiveAsFlow()
 
-    private val _currentTab = MutableStateFlow<PostTab>(PostTab.Act)
-    val currentTab: StateFlow<PostTab> = _currentTab.asStateFlow()
-
-    private var feedJob: Job? = null
-
-    private var actPage = 0
-    private var isActLast = false
-    private var isActLoaded = false
-
-    private var hiddenPage = 0
-    private var isHiddenLast = false
-    private var isHiddenLoaded = false
+    private var actJob: Job? = null
+    private var hiddenJob: Job? = null
 
     init {
         viewModelScope.launch {
-            postRepository.myActPosts.collect { posts ->
-                if (_currentTab.value is PostTab.Act && isActLoaded) {
-                    _uiState.value = MyPostUiState.Success(posts, isActLast)
-                }
+            postRepository.getFeedStream(FeedType.MY_ACT).collect { posts ->
+                updateTabState(isAct = true) { it.copy(posts = posts) }
             }
         }
 
         viewModelScope.launch {
-            postRepository.myHiddenPosts.collect { posts ->
-                if (_currentTab.value is PostTab.Hidden && isHiddenLoaded) {
-                    _uiState.value = MyPostUiState.Success(posts, isHiddenLast)
-                }
+            postRepository.getFeedStream(FeedType.MY_HIDDEN).collect { posts ->
+                updateTabState(isAct = false) { it.copy(posts = posts) }
             }
         }
-
-        loadMyPost(tab = PostTab.Act, isRefresh = false)
+        loadActFeed(isRefresh = false)
+        loadHiddenFeed(isRefresh = false)
     }
 
-    fun switchTab(tab: PostTab) {
-        if (_currentTab.value == tab) return
-        _currentTab.value = tab
+    fun loadActFeed(isRefresh: Boolean) = loadFeed(
+        isAct = true,
+        feedType = FeedType.MY_ACT,
+        isRefresh = isRefresh
+    )
 
-        val isTargetLoaded = if (tab is PostTab.Act) isActLoaded else isHiddenLoaded
-        val targetPosts = if (tab is PostTab.Act) postRepository.myActPosts.value else postRepository.myHiddenPosts.value
-        val targetIsLast = if (tab is PostTab.Act) isActLast else isHiddenLast
+    fun loadHiddenFeed(isRefresh: Boolean) = loadFeed(
+        isAct = false,
+        feedType = FeedType.MY_HIDDEN,
+        isRefresh = isRefresh
+    )
 
-        if (isTargetLoaded) {
-            _uiState.value = MyPostUiState.Success(targetPosts.toList(), targetIsLast)
-        } else {
-            _uiState.value = MyPostUiState.Loading
-            loadMyPost(tab = tab, isRefresh = false)
-        }
-    }
-
-    fun loadMyPost(tab: PostTab = _currentTab.value, isRefresh: Boolean = false) {
-        val isTargetLast = if (tab is PostTab.Act) isActLast else isHiddenLast
-        val targetPosts = if (tab is PostTab.Act) postRepository.myActPosts.value else postRepository.myHiddenPosts.value
+    private fun loadFeed(
+        isAct: Boolean,
+        feedType: String,
+        isRefresh: Boolean
+    ) {
+        val currentTabState = if (isAct) _uiState.value.actFeed else _uiState.value.hiddenFeed
+        val activeJob = if (isAct) actJob else hiddenJob
 
         if (isRefresh) {
-            feedJob?.cancel()
-            _isRefreshing.value = true
+            activeJob?.cancel()
         } else {
-            if (isTargetLast || feedJob?.isActive == true) return
-            if (targetPosts.isEmpty()) {
-                _uiState.value = MyPostUiState.Loading
-            }
+            if (currentTabState.isLast || activeJob?.isActive == true) return
         }
 
-        val targetPage = if (isRefresh) 0 else {
-            if (tab is PostTab.Act) actPage else hiddenPage
+        val targetPage = if (isRefresh) 0 else currentTabState.page
+        val isFirstFetch = currentTabState.posts.isEmpty()
+
+        updateTabState(isAct) {
+            it.copy(
+                isRefreshing = isRefresh,
+                isInitialLoading = !isRefresh && isFirstFetch
+            )
         }
 
-        feedJob = viewModelScope.launch {
+        val job = viewModelScope.launch {
             try {
-                val result = when (tab) {
-                    PostTab.Act -> postRepository.getMyActPost(targetPage, isRefresh)
-                    PostTab.Hidden -> postRepository.getMyHiddenPost(targetPage, isRefresh)
-                }
-                result.onSuccess { slice ->
-                    if (tab is PostTab.Act) {
-                        if (isRefresh) actPage = 0
-                        isActLast = slice.last
-                        actPage++
-                        isActLoaded = true
-                    } else {
-                        if (isRefresh) hiddenPage = 0
-                        isHiddenLast = slice.last
-                        hiddenPage++
-                        isHiddenLoaded = true
+                postRepository.fetchFeed(feedType, targetPage, isRefresh)
+                    .onSuccess { isLast ->
+                        updateTabState(isAct) { prev ->
+                            prev.copy(
+                                page = targetPage + 1,
+                                isLast = isLast,
+                                isLoaded = true,
+                                isInitialLoading = false,
+                                isRefreshing = false
+                            )
+                        }
                     }
-                    if (_currentTab.value == tab) {
-                        val currentList = if (tab is PostTab.Act) postRepository.myActPosts.value else postRepository.myHiddenPosts.value
-                        val currentLast = if (tab is PostTab.Act) isActLast else isHiddenLast
-                        _uiState.value = MyPostUiState.Success(currentList, currentLast)
+                    .onFailure { error ->
+                        if (error is CancellationException) return@onFailure
+                        updateTabState(isAct) { it.copy(isInitialLoading = false, isRefreshing = false) }
+                        error.message?.let { _toastEvent.send(it) }
                     }
-                }
-                .onFailure { error ->
-                    if (error is CancellationException) return@onFailure
-                    if (_uiState.value !is MyPostUiState.Success) {
-                        _uiState.value = MyPostUiState.Success(emptyList(), isLast = true)
-                    }
-                    val message = error.message ?: return@onFailure
-                    _toastEvent.send(message)
-                }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                if (_uiState.value !is MyPostUiState.Success) {
-                    _uiState.value = MyPostUiState.Success(emptyList(), isLast = true)
-                }
-                val message = e.message ?: return@launch
-                _toastEvent.send(message)
-            } finally {
-                if (isRefresh) {
-                    _isRefreshing.value = false
-                }
+                updateTabState(isAct) { it.copy(isInitialLoading = false, isRefreshing = false) }
+                e.message?.let { _toastEvent.send(it) }
             }
+        }
+
+        if (isAct) actJob = job else hiddenJob = job
+    }
+
+    private fun updateTabState(isAct: Boolean, transform: (FeedTabState) -> FeedTabState) {
+        _uiState.update { current ->
+            if (isAct) current.copy(actFeed = transform(current.actFeed))
+            else current.copy(hiddenFeed = transform(current.hiddenFeed))
         }
     }
 
@@ -157,6 +135,7 @@ class MyPostViewModel(
             postRepository.hidePost(postId)
                 .onSuccess {
                     _toastEvent.send("게시물을 숨김 처리하였습니다.")
+                    loadHiddenFeed(isRefresh = true)
                 }
                 .onFailure { error ->
                     val message = error.message ?: return@onFailure
@@ -165,11 +144,12 @@ class MyPostViewModel(
         }
     }
 
-    fun unhidePost(post: PostResponse) {
+    fun unhidePost(postId: Long) {
         viewModelScope.launch {
-            postRepository.unhidePost(post)
+            postRepository.unhidePost(postId)
                 .onSuccess {
                     _toastEvent.send("게시물 숨김을 해제하였습니다.")
+                    loadActFeed(isRefresh = true)
                 }
                 .onFailure { error ->
                     val message = error.message ?: return@onFailure

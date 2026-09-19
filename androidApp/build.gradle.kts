@@ -5,14 +5,9 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeCompiler)
-    id("com.mikepenz.aboutlibraries.plugin")
+    alias(libs.plugins.aboutLibraries)
 }
 
-kotlin {
-    compilerOptions {
-        jvmTarget = JvmTarget.JVM_11
-    }
-}
 dependencies {
     implementation(project(":shared"))
     implementation(libs.androidx.activity.compose)

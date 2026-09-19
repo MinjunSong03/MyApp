@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.myapp.auth.network.PostResponse
 import org.example.myapp.auth.network.ReportReason
+import org.example.myapp.auth.repository.FeedType
 import org.example.myapp.auth.repository.PostRepository
 import org.example.myapp.auth.repository.ReportRepository
 import org.example.myapp.auth.repository.UserBlockRepository
@@ -44,7 +45,7 @@ class HomeViewModel(
 
     init {
         viewModelScope.launch {
-            postRepository.homePosts.collect { posts ->
+            postRepository.getFeedStream(FeedType.HOME).collect { posts ->
                 _uiState.update { it.copy(posts = posts) }
             }
         }
@@ -68,10 +69,10 @@ class HomeViewModel(
 
         feedJob = viewModelScope.launch {
             try {
-                postRepository.getHomeFeed(targetPage, isRefresh)
-                    .onSuccess { slice ->
-                        isLastPage = slice.last
-                        currentPage++
+                postRepository.fetchFeed(FeedType.HOME, targetPage, isRefresh)
+                    .onSuccess { isLast ->
+                        isLastPage = isLast
+                        currentPage = targetPage + 1
                         _uiState.update { it.copy(isLast = isLastPage) }
                     }
                     .onFailure { error ->
@@ -124,7 +125,6 @@ class HomeViewModel(
         viewModelScope.launch {
             userBlockRepository.blockUser(targetUserId)
                 .onSuccess {
-                    postRepository.removePostsByUserId(targetUserId)
                     _toastEvent.send("사용자를 차단하였습니다.")
                 }
                 .onFailure { error ->
@@ -137,7 +137,9 @@ class HomeViewModel(
     fun reportPost(postId: Long, reason: ReportReason, detail: String) {
         viewModelScope.launch {
             reportRepository.reportPost(postId, reason, detail)
-                .onSuccess { _toastEvent.send("신고가 접수되었습니다.") }
+                .onSuccess {
+                    _toastEvent.send("신고가 접수되었습니다.")
+                }
                 .onFailure { error ->
                     val message = error.message ?: return@onFailure
                     _toastEvent.send(message)
@@ -148,7 +150,9 @@ class HomeViewModel(
     fun reportUser(targetId: Long, reason: ReportReason, detail: String) {
         viewModelScope.launch {
             reportRepository.reportUser(targetId, reason, detail)
-                .onSuccess { _toastEvent.send("신고가 접수되었습니다.") }
+                .onSuccess {
+                    _toastEvent.send("신고가 접수되었습니다.")
+                }
                 .onFailure { error ->
                     val message = error.message ?: return@onFailure
                     _toastEvent.send(message)

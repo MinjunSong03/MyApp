@@ -163,7 +163,7 @@ class PostApiService(
         }
     }
 
-    suspend fun unhidePost(postId: Long) {
+    suspend fun unhidePost(postId: Long): PostResponse {
         val response = client.delete("$baseUrl/api/posts/$postId/unhide") {
         }
 
@@ -172,6 +172,8 @@ class PostApiService(
             val message = errorBody?.message ?: "게시물 숨기기 해제에 실패했습니다. (${response.status.value})"
             throw IllegalStateException(message)
         }
+
+        return response.body()
     }
 }
 

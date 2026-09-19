@@ -73,9 +73,9 @@ class PostDetailViewModel(
         }
     }
 
-    fun unhidePost(post: PostResponse) {
+    fun unhidePost(postId: Long) {
         viewModelScope.launch {
-            postRepository.unhidePost(post)
+            postRepository.unhidePost(postId)
                 .onSuccess {
                     _toastEvent.send("게시물 숨김을 해제하였습니다.")
                 }

@@ -9,8 +9,11 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
@@ -64,6 +67,7 @@ fun MainScreen() {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
+        contentWindowInsets = WindowInsets.navigationBars,
         bottomBar = {
             if (isTopLevelTab) {
                 NavigationBar(
@@ -123,7 +127,8 @@ fun MainScreen() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = innerPadding.calculateBottomPadding())
+                .padding(innerPadding)
+                .consumeWindowInsets(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
             NavHost(

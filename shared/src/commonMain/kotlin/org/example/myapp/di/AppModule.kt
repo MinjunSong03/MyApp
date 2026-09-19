@@ -18,6 +18,8 @@ import io.ktor.http.encodedPath
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import org.example.myapp.auth.local.PostDao
+import org.example.myapp.auth.local.PostDatabase
 import org.example.myapp.auth.local.SessionManager
 import org.example.myapp.auth.repository.AuthRepository
 import org.example.myapp.auth.repository.AuthRepositoryImpl
@@ -135,6 +137,8 @@ val commonModule = module {
         }
     }
 
+    single<PostDao> { get<PostDatabase>().postDao() }
+
     single { AuthApiService(get(), "http://192.168.0.27:8081") }
     single { PostApiService(get(), "http://192.168.0.27:8081") }
     single { UserBlockApiService(get(), "http://192.168.0.27:8081") }
@@ -145,7 +149,7 @@ val commonModule = module {
     single { SessionManager(get()) }
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), get()) }
     single { PostRepository(get(), get()) }
-    single { UserBlockRepository(get()) }
+    single { UserBlockRepository(get(), get()) }
     single { ReportRepository(get()) }
     single { MediaRepository(get()) }
     single { CommentRepository(get()) }
