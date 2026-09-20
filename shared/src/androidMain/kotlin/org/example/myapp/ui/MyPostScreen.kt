@@ -52,7 +52,6 @@ fun MyPostScreen(
     val actFeed by viewModel.actFeed.collectAsStateWithLifecycle()
     val hiddenFeed by viewModel.hiddenFeed.collectAsStateWithLifecycle()
 
-
     val pagerState = rememberPagerState(pageCount = { 2 })
     val coroutineScope = rememberCoroutineScope()
     var activeDialog by remember { mutableStateOf<MyPostDialog?>(null) }

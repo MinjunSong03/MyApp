@@ -30,10 +30,6 @@ class SessionManager(
 
     }
 
-    suspend fun getAccessToken(): String? {
-        return getSession()?.accessToken
-    }
-
     suspend fun getSession(): Session? {
         val preferences = dataStore.data.first()
         val token = preferences[KEY_ACCESS_TOKEN] ?: return null

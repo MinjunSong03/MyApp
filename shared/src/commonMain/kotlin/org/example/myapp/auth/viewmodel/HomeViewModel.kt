@@ -58,7 +58,8 @@ class HomeViewModel(
                 it.copy(
                     isRefreshing = true,
                     isLast = false
-                ) }
+                )
+            }
         } else {
             if (_uiState.value.isLast || feedJob?.isActive == true) return
             if (_uiState.value.posts.isEmpty()) {

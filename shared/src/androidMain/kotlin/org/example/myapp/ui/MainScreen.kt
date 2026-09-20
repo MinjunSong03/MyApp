@@ -67,7 +67,7 @@ fun MainScreen() {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
-        contentWindowInsets = WindowInsets.navigationBars,
+        contentWindowInsets = WindowInsets(0.dp),
         bottomBar = {
             if (isTopLevelTab) {
                 NavigationBar(
@@ -180,6 +180,32 @@ fun MainScreen() {
                         }
                     )
                 }
+                composable("license") {
+                    LicenseScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+                composable("my_info") {
+                    MyInfoScreen(
+                        onUpdateNicknameClick = { navController.navigate("edit_profile") },
+                        onMyPostClick = { navController.navigate("my_post") },
+                        onManageMyClick = { navController.navigate("blocked_user")},
+                        onLicenseClick = { navController.navigate("license")}
+                    )
+                }
+                composable("my_post") {
+                    MyPostScreen(
+                        onNavigateToEditPost = { postId ->
+                            navController.navigate("edit_post/$postId") },
+                        onNavigateToPostDetail = { postId ->
+                            navController.navigate("post_detail/$postId")
+                        },
+                        onNavigateToProfileClick = { userId ->
+                            navController.navigate("profile_click/$userId")
+                        },
+                        onBack = { navController.popBackStack() }
+                    )
+                }
                 composable(
                     route = "post_detail/{postId}",
                     arguments = listOf(navArgument("postId") { type = NavType.LongType })
@@ -193,27 +219,6 @@ fun MainScreen() {
                         },
                         onNavigateToProfileClick = {userId ->
                             navController.navigate("profile_click/$userId")}
-                    )
-                }
-                composable("my_info") {
-                    MyInfoScreen(
-                        onUpdateNicknameClick = { navController.navigate("edit_profile") },
-                        onMyPostClick = { navController.navigate("post_my") },
-                        onManageMyClick = { navController.navigate("blocked_user")},
-                        onLicenseClick = { navController.navigate("license")}
-                    )
-                }
-                composable("post_my") {
-                    MyPostScreen(
-                        onNavigateToEditPost = { postId ->
-                            navController.navigate("edit_post/$postId") },
-                        onNavigateToPostDetail = { postId ->
-                            navController.navigate("post_detail/$postId")
-                        },
-                        onNavigateToProfileClick = { userId ->
-                            navController.navigate("profile_click/$userId")
-                        },
-                        onBack = { navController.popBackStack() }
                     )
                 }
                 composable(
@@ -230,11 +235,6 @@ fun MainScreen() {
                         onNavigateToEditPost = { postId ->
                             navController.navigate("edit_post/$postId")
                         }
-                    )
-                }
-                composable("license") {
-                    LicenseScreen(
-                        onBack = { navController.popBackStack() }
                     )
                 }
             }

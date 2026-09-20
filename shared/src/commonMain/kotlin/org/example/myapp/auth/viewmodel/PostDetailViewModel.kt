@@ -1,5 +1,6 @@
 package org.example.myapp.auth.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -8,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.myapp.auth.network.CommentResponse
 import org.example.myapp.auth.network.PostResponse
@@ -19,45 +21,86 @@ import org.example.myapp.auth.repository.ReportRepository
 import org.example.myapp.auth.repository.UserBlockRepository
 import kotlin.coroutines.cancellation.CancellationException
 
-sealed class CommentUiState {
-    object Loading : CommentUiState()
-    data class Success(val comments: List<CommentResponse>, val isLast: Boolean) : CommentUiState()
+data class PostDetailUiState(
+    val post: PostResponse? = null,
+    val isLoading: Boolean = false
+)
+
+data class CommentUiState(
+    val comments: List<CommentResponse> = emptyList(),
+    val isInitialLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
+    val isLast: Boolean = false,
+    val page: Int = 0,
+    val commentText: String = "",
+    val editingComment: CommentResponse? = null
+) {
+    val isEmpty: Boolean
+        get() = !isInitialLoading && comments.isEmpty()
 }
 
 class PostDetailViewModel(
-    authRepository: AuthRepository,
+    savedStateHandle: SavedStateHandle,
     private val postRepository: PostRepository,
     private val userBlockRepository: UserBlockRepository,
     private val reportRepository: ReportRepository,
     private val commentRepository: CommentRepository
 
 ): ViewModel() {
-    val authState = authRepository.authState
+    val postId: Long = checkNotNull(savedStateHandle["postId"])
 
-    private val _commentUiState = MutableStateFlow<CommentUiState>(CommentUiState.Loading)
+    private val _uiState = MutableStateFlow(PostDetailUiState())
+    val uiState: StateFlow<PostDetailUiState> = _uiState.asStateFlow()
+
+    private val _commentUiState = MutableStateFlow(CommentUiState())
     val commentUiState: StateFlow<CommentUiState> = _commentUiState.asStateFlow()
-
-    private val _isCommentLoadingMore = MutableStateFlow(false)
-    val isCommentLoadingMore: StateFlow<Boolean> = _isCommentLoadingMore.asStateFlow()
 
     private val _toastEvent = Channel<String>(Channel.BUFFERED)
     val toastEvent = _toastEvent.receiveAsFlow()
 
-    private var commentPage = 0
-    private var isCommentLastPage = false
-    private val currentCommentList = mutableListOf<CommentResponse>()
     private var commentJob: Job? = null
 
+    init {
+        getPostDetail()
+    }
+
+    fun onCommentTextChanged(text: String) {
+        if (text.length <= 500) {
+            _commentUiState.update { it.copy(commentText = text) }
+        }
+    }
+
+    fun startEditComment(comment: CommentResponse) {
+        _commentUiState.update {
+            it.copy(
+                editingComment = comment,
+                commentText = comment.content
+            )
+        }
+    }
+
+    fun cancelEditComment() {
+        _commentUiState.update {
+            it.copy(
+                editingComment = null,
+                commentText = ""
+            )
+        }
+    }
 
 
-    suspend fun getPostDetail(postId: Long): PostResponse? {
-        return postRepository.getPostDetail(postId)
-            .onFailure { error ->
-                if (error is CancellationException) return@onFailure
-                val message = error.message ?: return@onFailure
-                _toastEvent.send(message)
-            }
-            .getOrNull()
+    private fun getPostDetail() {
+        viewModelScope.launch {
+            postRepository.getPostDetail(postId)
+                .onSuccess { post ->
+                    _uiState.update { it.copy(post = post, isLoading = false) }
+                }
+                .onFailure { error ->
+                    if (error is CancellationException) return@onFailure
+                    val message = error.message ?: return@onFailure
+                    _toastEvent.send(message)
+                }
+        }
     }
 
     fun hidePost(postId: Long) {
@@ -134,40 +177,50 @@ class PostDetailViewModel(
         }
     }
 
-    fun loadComments(postId: Long, isRefresh: Boolean = false) {
-
+    // comment
+    fun loadComments(isRefresh: Boolean) {
         if (isRefresh) {
             commentJob?.cancel()
-            commentPage = 0
-            isCommentLastPage = false
-            currentCommentList.clear()
-            _commentUiState.value = CommentUiState.Loading
+            _commentUiState.update {
+                it.copy(
+                    isRefreshing = true,
+                    isLast = false
+                )
+            }
         } else {
-            if (isCommentLastPage || commentJob?.isActive == true) return
-            _isCommentLoadingMore.value = true
+            if (_commentUiState.value.isLast || commentJob?.isActive == true) return
+            if (_commentUiState.value.comments.isEmpty()) {
+                _commentUiState.update { it.copy(isInitialLoading = true) }
+            }
         }
 
+        val targetPage = if (isRefresh) 0 else _commentUiState.value.page
+
         commentJob = viewModelScope.launch {
-            commentRepository.getComments(postId, commentPage)
+            commentRepository.getComments(postId, targetPage)
                 .onSuccess { slice ->
-                    if (isRefresh) currentCommentList.clear()
-                    val newItems = slice.content.filter { newItem ->
-                        currentCommentList.none { it.id == newItem.id }
+                    if (isRefresh) _commentUiState.update { it.copy(comments = emptyList()) }
+                    _commentUiState.update { current ->
+                        val comments = if (isRefresh) {
+                            slice.content
+                        } else {
+                            val existingIds = current.comments.map { it.id }.toSet()
+                            current.comments + slice.content.filter { it.id !in existingIds }
+                        }
+                        current.copy(
+                            comments = comments,
+                            page = targetPage + 1,
+                            isLast = slice.last,
+                            isInitialLoading = false,
+                            isRefreshing = false
+                        )
                     }
-                    currentCommentList.addAll(newItems)
-                    isCommentLastPage = slice.last
-                    commentPage++
-                    _commentUiState.value = CommentUiState.Success(currentCommentList.toList(), isCommentLastPage)
                 }
                 .onFailure { error ->
                     if (error is CancellationException) return@onFailure
-                    if (currentCommentList.isEmpty()) {
-                        _commentUiState.value = CommentUiState.Success(emptyList(), isLast = true)
-                    } else {
-                        _commentUiState.value = CommentUiState.Success(currentCommentList.toList(), isCommentLastPage)
-                    }
+                    _commentUiState.update { it.copy(isInitialLoading = false, isRefreshing = false) }
+                    error.message?.let { _toastEvent.send(it) }
                 }
-            _isCommentLoadingMore.value = false
         }
     }
 
@@ -175,10 +228,12 @@ class PostDetailViewModel(
         viewModelScope.launch {
             commentRepository.createComment(postId, content)
                 .onSuccess { newComment ->
-                    if (currentCommentList.none { it.id == newComment.id }) {
-                        currentCommentList.add(newComment)
+                    _commentUiState.update { current ->
+                        current.copy(
+                            comments = current.comments + newComment,
+                            commentText = ""
+                        )
                     }
-                    _commentUiState.value = CommentUiState.Success(currentCommentList.toList(), isCommentLastPage)
                     onCreated()
                 }
                 .onFailure { error ->
@@ -192,10 +247,14 @@ class PostDetailViewModel(
         viewModelScope.launch {
             commentRepository.editComment(commentId, content)
                 .onSuccess { updatedComment ->
-                    val index = currentCommentList.indexOfFirst { it.id == commentId }
-                    if (index != -1) {
-                        currentCommentList[index] = updatedComment
-                        _commentUiState.value = CommentUiState.Success(currentCommentList.toList(), isCommentLastPage)
+                    _commentUiState.update { current ->
+                        current.copy(
+                            comments = current.comments.map {
+                                if (it.id == commentId) updatedComment else it
+                            },
+                            editingComment = null,
+                            commentText = ""
+                        )
                     }
                 }
                 .onFailure { error ->
@@ -209,8 +268,9 @@ class PostDetailViewModel(
         viewModelScope.launch {
             commentRepository.deleteComment(commentId)
                 .onSuccess {
-                    currentCommentList.removeAll { it.id == commentId }
-                    _commentUiState.value = CommentUiState.Success(currentCommentList.toList(), isCommentLastPage)
+                    _commentUiState.update { current ->
+                        current.copy(comments = current.comments.filterNot { it.id == commentId })
+                    }
                     _toastEvent.send("댓글이 삭제되었습니다.")
                 }
                 .onFailure { error ->
