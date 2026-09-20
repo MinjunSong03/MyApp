@@ -6,7 +6,7 @@ import androidx.room3.Index
 import androidx.room3.PrimaryKey
 
 @Entity(tableName = "posts")
-data class Post(
+data class PostEntity(
     @PrimaryKey val id: Long,
     val userId: Long,
     val userNickname: String,
@@ -29,7 +29,7 @@ data class Post(
     primaryKeys = ["feedType", "postId"],
     foreignKeys = [
         ForeignKey(
-            entity = Post::class,
+            entity = PostEntity::class,
             parentColumns = ["id"],
             childColumns = ["postId"],
             onDelete = ForeignKey.CASCADE

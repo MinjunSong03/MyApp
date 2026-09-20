@@ -6,7 +6,7 @@ import androidx.room3.RoomDatabase
 import androidx.room3.RoomDatabaseConstructor
 
 @Database(
-    entities = [Post::class, FeedItemEntity::class],
+    entities = [PostEntity::class, FeedItemEntity::class],
     version = 1
 )
 @ConstructedBy(PostDatabaseConstructor::class)

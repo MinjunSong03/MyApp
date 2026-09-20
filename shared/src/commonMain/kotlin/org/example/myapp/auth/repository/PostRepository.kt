@@ -6,7 +6,7 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import org.example.myapp.auth.local.Post
+import org.example.myapp.auth.local.PostEntity
 import org.example.myapp.auth.local.PostDao
 import org.example.myapp.auth.network.*
 
@@ -43,24 +43,19 @@ class PostRepository(
         }.onFailure { if (it is CancellationException) throw it }
     }
 
-    suspend fun createPost(request: CreatePostRequest): Result<PostResponse> = withContext(Dispatchers.IO) {
+    suspend fun createPost(request: CreatePostRequest): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             val created = postApiService.createPost(request)
             postDao.saveFeedPage(FeedType.HOME, listOf(created.toEntity()), isRefresh = false)
             postDao.saveFeedPage(FeedType.MY_ACT, listOf(created.toEntity()), isRefresh = false)
-            created
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
+        }.onFailure { if (it is CancellationException) throw it }
     }
 
-    suspend fun editPost(postId: Long, request: EditPostRequest): Result<PostResponse> = withContext(Dispatchers.IO) {
+    suspend fun editPost(postId: Long, request: EditPostRequest): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            val updated = postApiService.editPost(postId, request)
-            postDao.upsertPosts(listOf(updated.toEntity()))
-            updated
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
+            val edited = postApiService.editPost(postId, request)
+            postDao.upsertPosts(listOf(edited.toEntity()))
+        }.onFailure { if (it is CancellationException) throw it
         }
     }
 
@@ -68,9 +63,7 @@ class PostRepository(
         runCatching {
             postApiService.deletePost(postId)
             postDao.deletePost(postId)
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
+        }.onFailure { if (it is CancellationException) throw it }
     }
 
     suspend fun hidePost(postId: Long): Result<Unit> = withContext(Dispatchers.IO) {
@@ -78,9 +71,7 @@ class PostRepository(
             postApiService.hidePost(postId)
             postDao.removePostFromFeed(FeedType.HOME, postId)
             postDao.removePostFromFeed(FeedType.MY_ACT, postId)
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
+        }.onFailure { if (it is CancellationException) throw it }
     }
 
     suspend fun unhidePost(postId: Long): Result<Unit> = withContext(Dispatchers.IO) {
@@ -88,51 +79,34 @@ class PostRepository(
             val updated = postApiService.unhidePost(postId)
             postDao.removePostFromFeed(FeedType.MY_HIDDEN, postId)
             postDao.saveFeedPage(FeedType.MY_ACT, listOf(updated.toEntity()), isRefresh = false)
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
-    }
-    suspend fun getHomeFeed(page: Int): Result<SliceResponse<PostResponse>> = withContext(Dispatchers.IO) {
-        runCatching {
-            postApiService.getHomeFeed(page)
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
+        }.onFailure { if (it is CancellationException) throw it }
     }
 
     suspend fun getUserPosts(userId: Long, page: Int): Result<SliceResponse<PostResponse>> = withContext(Dispatchers.IO) {
         runCatching {
             postApiService.getUserPosts(userId, page)
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
+        }.onFailure { if (it is CancellationException) throw it }
     }
 
     suspend fun getUserProfile(userId: Long): Result<UserProfileResponse> = withContext(Dispatchers.IO) {
         runCatching {
             postApiService.getUserProfile(userId)
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
+        }.onFailure { if (it is CancellationException) throw it }
     }
 
     suspend fun getPostById(postId: Long): Result<PostResponse> = withContext(Dispatchers.IO) {
         runCatching {
             postApiService.getPostById(postId)
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
+        }.onFailure { if (it is CancellationException) throw it }
     }
 
     suspend fun getPostDetail(postId: Long): Result<PostResponse> = withContext(Dispatchers.IO) {
         runCatching {
             postApiService.getPostDetail(postId)
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
+        }.onFailure { if (it is CancellationException) throw it }
     }
 
-    private fun PostResponse.toEntity() = Post(
+    private fun PostResponse.toEntity() = PostEntity(
         id = id,
         userId = userId,
         userNickname = userNickname,
@@ -150,7 +124,7 @@ class PostRepository(
         isUserDeleted = isUserDeleted
     )
 
-    private fun Post.toResponse() = PostResponse(
+    private fun PostEntity.toResponse() = PostResponse(
         id = id,
         userId = userId,
         userNickname = userNickname,
@@ -177,25 +151,19 @@ class UserBlockRepository(
         runCatching {
             userBlockApiService.blockUser(targetUserId)
             postDao.deletePostsByUserId(targetUserId)
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
+        }.onFailure { if (it is CancellationException) throw it }
     }
 
     suspend fun unblockUser(targetUserId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             userBlockApiService.unblockUser(targetUserId)
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
+        }.onFailure { if (it is CancellationException) throw it }
     }
 
     suspend fun getMyBlockedUser(page: Int): Result<SliceResponse<BlockedUserResponse>> = withContext(Dispatchers.IO) {
         runCatching {
             userBlockApiService.getMyBlockedUser(page)
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
+        }.onFailure { if (it is CancellationException) throw it }
     }
 }
 
@@ -205,17 +173,13 @@ class ReportRepository(
     suspend fun reportPost(postId: Long, reason: ReportReason, detail: String): Result<Unit> = withContext(Dispatchers.IO) {
             runCatching {
                 reportApiService.reportPost(postId, CreateReportRequest(reason, detail))
-            }.onFailure { e ->
-                if (e is CancellationException) throw e
-            }
+            }.onFailure { if (it is CancellationException) throw it }
         }
 
     suspend fun reportUser(targetId: Long, reason: ReportReason, detail: String): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             reportApiService.reportUser(targetId, CreateReportRequest(reason, detail))
-        }.onFailure { e ->
-            if (e is CancellationException) throw e
-        }
+        }.onFailure { if (it is CancellationException) throw it }
     }
 }
 

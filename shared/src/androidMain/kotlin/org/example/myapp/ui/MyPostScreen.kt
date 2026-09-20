@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import org.example.myapp.auth.viewmodel.MyPostViewModel
 import org.example.myapp.ui.item.AppTopBar
@@ -48,7 +49,10 @@ fun MyPostScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val uiState by viewModel.uiState.collectAsState()
+    val actFeed by viewModel.actFeed.collectAsStateWithLifecycle()
+    val hiddenFeed by viewModel.hiddenFeed.collectAsStateWithLifecycle()
+
+
     val pagerState = rememberPagerState(pageCount = { 2 })
     val coroutineScope = rememberCoroutineScope()
     var activeDialog by remember { mutableStateOf<MyPostDialog?>(null) }
@@ -98,10 +102,10 @@ fun MyPostScreen(
             ) { page ->
                 if (page == 0) {
                     PostFeedList(
-                        posts = uiState.actFeed.posts,
-                        isInitialLoading = uiState.actFeed.isInitialLoading,
-                        isRefreshing = uiState.actFeed.isRefreshing,
-                        isLast = uiState.actFeed.isLast,
+                        posts = actFeed.posts,
+                        isInitialLoading = actFeed.isInitialLoading,
+                        isRefreshing = actFeed.isRefreshing,
+                        isLast = actFeed.isLast,
                         emptyMessage = "활성화된 게시물이 없습니다.",
                         videoManager = videoManager,
                         onRefresh = { viewModel.loadActFeed(isRefresh = true) },
@@ -114,10 +118,10 @@ fun MyPostScreen(
                     )
                 } else {
                     PostFeedList(
-                        posts = uiState.hiddenFeed.posts,
-                        isInitialLoading = uiState.hiddenFeed.isInitialLoading,
-                        isRefreshing = uiState.hiddenFeed.isRefreshing,
-                        isLast = uiState.hiddenFeed.isLast,
+                        posts = hiddenFeed.posts,
+                        isInitialLoading = hiddenFeed.isInitialLoading,
+                        isRefreshing = hiddenFeed.isRefreshing,
+                        isLast = hiddenFeed.isLast,
                         emptyMessage = "숨긴 게시물이 없습니다.",
                         videoManager = videoManager,
                         onRefresh = { viewModel.loadHiddenFeed(isRefresh = true) },

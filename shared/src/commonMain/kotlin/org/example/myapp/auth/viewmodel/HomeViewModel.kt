@@ -22,7 +22,8 @@ data class HomeUiState(
     val posts: List<PostResponse> = emptyList(),
     val isInitialLoading: Boolean = true,
     val isRefreshing: Boolean = false,
-    val isLast: Boolean = false
+    val isLast: Boolean = false,
+    val page: Int = 0
 ) {
     val isEmpty: Boolean
         get() = !isInitialLoading && posts.isEmpty()
@@ -39,8 +40,6 @@ class HomeViewModel(
     private val _toastEvent = Channel<String>(Channel.BUFFERED)
     val toastEvent = _toastEvent.receiveAsFlow()
 
-    private var currentPage = 0
-    private var isLastPage = false
     private var feedJob: Job? = null
 
     init {
@@ -55,43 +54,37 @@ class HomeViewModel(
     fun loadHomeFeed(isRefresh: Boolean) {
         if (isRefresh) {
             feedJob?.cancel()
-            _uiState.update { it.copy(isRefreshing = true) }
-            currentPage = 0
-            isLastPage = false
+            _uiState.update {
+                it.copy(
+                    isRefreshing = true,
+                    isLast = false
+                ) }
         } else {
-            if (isLastPage || feedJob?.isActive == true) return
+            if (_uiState.value.isLast || feedJob?.isActive == true) return
             if (_uiState.value.posts.isEmpty()) {
                 _uiState.update { it.copy(isInitialLoading = true) }
             }
         }
 
-        val targetPage = if (isRefresh) 0 else currentPage
+        val targetPage = if (isRefresh) 0 else _uiState.value.page
 
         feedJob = viewModelScope.launch {
-            try {
-                postRepository.fetchFeed(FeedType.HOME, targetPage, isRefresh)
-                    .onSuccess { isLast ->
-                        isLastPage = isLast
-                        currentPage = targetPage + 1
-                        _uiState.update { it.copy(isLast = isLastPage) }
+            postRepository.fetchFeed(FeedType.HOME, targetPage, isRefresh)
+                .onSuccess { isLast ->
+                    _uiState.update {
+                        it.copy(
+                            page = targetPage + 1,
+                            isLast = isLast,
+                            isInitialLoading = false,
+                            isRefreshing = false
+                        )
                     }
-                    .onFailure { error ->
-                        if (error is CancellationException) return@onFailure
-                        val message = error.message ?: return@onFailure
-                        _toastEvent.send(message)
-                    }
-            } catch (e : Exception) {
-                if (e is CancellationException) throw e
-                val message = e.message ?: return@launch
-                _toastEvent.send(message)
-            } finally {
-                _uiState.update {
-                    it.copy(
-                        isInitialLoading = false,
-                        isRefreshing = false
-                    )
                 }
-            }
+                .onFailure { error ->
+                    if (error is CancellationException) return@onFailure
+                    _uiState.update { it.copy(isInitialLoading = false, isRefreshing = false) }
+                    error.message?.let { _toastEvent.send(it) }
+                }
         }
     }
 

@@ -14,10 +14,10 @@ interface PostDao {
         WHERE f.feedType = :feedType
         ORDER BY f.position ASC
     """)
-    fun getFeed(feedType: String): Flow<List<Post>>
+    fun getFeed(feedType: String): Flow<List<PostEntity>>
 
     @Upsert
-    suspend fun upsertPosts(posts: List<Post>)
+    suspend fun upsertPosts(posts: List<PostEntity>)
 
     @Upsert
     suspend fun upsertFeedItems(items: List<FeedItemEntity>)
@@ -40,7 +40,7 @@ interface PostDao {
     @Transaction
     suspend fun saveFeedPage(
         feedType: String,
-        posts: List<Post>,
+        posts: List<PostEntity>,
         isRefresh: Boolean
     ) {
         if (isRefresh) {
