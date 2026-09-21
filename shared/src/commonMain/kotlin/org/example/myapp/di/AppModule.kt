@@ -147,7 +147,7 @@ val commonModule = module {
     single { CommentApiService(get(), "http://192.168.0.27:8081") }
 
     single { SessionManager(get()) }
-    single<AuthRepository> { AuthRepositoryImpl(get(), get(), get()) }
+    single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), get()) }
     single { PostRepository(get(), get()) }
     single { UserBlockRepository(get(), get()) }
     single { ReportRepository(get()) }

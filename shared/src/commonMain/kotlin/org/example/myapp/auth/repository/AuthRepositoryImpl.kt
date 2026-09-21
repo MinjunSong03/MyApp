@@ -10,18 +10,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withContext
+import org.example.myapp.auth.local.PostDatabase
+import org.example.myapp.auth.local.SessionManager
 import org.example.myapp.auth.model.AuthState
 import org.example.myapp.auth.model.OAuthProvider
 import org.example.myapp.auth.model.Session
-import org.example.myapp.auth.platform.AuthService
 import org.example.myapp.auth.network.AuthApiService
-import org.example.myapp.auth.local.SessionManager
 import org.example.myapp.auth.network.UpdateProfileRequest
+import org.example.myapp.auth.platform.AuthService
 
 class AuthRepositoryImpl(
     private val authService: AuthService,
     private val authApiService: AuthApiService,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val postDatabase: PostDatabase
 ): AuthRepository {
     override val authState: StateFlow<AuthState> = sessionManager.sessionFlow
         .map { session ->
@@ -77,10 +79,12 @@ class AuthRepositoryImpl(
                     println("SDK Logout Failure: ${e.message}")
                 }
             }
+            postDatabase.clearAllTables()
             sessionManager.clearSession()
             authApiService.clearAuthTokens()
         }.onFailure { e ->
             if (e is CancellationException) throw e
+            postDatabase.clearAllTables()
             sessionManager.clearSession()
             authApiService.clearAuthTokens()
         }
@@ -90,6 +94,7 @@ class AuthRepositoryImpl(
     override suspend fun unlink(provider: OAuthProvider): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             authApiService.unlinkAccount(provider)
+            postDatabase.clearAllTables()
             sessionManager.clearSession()
             authApiService.clearAuthTokens()
         }.onFailure { e ->

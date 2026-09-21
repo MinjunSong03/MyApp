@@ -60,7 +60,6 @@ class MyPostViewModel(
                 }
             }
         }
-
         loadActFeed(isRefresh = false)
         loadHiddenFeed(isRefresh = false)
     }
