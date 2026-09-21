@@ -85,14 +85,6 @@ fun EditProfileScreen(
         }
     }
 
-    val previewBitmap = remember(uiState.selectedImage) {
-        uiState.selectedImage?.let {
-            runCatching {
-                BitmapFactory.decodeByteArray(it.bytes, 0, it.bytes.size)?.asImageBitmap()
-            }.getOrNull()
-        }
-    }
-
     Scaffold(
         topBar = {
             AppTopBar(
@@ -134,9 +126,9 @@ fun EditProfileScreen(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                if (previewBitmap != null) {
-                    Image(
-                        bitmap = previewBitmap,
+                if (uiState.selectedImage != null) {
+                    AsyncImage(
+                        model = uiState.selectedImage?.bytes,
                         contentDescription = "새 프로필 사진",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop

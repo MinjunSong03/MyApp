@@ -27,7 +27,7 @@ data class EditProfileUiState(
     val isLoading: Boolean = false
 ) {
     val isNicknameChanged: Boolean
-        get() = selectedNickname.trim().isNotBlank() && selectedNickname.trim() != initialNickname
+        get() = selectedNickname.trim().isNotBlank() && selectedNickname.trim() != initialNickname.trim()
 
     val isImageChanged: Boolean
         get() = selectedImage != null || (isImageDeleted && initialProfileImageUrl != null)
@@ -104,7 +104,7 @@ class EditProfileViewModel(
                 } else null
 
                 authRepository.updateProfile(
-                    nickname = state.selectedNickname,
+                    nickname = state.selectedNickname.trim(),
                     profileImageUrl = uploadedImageUrl,
                     deleteProfileImage = state.isImageDeleted
                 ).onSuccess {

@@ -21,8 +21,7 @@ import org.example.myapp.auth.network.UpdateProfileRequest
 class AuthRepositoryImpl(
     private val authService: AuthService,
     private val authApiService: AuthApiService,
-    private val sessionManager: SessionManager,
-    private val postRepository: PostRepository
+    private val sessionManager: SessionManager
 ): AuthRepository {
     override val authState: StateFlow<AuthState> = sessionManager.sessionFlow
         .map { session ->

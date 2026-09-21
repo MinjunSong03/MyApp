@@ -42,13 +42,13 @@ class MyPostViewModel(
 
     init {
         viewModelScope.launch {
-            postRepository.getFeedStream(FeedType.MY_ACT).collect { posts ->
+            postRepository.getFeedStream(FeedType.MyAct).collect { posts ->
                 _actFeed.update { it.copy(posts = posts) }
             }
         }
 
         viewModelScope.launch {
-            postRepository.getFeedStream(FeedType.MY_HIDDEN).collect { posts ->
+            postRepository.getFeedStream(FeedType.MyHidden).collect { posts ->
                 _hiddenFeed.update { it.copy(posts = posts) }
             }
         }
@@ -58,19 +58,19 @@ class MyPostViewModel(
 
     fun loadActFeed(isRefresh: Boolean) = loadFeed(
         isAct = true,
-        feedType = FeedType.MY_ACT,
+        feedType = FeedType.MyAct,
         isRefresh = isRefresh
     )
 
     fun loadHiddenFeed(isRefresh: Boolean) = loadFeed(
         isAct = false,
-        feedType = FeedType.MY_HIDDEN,
+        feedType = FeedType.MyHidden,
         isRefresh = isRefresh
     )
 
     private fun loadFeed(
         isAct: Boolean,
-        feedType: String,
+        feedType: FeedType,
         isRefresh: Boolean
     ) {
         val currentTabState = if (isAct) _actFeed else _hiddenFeed

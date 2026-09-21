@@ -10,32 +10,44 @@ import org.example.myapp.auth.local.PostEntity
 import org.example.myapp.auth.local.PostDao
 import org.example.myapp.auth.network.*
 
-object FeedType {
-    const val HOME = "HOME"
-    const val MY_ACT = "MY_ACT"
-    const val MY_HIDDEN = "MY_HIDDEN"
+sealed interface FeedType {
+    val storageKey: String
+
+    data object Home : FeedType {
+        override val storageKey: String = "HOME"
+    }
+    data object MyAct : FeedType {
+        override val storageKey: String = "MY_ACT"
+    }
+    data object MyHidden : FeedType {
+        override val storageKey: String = "MY_HIDDEN"
+    }
+
+    data class User(val userId: Long) : FeedType {
+        override val storageKey: String = "USER_$userId"
+    }
 }
 
 class PostRepository(
     private val postApiService: PostApiService,
     private val postDao: PostDao
 ) {
-    fun getFeedStream(feedType: String): Flow<List<PostResponse>> {
-        return postDao.getFeed(feedType).map { entities ->
+    fun getFeedStream(feedType: FeedType): Flow<List<PostResponse>> {
+        return postDao.getFeed(feedType.storageKey).map { entities ->
             entities.map { it.toResponse() }
         }
     }
 
-    suspend fun fetchFeed(feedType: String, page: Int, isRefresh: Boolean): Result<Boolean> = withContext(Dispatchers.IO) {
+    suspend fun fetchFeed(feedType: FeedType, page: Int, isRefresh: Boolean): Result<Boolean> = withContext(Dispatchers.IO) {
         runCatching {
             val response = when (feedType) {
-                FeedType.HOME -> postApiService.getHomeFeed(page)
-                FeedType.MY_ACT -> postApiService.getMyActPost(page)
-                FeedType.MY_HIDDEN -> postApiService.getMyHiddenPost(page)
-                else -> error("정의되지 않은 FeedType: $feedType")
+                is FeedType.Home -> postApiService.getHomeFeed(page)
+                is FeedType.MyAct -> postApiService.getMyActPost(page)
+                is FeedType.MyHidden -> postApiService.getMyHiddenPost(page)
+                is FeedType.User -> postApiService.getUserPosts(feedType.userId, page)
             }
             postDao.saveFeedPage(
-                feedType = feedType,
+                feedType = feedType.storageKey,
                 posts = response.content.map { it.toEntity() },
                 isRefresh = isRefresh
             )
@@ -46,8 +58,8 @@ class PostRepository(
     suspend fun createPost(request: CreatePostRequest): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             val created = postApiService.createPost(request)
-            postDao.saveFeedPage(FeedType.HOME, listOf(created.toEntity()), isRefresh = false)
-            postDao.saveFeedPage(FeedType.MY_ACT, listOf(created.toEntity()), isRefresh = false)
+            postDao.saveFeedPage(FeedType.Home.storageKey, listOf(created.toEntity()), isRefresh = false)
+            postDao.saveFeedPage(FeedType.MyAct.storageKey, listOf(created.toEntity()), isRefresh = false)
         }.onFailure { if (it is CancellationException) throw it }
     }
 
@@ -69,22 +81,16 @@ class PostRepository(
     suspend fun hidePost(postId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching{
             postApiService.hidePost(postId)
-            postDao.removePostFromFeed(FeedType.HOME, postId)
-            postDao.removePostFromFeed(FeedType.MY_ACT, postId)
+            postDao.removePostFromFeed(FeedType.Home.storageKey, postId)
+            postDao.removePostFromFeed(FeedType.MyAct.storageKey, postId)
         }.onFailure { if (it is CancellationException) throw it }
     }
 
     suspend fun unhidePost(postId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching{
             val updated = postApiService.unhidePost(postId)
-            postDao.removePostFromFeed(FeedType.MY_HIDDEN, postId)
-            postDao.saveFeedPage(FeedType.MY_ACT, listOf(updated.toEntity()), isRefresh = false)
-        }.onFailure { if (it is CancellationException) throw it }
-    }
-
-    suspend fun getUserPosts(userId: Long, page: Int): Result<SliceResponse<PostResponse>> = withContext(Dispatchers.IO) {
-        runCatching {
-            postApiService.getUserPosts(userId, page)
+            postDao.removePostFromFeed(FeedType.MyHidden.storageKey, postId)
+            postDao.saveFeedPage(FeedType.MyAct.storageKey, listOf(updated.toEntity()), isRefresh = false)
         }.onFailure { if (it is CancellationException) throw it }
     }
 
@@ -94,12 +100,14 @@ class PostRepository(
         }.onFailure { if (it is CancellationException) throw it }
     }
 
+    // 게시물 수정 시
     suspend fun getPostById(postId: Long): Result<PostResponse> = withContext(Dispatchers.IO) {
         runCatching {
             postApiService.getPostById(postId)
         }.onFailure { if (it is CancellationException) throw it }
     }
 
+    // 게시물 상세보기 시
     suspend fun getPostDetail(postId: Long): Result<PostResponse> = withContext(Dispatchers.IO) {
         runCatching {
             postApiService.getPostDetail(postId)

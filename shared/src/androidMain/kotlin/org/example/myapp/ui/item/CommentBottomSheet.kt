@@ -94,14 +94,6 @@ fun CommentBottomSheet(
         }
     }
 
-    var previousSize by remember { mutableIntStateOf(commentUiState.comments.size) }
-    LaunchedEffect(commentUiState.comments.size) {
-        if (commentUiState.comments.size > previousSize) {
-            listState.animateScrollToItem(commentUiState.comments.lastIndex)
-        }
-        previousSize = commentUiState.comments.size
-    }
-
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,

@@ -94,8 +94,8 @@ class EditPostViewModel(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 val request = EditPostRequest(
-                    title = state.title,
-                    description = state.description,
+                    title = state.title.trim(),
+                    description = state.description.trim(),
                     videoUrl = post.videoUrl,
                     videoThumbnailUrl = post.videoThumbnailUrl,
                     imageUrls = post.imageUrls

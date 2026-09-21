@@ -47,6 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import org.example.myapp.auth.model.PickedMedia
 import org.example.myapp.auth.network.MediaType
@@ -60,27 +61,8 @@ fun ProfileSetupScreen(
     viewModel: ProfileSetupViewModel = koinViewModel(),
     onBack: () -> Unit
 ) {
-    val authState by viewModel.authState.collectAsState()
     val context = LocalContext.current
-
-    var selectedImage by remember { mutableStateOf<PickedMedia?>(null) }
-
-    val isLoading by viewModel.isLoading.collectAsState()
-
-    val singleImagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        if (uri != null) {
-            val media = uri.toPickedMedia(context)
-            if (media != null && media.mediaType == MediaType.IMAGE) {
-                selectedImage = media
-            } else if (media != null) {
-                Toast.makeText(context, "사진 파일만 선택할 수 있습니다.", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(context, "파일을 불러오지 못했습니다.", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.toastEvent.collect { message ->
@@ -88,18 +70,19 @@ fun ProfileSetupScreen(
         }
     }
 
-    val state = authState
-    val initialNickname = if (state is AuthState.Authenticated) {
-        state.session.nickname ?: ""
-    } else ""
 
-    var inputNickname by rememberSaveable(initialNickname) { mutableStateOf(initialNickname) }
-
-    val previewBitmap = remember(selectedImage) {
-        selectedImage?.let {
-            runCatching {
-                BitmapFactory.decodeByteArray(it.bytes, 0, it.bytes.size)?.asImageBitmap()
-            }.getOrNull()
+    val singleImagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            val media = uri.toPickedMedia(context)
+            if (media != null && media.mediaType == MediaType.IMAGE) {
+                viewModel.onImageSelect(media)
+            } else if (media != null) {
+                Toast.makeText(context, "사진 파일만 선택할 수 있습니다.", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "파일을 불러오지 못했습니다.", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -142,9 +125,9 @@ fun ProfileSetupScreen(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                if (previewBitmap != null) {
-                    Image(
-                        bitmap = previewBitmap,
+                if (uiState.selectedImage != null) {
+                    AsyncImage(
+                        model = uiState.selectedImage?.bytes,
                         contentDescription = "선택된 프로필 사진",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
@@ -164,13 +147,13 @@ fun ProfileSetupScreen(
                 }
             }
 
-            if (selectedImage != null) {
+            if (uiState.selectedImage != null) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    TextButton(onClick = { selectedImage = null }) {
+                    TextButton(onClick = { viewModel.onDeleteImage() }) {
                         Text(
                             text = "취소",
                             color = MaterialTheme.colorScheme.error,
@@ -184,12 +167,13 @@ fun ProfileSetupScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Column(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxWidth()
                     .padding(24.dp)
             ) {
                 OutlinedTextField(
-                    value = inputNickname,
-                    onValueChange = { if (it.length <= 10) inputNickname = it },
+                    value = uiState.inputNickname,
+                    onValueChange = { if (it.length <= 10 ) viewModel.onNicknameChange(it) },
                     label = { Text(text = "닉네임") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -201,19 +185,16 @@ fun ProfileSetupScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(
                     onClick = {
-                        viewModel.updateProfile(
-                            nickname = inputNickname.trim(),
-                            selectedImage = selectedImage
-                        )
+                        viewModel.updateProfile()
                     },
-                    enabled = inputNickname.trim().isNotBlank() && !isLoading,
+                    enabled = uiState.isFormValid && !uiState.isLoading,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    if (isLoading) {
+                    if (uiState.isLoading) {
                         CircularProgressIndicator(
                             color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(24.dp)

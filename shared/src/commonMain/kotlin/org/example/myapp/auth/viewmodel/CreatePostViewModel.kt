@@ -81,8 +81,8 @@ class CreatePostViewModel(
                 val uploadResult = mediaRepository.uploadPostMedia(state.selectedVideo, state.selectedImages).getOrThrow()
 
                 val request = CreatePostRequest(
-                    title = state.title,
-                    description = state.description,
+                    title = state.title.trim(),
+                    description = state.description.trim(),
                     videoUrl = uploadResult.videoUrl,
                     videoThumbnailUrl = uploadResult.videoThumbnailUrl,
                     imageUrls = uploadResult.imageUrls

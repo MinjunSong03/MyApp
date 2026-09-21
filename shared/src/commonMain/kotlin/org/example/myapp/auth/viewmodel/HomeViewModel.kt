@@ -44,7 +44,7 @@ class HomeViewModel(
 
     init {
         viewModelScope.launch {
-            postRepository.getFeedStream(FeedType.HOME).collect { posts ->
+            postRepository.getFeedStream(FeedType.Home).collect { posts ->
                 _uiState.update { it.copy(posts = posts) }
             }
         }
@@ -70,7 +70,7 @@ class HomeViewModel(
         val targetPage = if (isRefresh) 0 else _uiState.value.page
 
         feedJob = viewModelScope.launch {
-            postRepository.fetchFeed(FeedType.HOME, targetPage, isRefresh)
+            postRepository.fetchFeed(FeedType.Home, targetPage, isRefresh)
                 .onSuccess { isLast ->
                     _uiState.update {
                         it.copy(

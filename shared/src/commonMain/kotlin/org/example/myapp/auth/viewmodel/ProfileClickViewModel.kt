@@ -1,5 +1,6 @@
 package org.example.myapp.auth.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -8,47 +9,58 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.myapp.auth.network.PostResponse
 import org.example.myapp.auth.network.ReportReason
 import org.example.myapp.auth.network.UserProfileResponse
+import org.example.myapp.auth.repository.FeedType
 import org.example.myapp.auth.repository.PostRepository
 import org.example.myapp.auth.repository.ReportRepository
 import org.example.myapp.auth.repository.UserBlockRepository
 import kotlin.coroutines.cancellation.CancellationException
 
-sealed class ProfileClickUiState {
-    object Loading: ProfileClickUiState()
-    data class Success(val posts: List<PostResponse>, val isLast: Boolean): ProfileClickUiState()
+data class ProfileClickUiState(
+    val posts: List<PostResponse> = emptyList(),
+    val isInitialLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
+    val isLast: Boolean = false,
+    val page: Int = 0,
+    val userProfileResponse: UserProfileResponse? = null
+) {
+    val isEmpty: Boolean
+        get() = !isInitialLoading && posts.isEmpty()
 }
 
 class ProfileClickViewModel(
+    savedStateHandle: SavedStateHandle,
     private val postRepository: PostRepository,
     private val userBlockRepository: UserBlockRepository,
     private val reportRepository: ReportRepository
 ): ViewModel() {
-    private val _userProfile = MutableStateFlow<UserProfileResponse?>(null)
-    val userProfile: StateFlow<UserProfileResponse?> = _userProfile.asStateFlow()
-
-    private val _uiState = MutableStateFlow<ProfileClickUiState>(ProfileClickUiState.Loading)
+    val userId: Long = checkNotNull(savedStateHandle["userId"])
+    private val _uiState = MutableStateFlow(ProfileClickUiState())
     val uiState: StateFlow<ProfileClickUiState> = _uiState.asStateFlow()
-
-    private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
     private val _toastEvent = Channel<String>(Channel.BUFFERED)
     val toastEvent = _toastEvent.receiveAsFlow()
-
-    private var currentPage = 0
-    private var isLastPage = false
-    private val currentPostList = mutableListOf<PostResponse>()
     private var feedJob: Job? = null
 
-    fun loadProfile(userId: Long) {
+    init {
+        viewModelScope.launch {
+            postRepository.getFeedStream(FeedType.User(userId)).collect { posts ->
+                _uiState.update { it.copy(posts = posts) }
+            }
+        }
+        loadProfile()
+        loadPost(isRefresh = false)
+    }
+
+    fun loadProfile() {
         viewModelScope.launch {
             postRepository.getUserProfile(userId)
                 .onSuccess { profile ->
-                    _userProfile.value = profile
+                    _uiState.update { it.copy(userProfileResponse = profile) }
                 }
                 .onFailure { error ->
                     if (error is CancellationException) return@onFailure
@@ -58,49 +70,42 @@ class ProfileClickViewModel(
         }
     }
 
-    fun loadPost(userId: Long, isRefresh: Boolean = false) {
+    fun loadPost(isRefresh: Boolean) {
         if (userId == 0L) return
 
         if (isRefresh) {
             feedJob?.cancel()
-            _isRefreshing.value = true
-            currentPage = 0
-            isLastPage = false
-            currentPostList.clear()
-            _uiState.value = ProfileClickUiState.Loading
+            _uiState.update {
+                it.copy(
+                    isRefreshing = true,
+                    isLast = false
+                )
+            }
         } else {
-            if (isLastPage || feedJob?.isActive == true) return
+            if (_uiState.value.isLast || feedJob?.isActive == true) return
+            if (_uiState.value.posts.isEmpty()) {
+                _uiState.update { it.copy(isInitialLoading = true) }
+            }
         }
 
+        val targetPage = if (isRefresh) 0 else _uiState.value.page
+
         feedJob = viewModelScope.launch {
-            try {
-                postRepository.getUserPosts(userId, currentPage)
-                    .onSuccess { slice ->
-                        if (isRefresh) currentPostList.clear()
-                        currentPostList.addAll(slice.content)
-                        isLastPage = slice.last
-                        currentPage++
-                        _uiState.value = ProfileClickUiState.Success(currentPostList.toList(), isLastPage)
-                    }.onFailure { error ->
-                        if (error is CancellationException) return@onFailure
-                        if (currentPostList.isEmpty()) {
-                            _uiState.value = ProfileClickUiState.Success(emptyList(), isLast = true)
-                        } else {
-                            _uiState.value = ProfileClickUiState.Success(currentPostList.toList(), isLastPage)
-                        }
-                        val message = error.message ?: return@onFailure
-                        _toastEvent.send(message)
+            postRepository.fetchFeed(FeedType.User(userId), targetPage, isRefresh)
+                .onSuccess { isLast ->
+                    _uiState.update {
+                        it.copy(
+                            page = targetPage + 1,
+                            isLast = isLast,
+                            isInitialLoading = false,
+                            isRefreshing = false
+                        )
                     }
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                _uiState.value = ProfileClickUiState.Success(currentPostList.toList(), isLastPage)
-                val message = e.message ?: return@launch
-                _toastEvent.send(message)
-            } finally {
-                if (isRefresh) {
-                    _isRefreshing.value = false
+                }.onFailure { error ->
+                    if (error is CancellationException) return@onFailure
+                    val message = error.message ?: return@onFailure
+                    _toastEvent.send(message)
                 }
-            }
         }
     }
 
@@ -108,8 +113,6 @@ class ProfileClickViewModel(
         viewModelScope.launch {
             postRepository.hidePost(postId)
                 .onSuccess {
-                    currentPostList.removeAll { it.id == postId }
-                    _uiState.value = ProfileClickUiState.Success(currentPostList.toList(), isLastPage)
                     _toastEvent.send("게시물을 숨김 처리하였습니다.")
                 }
                 .onFailure { error ->
@@ -123,8 +126,6 @@ class ProfileClickViewModel(
         viewModelScope.launch {
             postRepository.deletePost(postId)
                 .onSuccess {
-                    currentPostList.removeAll { it.id == postId }
-                    _uiState.value = ProfileClickUiState.Success(currentPostList.toList(), isLastPage)
                     _toastEvent.send("게시물을 삭제하였습니다.")
                 }
                 .onFailure { error ->
@@ -138,8 +139,6 @@ class ProfileClickViewModel(
         viewModelScope.launch {
             userBlockRepository.blockUser(targetUserId)
                 .onSuccess {
-                    currentPostList.clear()
-                    _uiState.value = ProfileClickUiState.Success(emptyList(), isLast = true)
                     _toastEvent.send("사용자를 차단하였습니다.")
                 }
                 .onFailure { error ->

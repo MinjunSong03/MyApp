@@ -51,7 +51,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import org.example.myapp.auth.network.PostResponse
 import org.example.myapp.auth.viewmodel.ProfileClickViewModel
@@ -61,8 +63,18 @@ import org.example.myapp.ui.card.PostCard
 import org.example.myapp.ui.dialog.ReportDialog
 import org.example.myapp.ui.item.AppPullToRefreshBox
 import org.example.myapp.ui.item.AppTopBar
+import org.example.myapp.ui.item.PostFeedList
 import org.example.myapp.util.AndroidVideoPlayerManager
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
+
+private sealed interface ProfileClickDialog {
+    data class DeletePost(val postId: Long): ProfileClickDialog
+    data class HidePost(val postId: Long): ProfileClickDialog
+    data class BlockUser(val userId: Long): ProfileClickDialog
+    data class ReportPost(val postId: Long): ProfileClickDialog
+    data class ReportUser(val userId: Long): ProfileClickDialog
+}
 
 @Composable
 fun ProfileClickScreen(
@@ -71,96 +83,22 @@ fun ProfileClickScreen(
     onNavigateToPostDetail: (Long) -> Unit,
     onNavigateToEditPost: (Long) -> Unit,
     videoManager: AndroidVideoPlayerManager = koinViewModel(),
-    viewModel: ProfileClickViewModel = koinViewModel(),
+    viewModel: ProfileClickViewModel = koinViewModel(key = userId.toString()) { parametersOf(userId) },
 ) {
     val context = LocalContext.current
-    val userProfile by viewModel.userProfile.collectAsState()
-    val uiState by viewModel.uiState.collectAsState()
-    val isRefreshing by viewModel.isRefreshing.collectAsState()
-    var isMenuExpanded by rememberSaveable { mutableStateOf(false) }
-
-    var reportingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var reportingUserId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var blockingUserId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var deletingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var hidingPostId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var unhidingPost by rememberSaveable { mutableStateOf<PostResponse?>(null) }
-
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
-    val lifecycleOwner = LocalLifecycleOwner.current
 
-    LaunchedEffect(userId) {
-        viewModel.loadProfile(userId)
-        viewModel.loadPost(userId, isRefresh = true)
+    var activeDialog by remember { mutableStateOf<ProfileClickDialog?>(null) }
+
+
+    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) {
+        videoManager.pause()
+    }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        videoManager.pause()
     }
 
-    LaunchedEffect(listState, uiState) {
-        snapshotFlow {
-            val layoutInfo = listState.layoutInfo
-            val visibleItems = layoutInfo.visibleItemsInfo
-            if (visibleItems.isEmpty()) null
-            else {
-                when {
-                    !listState.canScrollBackward -> {
-                        visibleItems.firstOrNull()?.index
-                    }
-
-                    !listState.canScrollForward -> {
-                        val postsCount = (uiState as? ProfileClickUiState.Success)?.posts?.size ?: 0
-                        visibleItems.lastOrNull { it.index < postsCount }?.index
-                    }
-
-                    else -> {
-                        val viewportCenter = (layoutInfo.viewportStartOffset + layoutInfo.viewportEndOffset) / 2
-                        visibleItems.minByOrNull { item ->
-                            val itemCenter = item.offset + item.size / 2
-                            kotlin.math.abs(itemCenter - viewportCenter)
-                        }?.index
-                    }
-                }
-            }
-        }.collect { centerIndex ->
-            val state = uiState
-            if (centerIndex != null && state is ProfileClickUiState.Success) {
-                val posts = state.posts
-                val targetPost = posts.getOrNull(centerIndex)
-                val videoUrl = targetPost?.videoUrl
-                if (!videoUrl.isNullOrEmpty() && videoManager.currentPlayingUrl.value != videoUrl) {
-                    videoManager.play(videoUrl)
-                } else if (videoUrl.isNullOrEmpty()) {
-                    videoManager.pause()
-                }
-            }
-        }
-    }
-
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
-                videoManager.pause()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-            videoManager.pause()
-        }
-    }
-
-    val shouldLoadMore by remember {
-        derivedStateOf {
-            val totalItems = listState.layoutInfo.totalItemsCount
-            val lastVisibleIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            totalItems > 0 && lastVisibleIndex >= totalItems - 2
-        }
-    }
-
-    LaunchedEffect(shouldLoadMore) {
-        if (shouldLoadMore) {
-            viewModel.loadPost(userId, false)
-        }
-    }
 
     LaunchedEffect(Unit) {
         viewModel.toastEvent.collect { message ->
@@ -181,249 +119,129 @@ fun ProfileClickScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            when (val state = uiState) {
-                is ProfileClickUiState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                    }
-                }
-                is ProfileClickUiState.Success -> {
-                    userProfile?.let { user ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+            PostFeedList(
+                posts = uiState.posts,
+                isInitialLoading = uiState.isInitialLoading,
+                isRefreshing = uiState.isRefreshing,
+                isLast = uiState.isLast,
+                emptyMessage = "아래로 당겨 새로고침해 보세요!",
+                videoManager = videoManager,
+                listState = listState,
+                onRefresh = { viewModel.loadPost(isRefresh = true) },
+                onLoadMore = { viewModel.loadPost(isRefresh = false) },
+                onCardClick = onNavigateToPostDetail,
+                onProfileClick = { },
+                onEditClick = onNavigateToEditPost,
+                onDeleteClick = { activeDialog = ProfileClickDialog.DeletePost(it) },
+                onHideClick = { activeDialog = ProfileClickDialog.HidePost(it) },
+                onBlockClick = { activeDialog = ProfileClickDialog.BlockUser(it) },
+                onReportPostClick = { activeDialog = ProfileClickDialog.ReportPost(it) },
+                onReportUserClick = { activeDialog = ProfileClickDialog.ReportUser(it) }
+            )
+        }
+        when (val dialog = activeDialog) {
+            is ProfileClickDialog.DeletePost -> {
+                AlertDialog(
+                    onDismissRequest = { activeDialog = null },
+                    title = { Text(text = "이 게시물 삭제") },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    text = { Text(text = "이 게시물을 삭제하시겠습니까?\n게시물을 삭제 후 복구는 불가능합니다.") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                viewModel.deletePost(dialog.postId)
+                                activeDialog = null
+                            }
                         ) {
-                            AsyncImage(
-                                model = user.profileImageUrl,
-                                contentDescription = "프로필 사진",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                            Text(
+                                text = "삭제",
+                                color = MaterialTheme.colorScheme.error
                             )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = user.nickname,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (user.isDeleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                                    fontSize = 14.sp
-                                )
-                            }
-                            if (!user.isMine) {
-                                Box {
-                                    IconButton(onClick = { isMenuExpanded = true }) {
-                                        Icon(
-                                            painterResource(R.drawable.ic_option),
-                                            contentDescription = "옵션",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                    DropdownMenu(
-                                        expanded = isMenuExpanded,
-                                        onDismissRequest = { isMenuExpanded = false },
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                    ) {
-                                        DropdownMenuItem(
-                                            text = {
-                                                Text(
-                                                    text = "이 사용자 차단하기",
-                                                )
-                                            },
-                                            onClick = {
-                                                isMenuExpanded = false
-                                                blockingUserId = user.id
-                                            }
-                                        )
-                                        DropdownMenuItem(
-                                            text = {
-                                                Text(
-                                                    text = "이 사용자 신고하기",
-                                                    color = MaterialTheme.colorScheme.error
-                                                )
-                                            },
-                                            onClick = {
-                                                isMenuExpanded = false
-                                                reportingUserId = user.id
-                                            }
-                                        )
-                                    }
-                                }
-                            }
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { activeDialog = null }) {
+                            Text(text = "취소")
                         }
                     }
-                    Spacer(modifier = Modifier.height(7.dp))
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant)
-                    Spacer(modifier = Modifier.height(7.dp))
-                    Box(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        AppPullToRefreshBox(
-                            isRefreshing = isRefreshing,
-                            onRefresh = {
-                                videoManager.stop()
-                                viewModel.loadPost(userId = userId, isRefresh = true)
-                            },
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            if (state.posts.isEmpty()) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .verticalScroll(rememberScrollState()),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "활성화 게시물이 없습니다.",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            } else {
-                                LazyColumn(
-                                    state = listState,
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    items(state.posts, key = { it.id }) { post ->
-                                        PostCard(
-                                            post = post,
-                                            videoManager = videoManager,
-                                            onCardClick = onNavigateToPostDetail,
-                                            onProfileClick = {},
-                                            onEditClick = onNavigateToEditPost,
-                                            onDeleteClick = { deletingPostId = it },
-                                            onUnhidePostClick = { unhidingPost = post },
-                                            onHidePostClick = { hidingPostId = it },
-                                            onBlockUserClick = { blockingUserId = it },
-                                            onReportPostClick = { reportingPostId = it },
-                                            onReportUserClick = { reportingUserId = it }
-                                        )
-                                    }
-                                    if (!state.isLast) {
-                                        item {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(16.dp),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                )
             }
-        }
-        deletingPostId?.let { postId ->
-            AlertDialog(
-                onDismissRequest = { deletingPostId = null },
-                title = { Text(text = "이 게시물 삭제") },
-                containerColor = MaterialTheme.colorScheme.surface,
-                text = { Text(text = "이 게시물을 삭제하시겠습니까?\n게시물을 삭제 후 복구는 불가능합니다.") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            viewModel.deletePost(postId)
-                            deletingPostId = null
+
+            is ProfileClickDialog.HidePost -> {
+                AlertDialog(
+                    onDismissRequest = { activeDialog = null },
+                    title = { Text(text = "게시물 숨기기") },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    text = { Text(text = "이 게시물을 숨기시겠습니까?") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                viewModel.hidePost(dialog.postId)
+                                activeDialog = null
+                            }
+                        ) {
+                            Text(
+                                text = "숨기기",
+                                color = MaterialTheme.colorScheme.error
+                            )
                         }
-                    ) {
-                        Text(
-                            text = "삭제",
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { deletingPostId = null }) {
-                        Text(text = "취소")
-                    }
-                }
-            )
-        }
-
-        hidingPostId?.let { postId ->
-            AlertDialog(
-                onDismissRequest = { hidingPostId = null },
-                title = { Text(text = "게시물 숨기기") },
-                containerColor = MaterialTheme.colorScheme.surface,
-                text = { Text(text = "이 게시물을 숨기시겠습니까?") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            viewModel.hidePost(postId)
-                            hidingPostId = null
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { activeDialog = null }) {
+                            Text(text = "취소")
                         }
-                    ) {
-                        Text(
-                            text = "숨기기",
-                            color = MaterialTheme.colorScheme.error
-                        )
                     }
-                },
-                dismissButton = {
-                    TextButton(onClick = { hidingPostId = null }) {
-                        Text(text = "취소")
-                    }
-                }
-            )
-        }
+                )
+            }
 
-        blockingUserId?.let { targetId ->
-            AlertDialog(
-                onDismissRequest = { blockingUserId = null },
-                title = { Text(text = "이 사용자 차단") },
-                containerColor = MaterialTheme.colorScheme.surface,
-                text = { Text(text = "이 사용자를 차단하시겠습니까?\n피드에서 해당 사용자의 모든 글이 즉시 숨겨집니다.") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            viewModel.blockUser(targetId)
-                            blockingUserId = null
+            is ProfileClickDialog.BlockUser -> {
+                AlertDialog(
+                    onDismissRequest = { activeDialog = null },
+                    title = { Text(text = "이 사용자 차단") },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    text = { Text(text = "이 사용자를 차단하시겠습니까?\n피드에서 해당 사용자의 모든 글이 즉시 숨겨집니다.") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                viewModel.blockUser(dialog.userId)
+                                activeDialog = null
+                            }
+                        ) {
+                            Text(
+                                text = "차단",
+                                color = MaterialTheme.colorScheme.error
+                            )
                         }
-                    ) {
-                        Text(
-                            text = "차단",
-                            color = MaterialTheme.colorScheme.error
-                        )
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { activeDialog = null }) {
+                            Text(text = "취소")
+                        }
                     }
-                },
-                dismissButton = {
-                    TextButton(onClick = { blockingUserId = null }) {
-                        Text(text = "취소")
+                )
+            }
+
+            is ProfileClickDialog.ReportPost -> {
+                ReportDialog(
+                    onDismiss = { activeDialog = null },
+                    onConfirm = { reportReason, detail ->
+                        viewModel.reportPost(dialog.postId, reportReason, detail)
+                        activeDialog = null
                     }
-                }
-            )
-        }
+                )
+            }
 
-        reportingPostId?.let { postId ->
-            ReportDialog(
-                onDismiss = { reportingPostId = null },
-                onConfirm = { reportReason, detail ->
-                    viewModel.reportPost(postId, reportReason, detail)
-                    reportingPostId = null
-                }
-            )
-        }
+            is ProfileClickDialog.ReportUser -> {
+                ReportDialog(
+                    onDismiss = { activeDialog = null },
+                    onConfirm = { reportReason, detail ->
+                        viewModel.reportUser(dialog.userId, reportReason, detail)
+                        activeDialog = null
+                    }
+                )
+            }
 
-        reportingUserId?.let { userId ->
-            ReportDialog(
-                onDismiss = { reportingUserId = null },
-                onConfirm = { reportReason, detail ->
-                    viewModel.reportUser(userId, reportReason, detail)
-                    reportingUserId = null
-                }
-            )
+            null -> Unit
         }
     }
 }
