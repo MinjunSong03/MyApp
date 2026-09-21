@@ -48,6 +48,13 @@ class HomeViewModel(
                 _uiState.update { it.copy(posts = posts) }
             }
         }
+        viewModelScope.launch {
+            postRepository.feedRefreshEvent.collect { feedType ->
+                if (feedType is FeedType.Home) {
+                    loadHomeFeed(isRefresh = true)
+                }
+            }
+        }
         loadHomeFeed(isRefresh = false)
     }
 

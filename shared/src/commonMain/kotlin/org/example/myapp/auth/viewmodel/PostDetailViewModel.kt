@@ -61,7 +61,12 @@ class PostDetailViewModel(
     private var commentJob: Job? = null
 
     init {
-        getPostDetail()
+        viewModelScope.launch {
+            postRepository.getPostStream(postId).collect { post ->
+                _uiState.update { it.copy(post = post) }
+            }
+        }
+        fetchPostDetail()
     }
 
     fun onCommentTextChanged(text: String) {
@@ -89,17 +94,16 @@ class PostDetailViewModel(
     }
 
 
-    private fun getPostDetail() {
+    private fun fetchPostDetail() {
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
             postRepository.getPostDetail(postId)
-                .onSuccess { post ->
-                    _uiState.update { it.copy(post = post, isLoading = false) }
-                }
                 .onFailure { error ->
                     if (error is CancellationException) return@onFailure
                     val message = error.message ?: return@onFailure
                     _toastEvent.send(message)
                 }
+            _uiState.update { it.copy(isLoading = false) }
         }
     }
 

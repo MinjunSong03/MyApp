@@ -90,8 +90,8 @@ class CreatePostViewModel(
 
                 postRepository.createPost(request)
                     .onSuccess {
-                        _toastEvent.send("게시물을 생성하였습니다.")
                         clearForm()
+                        _toastEvent.send("게시물을 생성하였습니다.")
                         _updateSuccessEvent.send(Unit)
                     }
                     .onFailure { error ->

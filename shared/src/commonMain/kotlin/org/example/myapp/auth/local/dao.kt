@@ -16,6 +16,9 @@ interface PostDao {
     """)
     fun getFeed(feedType: String): Flow<List<PostEntity>>
 
+    @Query("SELECT * FROM posts WHERE id = :postId")
+    fun getPost(postId: Long): Flow<PostEntity?>
+
     @Upsert
     suspend fun upsertPosts(posts: List<PostEntity>)
 

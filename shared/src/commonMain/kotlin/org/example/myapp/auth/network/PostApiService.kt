@@ -16,7 +16,7 @@ class PostApiService(
     private val client: HttpClient,
     private val baseUrl: String
 ) {
-    suspend fun createPost(request: CreatePostRequest): PostResponse {
+    suspend fun createPost(request: CreatePostRequest) {
         val response = client.post("$baseUrl/api/posts") {
             contentType(ContentType.Application.Json)
             setBody(request)

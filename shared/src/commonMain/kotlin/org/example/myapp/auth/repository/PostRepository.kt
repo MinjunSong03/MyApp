@@ -4,6 +4,9 @@ import io.ktor.utils.io.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import org.example.myapp.auth.local.PostEntity
@@ -32,6 +35,9 @@ class PostRepository(
     private val postApiService: PostApiService,
     private val postDao: PostDao
 ) {
+    private val _feedRefreshEvent = MutableSharedFlow<FeedType>(extraBufferCapacity = 1)
+    val feedRefreshEvent = _feedRefreshEvent.asSharedFlow()
+
     fun getFeedStream(feedType: FeedType): Flow<List<PostResponse>> {
         return postDao.getFeed(feedType.storageKey).map { entities ->
             entities.map { it.toResponse() }
@@ -55,11 +61,16 @@ class PostRepository(
         }.onFailure { if (it is CancellationException) throw it }
     }
 
+    fun getPostStream(postId: Long): Flow<PostResponse?> {
+        return postDao.getPost(postId).map { it?.toResponse() }
+    }
+
     suspend fun createPost(request: CreatePostRequest): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            val created = postApiService.createPost(request)
-            postDao.saveFeedPage(FeedType.Home.storageKey, listOf(created.toEntity()), isRefresh = false)
-            postDao.saveFeedPage(FeedType.MyAct.storageKey, listOf(created.toEntity()), isRefresh = false)
+            postApiService.createPost(request)
+            _feedRefreshEvent.tryEmit(FeedType.Home)
+            _feedRefreshEvent.tryEmit(FeedType.MyAct)
+            Unit
         }.onFailure { if (it is CancellationException) throw it }
     }
 
@@ -90,7 +101,7 @@ class PostRepository(
         runCatching{
             val updated = postApiService.unhidePost(postId)
             postDao.removePostFromFeed(FeedType.MyHidden.storageKey, postId)
-            postDao.saveFeedPage(FeedType.MyAct.storageKey, listOf(updated.toEntity()), isRefresh = false)
+            postDao.upsertPosts(listOf(updated.toEntity()))
         }.onFailure { if (it is CancellationException) throw it }
     }
 
@@ -103,14 +114,19 @@ class PostRepository(
     // 게시물 수정 시
     suspend fun getPostById(postId: Long): Result<PostResponse> = withContext(Dispatchers.IO) {
         runCatching {
-            postApiService.getPostById(postId)
+            val post = postDao.getPost(postId).firstOrNull()?.toResponse()
+                ?: postApiService.getPostById(postId).also {
+                    postDao.upsertPosts(listOf(it.toEntity()))
+                }
+            post
         }.onFailure { if (it is CancellationException) throw it }
     }
 
     // 게시물 상세보기 시
-    suspend fun getPostDetail(postId: Long): Result<PostResponse> = withContext(Dispatchers.IO) {
+    suspend fun getPostDetail(postId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            postApiService.getPostDetail(postId)
+            val post = postApiService.getPostDetail(postId)
+            postDao.upsertPosts(listOf(post.toEntity()))
         }.onFailure { if (it is CancellationException) throw it }
     }
 

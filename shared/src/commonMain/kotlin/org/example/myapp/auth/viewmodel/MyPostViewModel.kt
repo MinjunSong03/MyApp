@@ -52,6 +52,15 @@ class MyPostViewModel(
                 _hiddenFeed.update { it.copy(posts = posts) }
             }
         }
+
+        viewModelScope.launch {
+            postRepository.feedRefreshEvent.collect { feedType ->
+                if (feedType is FeedType.MyAct) {
+                    loadActFeed(isRefresh = true)
+                }
+            }
+        }
+
         loadActFeed(isRefresh = false)
         loadHiddenFeed(isRefresh = false)
     }
