@@ -413,6 +413,8 @@ fun PostDetailScreen(
             if (isCommentSheetOpen) {
                 CommentBottomSheet(
                     commentUiState = commentUiState,
+                    isRefreshing = commentUiState.isRefreshing,
+                    onRefresh = { viewModel.loadComments(isRefresh = true)},
                     onDismissRequest = { isCommentSheetOpen = false },
                     onLoadMore = { viewModel.loadComments(isRefresh = false) },
                     onCommentTextChanged = { viewModel.onCommentTextChanged(it) },

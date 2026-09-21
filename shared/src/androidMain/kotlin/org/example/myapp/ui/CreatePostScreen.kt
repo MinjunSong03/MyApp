@@ -23,11 +23,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.myapp.auth.network.MediaType
 import org.example.myapp.auth.viewmodel.CreatePostViewModel
+import org.example.myapp.shared.R
 import org.example.myapp.ui.item.AppTopBar
 import org.koin.compose.viewmodel.koinViewModel
 import org.example.myapp.util.toPickedMedia
@@ -89,6 +91,7 @@ fun CreatePostScreen(
     Scaffold(
         topBar = {
             AppTopBar(
+                iconPainter = painterResource(R.drawable.ic_launcher_foreground),
                 title = "게시물 생성"
             )
         }

@@ -58,6 +58,8 @@ import org.koin.core.module.dsl.viewModel
 val commonModule = module {
     single {
         val sessionManager: SessionManager = get()
+        val postDatabase: PostDatabase = get()
+
         HttpClient {
             install(ContentNegotiation) {
                 json(Json {
@@ -105,6 +107,7 @@ val commonModule = module {
                             BearerTokens(refreshResult.accessToken, refreshResult.refreshToken)
                         } else {
                             sessionManager.clearSession()
+                            runCatching { postDatabase.clearAllTables() }
                             runCatching {
                                 client.plugin(Auth).providers
                                     .filterIsInstance<BearerAuthProvider>()
@@ -125,6 +128,7 @@ val commonModule = module {
 
                     if (isUnauthorized || isInvalidUser) {
                         sessionManager.clearSession()
+                        runCatching { postDatabase.clearAllTables() }
                         runCatching {
                             response.call.client.plugin(Auth).providers
                                 .filterIsInstance<BearerAuthProvider>()

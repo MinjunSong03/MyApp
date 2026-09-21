@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.example.myapp.auth.local.PostDatabase
 import org.example.myapp.auth.local.SessionManager
@@ -25,6 +26,18 @@ class AuthRepositoryImpl(
     private val sessionManager: SessionManager,
     private val postDatabase: PostDatabase
 ): AuthRepository {
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    init {
+        scope.launch {
+            sessionManager.sessionFlow.collect { session ->
+                if (session == null) {
+                    runCatching { postDatabase.clearAllTables() }
+                }
+            }
+        }
+    }
+
+
     override val authState: StateFlow<AuthState> = sessionManager.sessionFlow
         .map { session ->
             if (session != null) {
@@ -43,6 +56,9 @@ class AuthRepositoryImpl(
         runCatching {
             val session = sessionManager.getSession()
             if (session == null) {
+                postDatabase.clearAllTables()
+                sessionManager.clearSession()
+                authApiService.clearAuthTokens()
                 throw IllegalStateException("저장된 세션이 없습니다.")
             }
         }.onFailure { e ->

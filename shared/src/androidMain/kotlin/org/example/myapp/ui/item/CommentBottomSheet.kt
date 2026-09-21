@@ -35,11 +35,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -59,6 +56,8 @@ import org.example.myapp.ui.card.CommentCard
 @Composable
 fun CommentBottomSheet(
     commentUiState: CommentUiState,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
     onDismissRequest: () -> Unit,
     onLoadMore: () -> Unit,
     onCommentTextChanged: (String) -> Unit,
@@ -71,7 +70,7 @@ fun CommentBottomSheet(
     onReportUserClick: (Long) -> Unit,
     onProfileClick: (Long) -> Unit
 ) {
-    val sheetHeight = (LocalConfiguration.current.screenHeightDp * 0.65f).dp
+    val sheetHeight = (LocalConfiguration.current.screenHeightDp * 0.55f).dp
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val listState = rememberLazyListState()
     val focusRequester = remember { FocusRequester() }
@@ -91,6 +90,13 @@ fun CommentBottomSheet(
     LaunchedEffect(shouldLoadMore) {
         if (shouldLoadMore && !commentUiState.isLast && !commentUiState.isRefreshing && !commentUiState.isInitialLoading) {
             onLoadMore()
+        }
+    }
+
+    val latestCommentId = commentUiState.comments.firstOrNull()?.id
+    LaunchedEffect(latestCommentId) {
+        if (commentUiState.comments.isNotEmpty()) {
+            listState.animateScrollToItem(0)
         }
     }
 
@@ -135,41 +141,49 @@ fun CommentBottomSheet(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 } else {
-                    LazyColumn(
-                        state = listState,
+                    AppPullToRefreshBox(
+                        isRefreshing = isRefreshing,
+                        onRefresh = {
+                            onRefresh()
+                        },
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(commentUiState.comments, key = { it.id }) { comment ->
-                            CommentCard(
-                                comment = comment,
-                                onProfileClick = onProfileClick,
-                                onEditClick = { targetComment ->
-                                    onStartEditComment(targetComment)
-                                    focusRequester.requestFocus()
-                                },
-                                onDeleteClick = onDeleteClick,
-                                onReportCommentClick = onReportCommentClick,
-                                onReportUserClick = onReportUserClick
-                            )
-                            HorizontalDivider(
-                                color = MaterialTheme.colorScheme.outlineVariant,
-                                modifier = Modifier.padding(horizontal = 16.dp)
-                            )
-                        }
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            items(commentUiState.comments, key = { it.id }) { comment ->
+                                CommentCard(
+                                    comment = comment,
+                                    onProfileClick = onProfileClick,
+                                    onEditClick = { targetComment ->
+                                        onStartEditComment(targetComment)
+                                        focusRequester.requestFocus()
+                                    },
+                                    onDeleteClick = onDeleteClick,
+                                    onReportCommentClick = onReportCommentClick,
+                                    onReportUserClick = onReportUserClick
+                                )
+                                HorizontalDivider(
+                                    color = MaterialTheme.colorScheme.outlineVariant,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+                            }
 
-                        if (!commentUiState.isLast) {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(12.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(24.dp),
-                                        strokeWidth = 2.dp
-                                    )
+                            if (!commentUiState.isLast) {
+                                item {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(24.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                    }
                                 }
                             }
                         }

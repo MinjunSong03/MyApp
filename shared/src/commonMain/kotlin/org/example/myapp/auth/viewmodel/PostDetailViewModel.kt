@@ -23,7 +23,7 @@ import kotlin.coroutines.cancellation.CancellationException
 
 data class PostDetailUiState(
     val post: PostResponse? = null,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
 )
 
 data class CommentUiState(
@@ -228,17 +228,16 @@ class PostDetailViewModel(
         }
     }
 
-    fun createComment(postId: Long, content: String, onCreated: () -> Unit = {}) {
+    fun createComment(postId: Long, content: String) {
         viewModelScope.launch {
             commentRepository.createComment(postId, content)
                 .onSuccess { newComment ->
                     _commentUiState.update { current ->
                         current.copy(
-                            comments = current.comments + newComment,
+                            comments = listOf(newComment) + current.comments,
                             commentText = ""
                         )
                     }
-                    onCreated()
                 }
                 .onFailure { error ->
                     val message = error.message ?: return@onFailure
