@@ -60,8 +60,8 @@ class MyPostViewModel(
                 }
             }
         }
-        loadActFeed(isRefresh = false)
-        loadHiddenFeed(isRefresh = false)
+        loadActFeed(isRefresh = true)
+        loadHiddenFeed(isRefresh = true)
     }
 
     fun loadActFeed(isRefresh: Boolean) = loadFeed(

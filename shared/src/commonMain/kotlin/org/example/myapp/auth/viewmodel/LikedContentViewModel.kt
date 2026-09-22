@@ -21,17 +21,18 @@ import kotlin.coroutines.cancellation.CancellationException
 
 data class LikedUsersTabState(
     val users: List<UserResponse> = emptyList(),
-    val isInitialLoading: Boolean = false,
+    val isInitialLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val isLast: Boolean = false,
-    val page: Int = 0
+    val page: Int = 0,
+    val isLoading: Boolean = false
 ) {
     val isEmpty: Boolean get() = !isInitialLoading && users.isEmpty()
 }
 
 data class LikedPostsTabState(
     val posts: List<PostResponse> = emptyList(),
-    val isInitialLoading: Boolean = false,
+    val isInitialLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val isLast: Boolean = false,
     val page: Int = 0
@@ -65,15 +66,15 @@ class LikedContentViewModel(
         }
 
         viewModelScope.launch {
-            postRepository.feedRefreshEvent.collect { feedType ->
-                if (feedType is FeedType.Liked) {
-                    loadLikedPosts(isRefresh = true)
+            postRepository.userUnlikeEvent.collect { unlikedUserId ->
+                _usersState.update { current ->
+                    current.copy(users = current.users.filterNot { it.id == unlikedUserId })
                 }
             }
         }
 
-        loadLikedUsers(isRefresh = false)
-        loadLikedPosts(isRefresh = false)
+        loadLikedUsers(isRefresh = true)
+        loadLikedPosts(isRefresh = true)
     }
 
     fun loadLikedUsers(isRefresh: Boolean) {
@@ -121,7 +122,6 @@ class LikedContentViewModel(
             _usersState.update { current ->
                 current.copy(users = current.users.filterNot { it.id == userId })
             }
-
             postRepository.unlikeUser(userId)
                 .onSuccess {
                     _toastEvent.send("사용자 좋아요를 취소하였습니다.")
@@ -174,13 +174,21 @@ class LikedContentViewModel(
     }
 
     fun toggleLikePost(postId: Long) {
+        val targetPost = _postsState.value.posts.find { it.id == postId } ?: return
+        val isLiked = targetPost.isLiked
+
         viewModelScope.launch {
-            postRepository.unlikePost(postId)
-                .onFailure { error ->
-                    if (error is CancellationException) return@onFailure
-                    val message = error.message ?: return@onFailure
-                    _toastEvent.send(message)
-                }
+            val result = if (isLiked) {
+                postRepository.unlikePost(postId)
+            } else {
+                postRepository.likePost(postId)
+            }
+
+            result.onFailure { error ->
+                if (error is CancellationException) return@onFailure
+                val message = error.message ?: return@onFailure
+                _toastEvent.send(message)
+            }
         }
     }
 

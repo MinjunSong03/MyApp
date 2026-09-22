@@ -188,18 +188,6 @@ class PostApiService(
         return response.body()
     }
 
-    suspend fun getLikedUsers(page: Int, size: Int = 10): SliceResponse<UserResponse> {
-        val response = client.get("$baseUrl/api/user/my_likes") {
-            parameter("page", page)
-            parameter("size", size)
-        }
-        if (!response.status.isSuccess()) {
-            val errorBody = runCatching { response.body<ErrorResponse>() }.getOrNull()
-            throw IllegalStateException(errorBody?.message ?: "좋아요한 사용자를 불러오지 못했습니다.")
-        }
-        return response.body()
-    }
-
     suspend fun likePost(postId: Long): LikeResponse {
         val response = client.post("$baseUrl/api/posts/$postId/like")
         if (!response.status.isSuccess()) {
@@ -214,6 +202,18 @@ class PostApiService(
         if (!response.status.isSuccess()) {
             val errorBody = runCatching { response.body<ErrorResponse>() }.getOrNull()
             throw IllegalStateException(errorBody?.message ?: "좋아요 취소 처리에 실패했습니다. (${response.status.value})")
+        }
+        return response.body()
+    }
+
+    suspend fun getLikedUsers(page: Int, size: Int = 10): SliceResponse<UserResponse> {
+        val response = client.get("$baseUrl/api/user/my_likes") {
+            parameter("page", page)
+            parameter("size", size)
+        }
+        if (!response.status.isSuccess()) {
+            val errorBody = runCatching { response.body<ErrorResponse>() }.getOrNull()
+            throw IllegalStateException(errorBody?.message ?: "좋아요한 사용자를 불러오지 못했습니다.")
         }
         return response.body()
     }

@@ -102,6 +102,7 @@ class PostRepository(
             postApiService.hidePost(postId)
             postDao.removePostFromFeed(FeedType.Home.storageKey, postId)
             postDao.removePostFromFeed(FeedType.MyAct.storageKey, postId)
+            postDao.removePostFromFeed(FeedType.Liked.storageKey, postId)
         }.onFailure { if (it is CancellationException) throw it }
     }
 
@@ -155,8 +156,6 @@ class PostRepository(
             try {
                 val response = postApiService.likePost(postId)
                 postDao.updateLikeStatus(postId = postId, isLiked = response.isLiked, likeCount = response.likeCount)
-                _feedRefreshEvent.tryEmit(FeedType.Liked)
-                Unit
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 postDao.updateLikeStatus(postId = postId, isLiked = false, likeCount = prevCount)
@@ -191,7 +190,9 @@ class PostRepository(
 
     suspend fun unlikeUser(targetUserId: Long): Result<LikeResponse> = withContext(Dispatchers.IO) {
         runCatching {
-            postApiService.unlikeUser(targetUserId)
+            val response = postApiService.unlikeUser(targetUserId)
+            _userUnlikeEvent.tryEmit(targetUserId)
+            response
         }.onFailure { if (it is CancellationException) throw it }
     }
 
