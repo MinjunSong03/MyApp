@@ -109,6 +109,74 @@ class ProfileClickViewModel(
         }
     }
 
+    fun toggleLikePost(postId: Long) {
+        val targetPost = _uiState.value.posts.find { it.id == postId } ?: return
+        val isLiked = targetPost.isLiked
+
+        viewModelScope.launch {
+            val result = if (isLiked) {
+                postRepository.unlikePost(postId)
+            } else {
+                postRepository.likePost(postId)
+            }
+
+            result.onFailure { error ->
+                if (error is CancellationException) return@onFailure
+                val message = error.message ?: return@onFailure
+                _toastEvent.send(message)
+            }
+        }
+    }
+
+    fun toggleLikeUser() {
+        val currentProfile = _uiState.value.userProfileResponse ?: return
+        val willLike = !currentProfile.isLiked
+        val prevCount = currentProfile.likeCount
+        val optimisticCount = if (willLike) prevCount + 1 else (prevCount - 1).coerceAtLeast(0)
+
+        _uiState.update {
+            it.copy(
+                userProfileResponse = currentProfile.copy(
+                    isLiked = willLike,
+                    likeCount = optimisticCount
+                )
+            )
+        }
+
+        viewModelScope.launch {
+            val result = if (willLike) {
+                postRepository.likeUser(userId)
+            } else {
+                postRepository.unlikeUser(userId)
+            }
+
+            result.onSuccess { response ->
+                _uiState.update {
+                    it.copy(
+                        userProfileResponse = _uiState.value.userProfileResponse?.copy(
+                            isLiked = response.isLiked,
+                            likeCount = response.likeCount
+                        )
+                    )
+                }
+            }.onFailure { error ->
+                if (error is CancellationException) return@onFailure
+                _uiState.update {
+                    it.copy(
+                        userProfileResponse = currentProfile.copy(
+                            isLiked = currentProfile.isLiked,
+                            likeCount = prevCount
+                        )
+                    )
+                }
+                val message = error.message ?: return@onFailure
+                _toastEvent.send(message)
+            }
+        }
+    }
+
+
+
     fun hidePost(postId: Long) {
         viewModelScope.launch {
             postRepository.hidePost(postId)

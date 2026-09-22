@@ -48,6 +48,7 @@ fun PostCard(
     videoManager: AndroidVideoPlayerManager,
     onCardClick: (Long) -> Unit,
     onProfileClick: (Long) -> Unit,
+    onLikeClick: (Long) -> Unit,
     onEditClick: (Long) -> Unit,
     onDeleteClick: (Long) -> Unit,
     onUnhidePostClick: (Long) -> Unit = {},
@@ -79,9 +80,9 @@ fun PostCard(
             ) {
                 Row(
                     modifier = Modifier
-                        .clickable { onProfileClick(post.userId) },
+                        .clickable { if (!post.isUserDeleted) onProfileClick(post.userId) },
                     verticalAlignment = Alignment.CenterVertically
-                ){
+                ) {
                     AsyncImage(
                         model = post.userProfileImageUrl,
                         contentDescription = "프로필 사진",
@@ -100,6 +101,33 @@ fun PostCard(
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(end = 4.dp)
+                ) {
+                    IconButton(
+                        onClick = { onLikeClick(post.id) },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                if (post.isLiked) R.drawable.ic_like_filled else R.drawable.ic_like
+                            ),
+                            contentDescription = if (post.isLiked) "좋아요 취소" else "좋아요",
+                            tint = if (post.isLiked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    if (post.likeCount > 0) {
+                        Text(
+                            text = "${post.likeCount}",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = if (post.isLiked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(end = 6.dp)
+                        )
+                    }
+                }
                 Box {
                     IconButton(onClick = { isMenuExpanded = true }) {
                         Icon(

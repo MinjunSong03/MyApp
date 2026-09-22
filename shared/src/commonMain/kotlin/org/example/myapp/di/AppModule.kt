@@ -48,6 +48,7 @@ import org.example.myapp.auth.viewmodel.EditPostViewModel
 import org.example.myapp.auth.viewmodel.BlockedUserViewModel
 import org.example.myapp.auth.viewmodel.MyPostViewModel
 import org.example.myapp.auth.viewmodel.HomeViewModel
+import org.example.myapp.auth.viewmodel.LikedContentViewModel
 import org.example.myapp.auth.viewmodel.LoginViewModel
 import org.example.myapp.auth.viewmodel.MyInfoViewModel
 import org.example.myapp.auth.viewmodel.PostDetailViewModel
@@ -163,6 +164,7 @@ val commonModule = module {
     viewModel { EditProfileViewModel(get(), get()) }
     viewModel { EditPostViewModel(get(), get()) }
     viewModel { HomeViewModel(get(), get(), get()) }
+    viewModel { LikedContentViewModel(get(), get(), get()) }
     viewModel { LoginViewModel(get()) }
     viewModel { BlockedUserViewModel(get()) }
     viewModel { MyInfoViewModel(get()) }

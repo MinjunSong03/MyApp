@@ -122,6 +122,28 @@ class MyPostViewModel(
         if (isAct) actJob = job else hiddenJob = job
     }
 
+    fun toggleLikePost(postId: Long) {
+        val targetPost = _actFeed.value.posts.find { it.id == postId }
+            ?: _hiddenFeed.value.posts.find { it.id == postId }
+            ?: return
+
+        val isLiked = targetPost.isLiked
+
+        viewModelScope.launch {
+            val result = if (isLiked) {
+                postRepository.unlikePost(postId)
+            } else {
+                postRepository.likePost(postId)
+            }
+
+            result.onFailure { error ->
+                if (error is CancellationException) return@onFailure
+                val message = error.message ?: return@onFailure
+                _toastEvent.send(message)
+            }
+        }
+    }
+
     fun hidePost(postId: Long) {
         viewModelScope.launch {
             postRepository.hidePost(postId)

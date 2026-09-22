@@ -41,6 +41,7 @@ fun MyInfoScreen(
     viewModel: MyInfoViewModel = koinViewModel(),
     onUpdateNicknameClick: () -> Unit,
     onMyPostClick: () -> Unit,
+    onMyLikesClick: () -> Unit,
     onManageMyClick: () -> Unit,
     onLicenseClick: () -> Unit
 ) {
@@ -178,6 +179,16 @@ fun MyInfoScreen(
                 Text(
                     text = "나의 게시물"
                 )
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+            Button(
+                onClick = { onMyLikesClick() },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text(text = "좋아요")
             }
             Spacer(modifier = Modifier.height(20.dp))
             Button(

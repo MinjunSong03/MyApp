@@ -141,7 +141,11 @@ fun MainScreen() {
             ) {
                 composable("blocked_user") {
                     BlockedUserScreen(
-                        onBack = { navController.popBackStack() }
+                        onBack = { navController.popBackStack() },
+                        onNavigateToProfileClick = { userId ->
+                            navController.navigate("profile_click/$userId")
+
+                        }
                     )
                 }
                 composable("create_post") {
@@ -185,10 +189,25 @@ fun MainScreen() {
                         onBack = { navController.popBackStack() }
                     )
                 }
+                composable("liked_content") {
+                    LikedContentScreen(
+                        onNavigateToPostDetail = { postId ->
+                            navController.navigate("post_detail/$postId")
+                        },
+                        onNavigateToEditPost = { postId ->
+                            navController.navigate("edit_post/$postId")
+                        },
+                        onNavigateToProfileClick = { userId ->
+                            navController.navigate("profile_click/$userId")
+                        },
+                        onBack = { navController.popBackStack() }
+                    )
+                }
                 composable("my_info") {
                     MyInfoScreen(
                         onUpdateNicknameClick = { navController.navigate("edit_profile") },
                         onMyPostClick = { navController.navigate("my_post") },
+                        onMyLikesClick = { navController.navigate("liked_content") },
                         onManageMyClick = { navController.navigate("blocked_user")},
                         onLicenseClick = { navController.navigate("license")}
                     )

@@ -5,17 +5,16 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.example.myapp.auth.network.BlockedUserResponse
+import org.example.myapp.auth.network.UserResponse
 import org.example.myapp.auth.repository.UserBlockRepository
 import kotlin.coroutines.cancellation.CancellationException
 
 data class BlockedUserUiState(
-    val users: List<BlockedUserResponse> = emptyList(),
+    val users: List<UserResponse> = emptyList(),
     val isInitialLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val isLast: Boolean = false

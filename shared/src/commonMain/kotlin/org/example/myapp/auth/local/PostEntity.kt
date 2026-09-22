@@ -17,6 +17,8 @@ data class PostEntity(
     val videoThumbnailUrl: String?,
     val imageUrls: String,
     val viewCount: Long,
+    val likeCount: Long = 0,
+    val isLiked: Boolean = false,
     val createdAt: String,
     val editedAt: String?,
     val isMine: Boolean,

@@ -90,6 +90,7 @@ fun HomeScreen(
                 onLoadMore = { viewModel.loadHomeFeed(isRefresh = false) },
                 onCardClick = onNavigateToPostDetail,
                 onProfileClick = onNavigateToProfileClick,
+                onLikeClick = { viewModel.toggleLikePost(it) },
                 onEditClick = onNavigateToEditPost,
                 onDeleteClick = { activeDialog = HomeDialog.DeletePost(it) },
                 onHideClick = { activeDialog = HomeDialog.HidePost(it) },

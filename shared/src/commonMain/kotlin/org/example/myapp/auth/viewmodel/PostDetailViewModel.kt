@@ -107,6 +107,25 @@ class PostDetailViewModel(
         }
     }
 
+    fun toggleLikePost() {
+        val currentPost = _uiState.value.post ?: return
+        val isLiked = currentPost.isLiked
+
+        viewModelScope.launch {
+            val result = if (isLiked) {
+                postRepository.unlikePost(postId)
+            } else {
+                postRepository.likePost(postId)
+            }
+
+            result.onFailure { error ->
+                if (error is CancellationException) return@onFailure
+                val message = error.message ?: return@onFailure
+                _toastEvent.send(message)
+            }
+        }
+    }
+
     fun hidePost(postId: Long) {
         viewModelScope.launch {
             postRepository.hidePost(postId)

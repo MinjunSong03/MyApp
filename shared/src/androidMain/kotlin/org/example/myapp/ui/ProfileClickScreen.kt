@@ -2,6 +2,7 @@ package org.example.myapp.ui
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -90,6 +91,7 @@ fun ProfileClickScreen(
     val listState = rememberLazyListState()
 
     var activeDialog by remember { mutableStateOf<ProfileClickDialog?>(null) }
+    var isMenuExpanded by rememberSaveable { mutableStateOf(false) }
 
 
     LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) {
@@ -119,18 +121,115 @@ fun ProfileClickScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            val profile = uiState.userProfileResponse
+            val isLiked = profile?.isLiked == true
+            val likeCount = profile?.likeCount ?: 0L
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    AsyncImage(
+                        model = profile?.profileImageUrl,
+                        contentDescription = "프로필 사진",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = profile?.nickname ?: "",
+                        fontWeight = FontWeight.Bold,
+                        color = if (profile?.isDeleted == true) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                        fontSize = 15.sp
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(end = 4.dp)
+                ) {
+                    IconButton(
+                        onClick = { viewModel.toggleLikeUser() },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                if (isLiked) R.drawable.ic_like_filled else R.drawable.ic_like
+                            ),
+                            contentDescription = if (isLiked) "좋아요 취소" else "좋아요",
+                            tint = if (isLiked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    if (likeCount > 0) {
+                        Text(
+                            text = "$likeCount",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = if (isLiked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(end = 6.dp)
+                        )
+                    }
+                }
+                if (profile?.isMine == false) {
+                    Box {
+                        IconButton(
+                            onClick = { isMenuExpanded = true },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_option),
+                                contentDescription = "옵션",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = isMenuExpanded,
+                            onDismissRequest = { isMenuExpanded = false },
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(text = "이 사용자 차단하기") },
+                                onClick = {
+                                    isMenuExpanded = false
+                                    activeDialog = ProfileClickDialog.BlockUser(userId)
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = "이 사용자 신고하기",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                },
+                                onClick = {
+                                    isMenuExpanded = false
+                                    activeDialog = ProfileClickDialog.ReportUser(userId)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             PostFeedList(
                 posts = uiState.posts,
                 isInitialLoading = uiState.isInitialLoading,
                 isRefreshing = uiState.isRefreshing,
                 isLast = uiState.isLast,
-                emptyMessage = "아래로 당겨 새로고침해 보세요!",
+                emptyMessage = "게시물이 없습니다.",
                 videoManager = videoManager,
                 listState = listState,
                 onRefresh = { viewModel.loadPost(isRefresh = true) },
                 onLoadMore = { viewModel.loadPost(isRefresh = false) },
                 onCardClick = onNavigateToPostDetail,
                 onProfileClick = { },
+                onLikeClick = { viewModel.toggleLikePost(it)},
                 onEditClick = onNavigateToEditPost,
                 onDeleteClick = { activeDialog = ProfileClickDialog.DeletePost(it) },
                 onHideClick = { activeDialog = ProfileClickDialog.HidePost(it) },

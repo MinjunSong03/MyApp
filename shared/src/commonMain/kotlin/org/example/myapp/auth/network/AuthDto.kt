@@ -47,5 +47,7 @@ data class UserProfileResponse(
     val nickname: String,
     val profileImageUrl: String? = null,
     val isDeleted: Boolean = false,
-    val isMine: Boolean = false
+    val isMine: Boolean = false,
+    val likeCount: Long = 0,
+    val isLiked: Boolean = false,
 )

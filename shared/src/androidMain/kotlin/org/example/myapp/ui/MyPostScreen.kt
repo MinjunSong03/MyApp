@@ -111,6 +111,7 @@ fun MyPostScreen(
                         onLoadMore = { viewModel.loadActFeed(isRefresh = false) },
                         onCardClick = onNavigateToPostDetail,
                         onProfileClick = onNavigateToProfileClick,
+                        onLikeClick = { viewModel.toggleLikePost(it) },
                         onEditClick = onNavigateToEditPost,
                         onDeleteClick = { activeDialog = MyPostDialog.DeletePost(it) },
                         onHideClick = { activeDialog = MyPostDialog.HidePost(it) }
@@ -127,6 +128,7 @@ fun MyPostScreen(
                         onLoadMore = { viewModel.loadHiddenFeed(isRefresh = false) },
                         onCardClick = onNavigateToPostDetail,
                         onProfileClick = onNavigateToProfileClick,
+                        onLikeClick = { viewModel.toggleLikePost(it) },
                         onEditClick = onNavigateToEditPost,
                         onDeleteClick = { activeDialog = MyPostDialog.DeletePost(it) },
                         onHideClick = { },

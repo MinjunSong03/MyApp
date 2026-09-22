@@ -41,6 +41,7 @@ fun CommentCard(
     onProfileClick: (Long) -> Unit,
     onEditClick: (CommentResponse) -> Unit,
     onDeleteClick: (Long) -> Unit,
+    onBlockClick: (Long) -> Unit,
     onReportCommentClick: (Long) -> Unit,
     onReportUserClick: (Long) -> Unit,
     modifier: Modifier = Modifier
@@ -61,13 +62,9 @@ fun CommentCard(
                 .size(32.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceVariant)
-                .clickable {
-                    onProfileClick(comment.userId)
-                }
+                .clickable { if (!comment.isUserDeleted) onProfileClick(comment.userId) }
         )
-
         Spacer(modifier = Modifier.width(10.dp))
-
         Column(modifier = Modifier.weight(1f)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically
@@ -77,9 +74,7 @@ fun CommentCard(
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp,
                     color = if (comment.isUserDeleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.clickable {
-                        onProfileClick(comment.userId)
-                    }
+                    modifier = Modifier.clickable { if (!comment.isUserDeleted) onProfileClick(comment.userId) }
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -139,6 +134,15 @@ fun CommentCard(
                         }
                     )
                 } else {
+                    DropdownMenuItem(
+                        text = {
+                            Text("이 사용자 차단하기")
+                        },
+                        onClick = {
+                            isMenuExpanded = false
+                            onBlockClick(comment.userId)
+                        }
+                    )
                     DropdownMenuItem(
                         text = {
                             Text("댓글 신고하기", color = MaterialTheme.colorScheme.error)

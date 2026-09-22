@@ -40,6 +40,9 @@ interface PostDao {
     @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM feed_items WHERE feedType = :feedType")
     suspend fun getNextPosition(feedType: String): Int
 
+    @Query("UPDATE posts SET isLiked = :isLiked, likeCount = :likeCount WHERE id = :postId")
+    suspend fun updateLikeStatus(postId: Long, isLiked: Boolean, likeCount: Long)
+
     @Transaction
     suspend fun saveFeedPage(
         feedType: String,

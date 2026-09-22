@@ -34,7 +34,8 @@ import org.example.myapp.ui.item.AppTopBar
 @Composable
 fun BlockedUserScreen(
     viewModel: BlockedUserViewModel= koinViewModel(),
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavigateToProfileClick: (Long) -> Unit
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -109,7 +110,8 @@ fun BlockedUserScreen(
                         items(uiState.users, key = { it.id }) { user ->
                             BlockedUserCard(
                                 user = user,
-                                onUnblockUserClick = { viewModel.unblockUser(user.id) }
+                                onUnblockUserClick = { viewModel.unblockUser(user.id) },
+                                onProfileClick = onNavigateToProfileClick
                             )
                         }
                         if (!uiState.isLast) {

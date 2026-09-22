@@ -29,6 +29,10 @@ sealed interface FeedType {
     data class User(val userId: Long) : FeedType {
         override val storageKey: String = "USER_$userId"
     }
+
+    data object Liked : FeedType {
+        override val storageKey: String = "LIKED"
+    }
 }
 
 class PostRepository(
@@ -38,10 +42,17 @@ class PostRepository(
     private val _feedRefreshEvent = MutableSharedFlow<FeedType>(extraBufferCapacity = 1)
     val feedRefreshEvent = _feedRefreshEvent.asSharedFlow()
 
+    private val _userUnlikeEvent = MutableSharedFlow<Long>(extraBufferCapacity = 1)
+    val userUnlikeEvent = _userUnlikeEvent.asSharedFlow()
+
     fun getFeedStream(feedType: FeedType): Flow<List<PostResponse>> {
         return postDao.getFeed(feedType.storageKey).map { entities ->
             entities.map { it.toResponse() }
         }
+    }
+
+    fun getPostStream(postId: Long): Flow<PostResponse?> {
+        return postDao.getPost(postId).map { it?.toResponse() }
     }
 
     suspend fun fetchFeed(feedType: FeedType, page: Int, isRefresh: Boolean): Result<Boolean> = withContext(Dispatchers.IO) {
@@ -51,6 +62,7 @@ class PostRepository(
                 is FeedType.MyAct -> postApiService.getMyActPost(page)
                 is FeedType.MyHidden -> postApiService.getMyHiddenPost(page)
                 is FeedType.User -> postApiService.getUserPosts(feedType.userId, page)
+                is FeedType.Liked -> postApiService.getLikedPosts(page)
             }
             postDao.saveFeedPage(
                 feedType = feedType.storageKey,
@@ -59,10 +71,6 @@ class PostRepository(
             )
             response.last
         }.onFailure { if (it is CancellationException) throw it }
-    }
-
-    fun getPostStream(postId: Long): Flow<PostResponse?> {
-        return postDao.getPost(postId).map { it?.toResponse() }
     }
 
     suspend fun createPost(request: CreatePostRequest): Result<Unit> = withContext(Dispatchers.IO) {
@@ -130,6 +138,63 @@ class PostRepository(
         }.onFailure { if (it is CancellationException) throw it }
     }
 
+    suspend fun fetchLikedUsers(page: Int): Result<SliceResponse<UserResponse>> = withContext(Dispatchers.IO) {
+        runCatching {
+            postApiService.getLikedUsers(page)
+        }.onFailure { if (it is CancellationException) throw it }
+    }
+
+
+    suspend fun likePost(postId: Long): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val currentPost = postDao.getPost(postId).firstOrNull()
+            val prevCount = currentPost?.likeCount ?: 0L
+
+            postDao.updateLikeStatus(postId = postId, isLiked = true, likeCount = prevCount + 1)
+
+            try {
+                val response = postApiService.likePost(postId)
+                postDao.updateLikeStatus(postId = postId, isLiked = response.isLiked, likeCount = response.likeCount)
+                _feedRefreshEvent.tryEmit(FeedType.Liked)
+                Unit
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                postDao.updateLikeStatus(postId = postId, isLiked = false, likeCount = prevCount)
+                throw e
+            }
+        }.onFailure { if (it is CancellationException) throw it }
+    }
+
+    suspend fun unlikePost(postId: Long): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val currentPost = postDao.getPost(postId).firstOrNull()
+            val prevCount = currentPost?.likeCount ?: 0L
+
+            postDao.updateLikeStatus(postId = postId, isLiked = false, likeCount = (prevCount - 1).coerceAtLeast(0))
+
+            try {
+                val response = postApiService.unlikePost(postId)
+                postDao.updateLikeStatus(postId = postId, isLiked = response.isLiked, likeCount = response.likeCount)
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                postDao.updateLikeStatus(postId = postId, isLiked = true, likeCount = prevCount)
+                throw e
+            }
+        }.onFailure { if (it is CancellationException) throw it }
+    }
+
+    suspend fun likeUser(targetUserId: Long): Result<LikeResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            postApiService.likeUser(targetUserId)
+        }.onFailure { if (it is CancellationException) throw it }
+    }
+
+    suspend fun unlikeUser(targetUserId: Long): Result<LikeResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            postApiService.unlikeUser(targetUserId)
+        }.onFailure { if (it is CancellationException) throw it }
+    }
+
     private fun PostResponse.toEntity() = PostEntity(
         id = id,
         userId = userId,
@@ -141,6 +206,8 @@ class PostRepository(
         videoThumbnailUrl = videoThumbnailUrl,
         imageUrls = imageUrls.joinToString("|||"),
         viewCount = viewCount,
+        likeCount = likeCount,
+        isLiked = isLiked,
         createdAt = createdAt,
         editedAt = editedAt,
         isMine = isMine,
@@ -159,12 +226,16 @@ class PostRepository(
         videoThumbnailUrl = videoThumbnailUrl,
         imageUrls = if (imageUrls.isBlank()) emptyList() else imageUrls.split("|||"),
         viewCount = viewCount,
+        likeCount = likeCount,
+        isLiked = isLiked,
         createdAt = createdAt,
         editedAt = editedAt,
         isMine = isMine,
         isHidden = isHidden,
         isUserDeleted = isUserDeleted
     )
+
+
 }
 
 class UserBlockRepository(
@@ -184,7 +255,7 @@ class UserBlockRepository(
         }.onFailure { if (it is CancellationException) throw it }
     }
 
-    suspend fun getMyBlockedUser(page: Int): Result<SliceResponse<BlockedUserResponse>> = withContext(Dispatchers.IO) {
+    suspend fun getMyBlockedUser(page: Int): Result<SliceResponse<UserResponse>> = withContext(Dispatchers.IO) {
         runCatching {
             userBlockApiService.getMyBlockedUser(page)
         }.onFailure { if (it is CancellationException) throw it }

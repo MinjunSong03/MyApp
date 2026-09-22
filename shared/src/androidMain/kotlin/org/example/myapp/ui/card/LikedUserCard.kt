@@ -38,10 +38,13 @@ import org.example.myapp.auth.network.UserResponse
 import org.example.myapp.shared.R
 
 @Composable
-fun BlockedUserCard(
+fun LikedUserCard(
     user: UserResponse,
-    onUnblockUserClick: (Long) -> Unit,
-    onProfileClick: (Long) -> Unit
+    isLiked: Boolean = true,
+    onProfileClick: (Long) -> Unit,
+    onLikeClick: (Long) -> Unit,
+    onBlockUserClick: (Long) -> Unit,
+    onReportUserClick: (Long) -> Unit
 ) {
     var isMenuExpanded by rememberSaveable { mutableStateOf(false) }
 
@@ -87,10 +90,29 @@ fun BlockedUserCard(
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
+                IconButton(
+                    onClick = { onLikeClick(user.id) },
+                    modifier = Modifier
+                        .padding(end = 4.dp)
+                        .size(36.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(
+                            if (isLiked) R.drawable.ic_like_filled else R.drawable.ic_like
+                        ),
+                        contentDescription = if (isLiked) "좋아요 취소" else "좋아요",
+                        tint = if (isLiked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+
                 Box {
-                    IconButton(onClick = { isMenuExpanded = true }) {
+                    IconButton(
+                        onClick = { isMenuExpanded = true },
+                        modifier = Modifier.size(36.dp)
+                    ) {
                         Icon(
-                            painterResource(R.drawable.ic_option),
+                            painter = painterResource(R.drawable.ic_option),
                             contentDescription = "옵션",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -101,11 +123,23 @@ fun BlockedUserCard(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant
                     ) {
                         DropdownMenuItem(
-                            text = { Text(text = "차단 해제") },
+                            text = { Text(text = "이 사용자 차단하기") },
                             onClick = {
                                 isMenuExpanded = false
-                                onUnblockUserClick(user.id)
+                                onBlockUserClick(user.id)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = "이 사용자 신고하기",
+                                    color = MaterialTheme.colorScheme.error
+                                )
                             },
+                            onClick = {
+                                isMenuExpanded = false
+                                onReportUserClick(user.id)
+                            }
                         )
                     }
                 }

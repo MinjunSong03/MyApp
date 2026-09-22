@@ -256,7 +256,7 @@ fun PostDetailScreen(
                     ) {
                         Row(
                             modifier = Modifier
-                                .clickable { onNavigateToProfileClick(currentPost.userId) },
+                                .clickable { if (!currentPost.isUserDeleted) onNavigateToProfileClick(currentPost.userId) },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             AsyncImage(
@@ -277,6 +277,33 @@ fun PostDetailScreen(
                             )
                         }
                         Spacer(modifier = Modifier.weight(1f))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(end = 4.dp)
+                        ) {
+                            IconButton(
+                                onClick = { viewModel.toggleLikePost() },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(
+                                        if (currentPost.isLiked) R.drawable.ic_like_filled else R.drawable.ic_like
+                                    ),
+                                    contentDescription = if (currentPost.isLiked) "좋아요 취소" else "좋아요",
+                                    tint = if (currentPost.isLiked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            if (currentPost.likeCount > 0) {
+                                Text(
+                                    text = "${currentPost.likeCount}",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (currentPost.isLiked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(end = 6.dp)
+                                )
+                            }
+                        }
                         Box {
                             IconButton(onClick = { isMenuExpanded = true }) {
                                 Icon(
@@ -423,6 +450,7 @@ fun PostDetailScreen(
                     onCreateComment = { viewModel.createComment(postId, it) },
                     onEditComment = { id, text -> viewModel.editComment(id, text) },
                     onDeleteClick = { activeDialog = PostDetailDialog.DeleteComment(it) },
+                    onBlockClick = { activeDialog = PostDetailDialog.BlockUser(it)},
                     onReportCommentClick = { activeDialog = PostDetailDialog.ReportComment(it) },
                     onReportUserClick = { activeDialog = PostDetailDialog.ReportUser(it) },
                     onProfileClick = onNavigateToProfileClick

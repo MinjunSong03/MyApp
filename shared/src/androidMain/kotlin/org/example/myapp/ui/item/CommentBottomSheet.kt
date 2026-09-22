@@ -66,6 +66,7 @@ fun CommentBottomSheet(
     onCreateComment: (String) -> Unit,
     onEditComment: (Long, String) -> Unit,
     onDeleteClick: (Long) -> Unit,
+    onBlockClick: (Long) -> Unit,
     onReportCommentClick: (Long) -> Unit,
     onReportUserClick: (Long) -> Unit,
     onProfileClick: (Long) -> Unit
@@ -161,6 +162,7 @@ fun CommentBottomSheet(
                                         focusRequester.requestFocus()
                                     },
                                     onDeleteClick = onDeleteClick,
+                                    onBlockClick = onBlockClick,
                                     onReportCommentClick = onReportCommentClick,
                                     onReportUserClick = onReportUserClick
                                 )

@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "865f79b9f1c1372af5fdf0e446b72c1b",
+    "identityHash": "f4aac044a6336ab6a0daeb743fa04785",
     "entities": [
       {
         "tableName": "posts",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `userId` INTEGER NOT NULL, `userNickname` TEXT NOT NULL, `userProfileImageUrl` TEXT, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `videoUrl` TEXT, `videoThumbnailUrl` TEXT, `imageUrls` TEXT NOT NULL, `viewCount` INTEGER NOT NULL, `createdAt` TEXT NOT NULL, `editedAt` TEXT, `isMine` INTEGER NOT NULL, `isHidden` INTEGER NOT NULL, `isUserDeleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `userId` INTEGER NOT NULL, `userNickname` TEXT NOT NULL, `userProfileImageUrl` TEXT, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `videoUrl` TEXT, `videoThumbnailUrl` TEXT, `imageUrls` TEXT NOT NULL, `viewCount` INTEGER NOT NULL, `likeCount` INTEGER NOT NULL, `isLiked` INTEGER NOT NULL, `createdAt` TEXT NOT NULL, `editedAt` TEXT, `isMine` INTEGER NOT NULL, `isHidden` INTEGER NOT NULL, `isUserDeleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -62,6 +62,18 @@
           {
             "fieldPath": "viewCount",
             "columnName": "viewCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "likeCount",
+            "columnName": "likeCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isLiked",
+            "columnName": "isLiked",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -160,7 +172,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '865f79b9f1c1372af5fdf0e446b72c1b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f4aac044a6336ab6a0daeb743fa04785')"
     ]
   }
 }

@@ -31,6 +31,12 @@ data class EditPostRequest(
 )
 
 @Serializable
+data class LikeResponse(
+    val isLiked: Boolean,
+    val likeCount: Long
+)
+
+@Serializable
 data class PostResponse(
     val id: Long,
     val userId: Long,
@@ -42,6 +48,8 @@ data class PostResponse(
     val videoThumbnailUrl: String? = null,
     val imageUrls: List<String> = emptyList(),
     val viewCount: Long,
+    val likeCount: Long = 0,
+    val isLiked: Boolean = false,
     val createdAt: String,
     val editedAt: String?,
     val isMine: Boolean,
@@ -86,9 +94,9 @@ data class CreateReportRequest(
 )
 
 @Serializable
-data class BlockedUserResponse(
+data class UserResponse(
     val id: Long,
     val nickname: String,
     val profileImageUrl: String?,
-    val status: UserStatus
+    val isDeleted: Boolean
 )
