@@ -62,14 +62,6 @@ class LikedContentViewModel(
         }
 
         viewModelScope.launch {
-            postRepository.feedRefreshEvent.collect { feedType ->
-                if (feedType is FeedType.LikedPosts) {
-                    loadLikedPosts(isRefresh = true)
-                }
-            }
-        }
-
-        viewModelScope.launch {
             postRepository.userUnlikeEvent.collect { unlikedUserId ->
                 _usersState.update { current ->
                     current.copy(users = current.users.filterNot { it.id == unlikedUserId })
@@ -78,7 +70,7 @@ class LikedContentViewModel(
         }
 
         loadLikedUsers(isRefresh = false)
-        loadLikedPosts(isRefresh = false)
+        loadLikedPosts(isRefresh = true)
     }
 
     fun loadLikedUsers(isRefresh: Boolean) {

@@ -122,12 +122,7 @@ class PostRepository(
             val updated = postApiService.unhidePost(postId)
             postDao.removePostFromFeed(FeedType.MyHidden.storageKey, postId)
             postDao.upsertPosts(listOf(updated.toEntity()))
-            _feedRefreshEvent.emit(FeedType.Home)
             _feedRefreshEvent.emit(FeedType.MyAct)
-            if (updated.isLiked) {
-                _feedRefreshEvent.emit(FeedType.LikedPosts)
-            }
-            Unit
         }.onFailure { if (it is CancellationException) throw it }
     }
 
