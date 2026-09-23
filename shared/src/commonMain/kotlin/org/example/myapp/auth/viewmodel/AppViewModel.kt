@@ -2,6 +2,7 @@ package org.example.myapp.auth.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -23,8 +24,7 @@ class AppViewModel(
     val uiState: StateFlow<AppUiState> = authRepository.authState
         .map { state ->
             when (state) {
-                is AuthState.Initial -> AppUiState.Loading()
-                is AuthState.Loading -> AppUiState.Loading(state.message)
+                is AuthState.Initial, is AuthState.Loading -> AppUiState.Loading()
                 is AuthState.Unauthenticated -> AppUiState.Login
                 is AuthState.Authenticated -> {
                     if (state.isNewUser) AppUiState.ProfileSetup

@@ -36,6 +36,12 @@ class AndroidAuthService(private val context: Context): AuthService {
 
     //Kakao Login, Logout, Unlink
     private suspend fun loginWithKakao(): Session = suspendCancellableCoroutine { continuation ->
+        val activity = ActivityHolder.currentActivity
+        if (activity == null) {
+            continuation.resumeWithException(IllegalStateException("로그인을 진행할 활성 화면(Activity)을 찾을 수 없습니다."))
+            return@suspendCancellableCoroutine
+        }
+
         val callback: (OAuthToken?, Throwable?) -> Unit = { token, error ->
             if (error != null) {
                 continuation.resumeWithException(error)
@@ -52,10 +58,10 @@ class AndroidAuthService(private val context: Context): AuthService {
             }
         }
 
-        if (UserApiClient.instance.isKakaoTalkLoginAvailable(context)) {
-            UserApiClient.instance.loginWithKakao(context, callback = callback)
+        if (UserApiClient.instance.isKakaoTalkLoginAvailable(activity)) {
+            UserApiClient.instance.loginWithKakao(activity, callback = callback)
         } else {
-            UserApiClient.instance.loginWithKakaoAccount(context, callback = callback)
+            UserApiClient.instance.loginWithKakaoAccount(activity, callback = callback)
         }
     }
 

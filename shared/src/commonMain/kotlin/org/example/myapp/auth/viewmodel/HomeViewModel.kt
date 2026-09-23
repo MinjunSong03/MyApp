@@ -24,10 +24,7 @@ data class HomeUiState(
     val isRefreshing: Boolean = false,
     val isLast: Boolean = false,
     val page: Int = 0
-) {
-    val isEmpty: Boolean
-        get() = !isInitialLoading && posts.isEmpty()
-}
+)
 
 class HomeViewModel(
     private val postRepository: PostRepository,
@@ -53,6 +50,11 @@ class HomeViewModel(
                 if (feedType is FeedType.Home) {
                     loadHomeFeed(isRefresh = true)
                 }
+            }
+        }
+        viewModelScope.launch {
+            userBlockRepository.unBlockUserEvent.collect {
+                loadHomeFeed(isRefresh = true)
             }
         }
         loadHomeFeed(isRefresh = false)

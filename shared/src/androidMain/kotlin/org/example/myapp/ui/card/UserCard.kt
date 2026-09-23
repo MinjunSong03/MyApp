@@ -38,15 +38,21 @@ import org.example.myapp.auth.network.UserResponse
 import org.example.myapp.shared.R
 
 @Composable
-fun BlockedUserCard(
+fun UserCard(
     user: UserResponse,
-    onUnblockUserClick: (Long) -> Unit,
-    onProfileClick: (Long) -> Unit
+    onProfileClick: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+    isLiked: Boolean = true,
+    onLikeClick: ((Long) -> Unit)? = null,
+    onUnblockClick: ((Long) -> Unit)? = null,
+    onBlockClick: ((Long) -> Unit)? = null,
+    onReportClick: ((Long) -> Unit)? = null
 ) {
     var isMenuExpanded by rememberSaveable { mutableStateOf(false) }
+    val hasOptionsMenu = onUnblockClick != null || onBlockClick != null || onReportClick != null
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         shape = RoundedCornerShape(16.dp),
@@ -86,27 +92,77 @@ fun BlockedUserCard(
                         fontSize = 14.sp
                     )
                 }
+
                 Spacer(modifier = Modifier.weight(1f))
-                Box {
-                    IconButton(onClick = { isMenuExpanded = true }) {
+
+                if (onLikeClick != null) {
+                    IconButton(
+                        onClick = { onLikeClick(user.id) },
+                        modifier = Modifier
+                            .padding(end = 4.dp)
+                            .size(36.dp)
+                    ) {
                         Icon(
-                            painterResource(R.drawable.ic_option),
-                            contentDescription = "옵션",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            painter = painterResource(
+                                if (isLiked) R.drawable.ic_like_filled else R.drawable.ic_like
+                            ),
+                            contentDescription = if (isLiked) "좋아요 취소" else "좋아요",
+                            tint = if (isLiked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(22.dp)
                         )
                     }
-                    DropdownMenu(
-                        expanded = isMenuExpanded,
-                        onDismissRequest = { isMenuExpanded = false },
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(text = "차단 해제") },
-                            onClick = {
-                                isMenuExpanded = false
-                                onUnblockUserClick(user.id)
-                            },
-                        )
+                }
+
+                if (hasOptionsMenu) {
+                    Box {
+                        IconButton(
+                            onClick = { isMenuExpanded = true },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_option),
+                                contentDescription = "옵션",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = isMenuExpanded,
+                            onDismissRequest = { isMenuExpanded = false },
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        ) {
+                            if (onUnblockClick != null) {
+                                DropdownMenuItem(
+                                    text = { Text(text = "차단 해제") },
+                                    onClick = {
+                                        isMenuExpanded = false
+                                        onUnblockClick(user.id)
+                                    }
+                                )
+                            }
+                            if (onBlockClick != null) {
+                                DropdownMenuItem(
+                                    text = { Text(text = "이 사용자 차단하기") },
+                                    onClick = {
+                                        isMenuExpanded = false
+                                        onBlockClick(user.id)
+                                    }
+                                )
+                            }
+                            if (onReportClick != null) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = "이 사용자 신고하기",
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    },
+                                    onClick = {
+                                        isMenuExpanded = false
+                                        onReportClick(user.id)
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             }

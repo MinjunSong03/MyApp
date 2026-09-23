@@ -7,10 +7,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import org.example.myapp.auth.viewmodel.AppUiState
+import org.example.myapp.auth.viewmodel.AppViewModel
 import org.example.myapp.ui.MyAppTheme
-import org.example.myapp.util.getAsyncImageLoader
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : ComponentActivity() {
+    private val appViewModel: AppViewModel by viewModel()
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.auto(
@@ -18,8 +22,11 @@ class MainActivity : ComponentActivity() {
                 android.graphics.Color.TRANSPARENT
             )
         )
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
-
+        splashScreen.setKeepOnScreenCondition {
+            appViewModel.uiState.value is AppUiState.Loading
+        }
         setContent {
             MyAppTheme {
                 App()

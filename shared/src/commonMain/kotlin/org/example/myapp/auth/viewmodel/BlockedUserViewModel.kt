@@ -11,17 +11,16 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.myapp.auth.network.UserResponse
 import org.example.myapp.auth.repository.UserBlockRepository
+import kotlin.collections.plus
 import kotlin.coroutines.cancellation.CancellationException
 
 data class BlockedUserUiState(
     val users: List<UserResponse> = emptyList(),
     val isInitialLoading: Boolean = true,
     val isRefreshing: Boolean = false,
-    val isLast: Boolean = false
-) {
-    val isEmpty: Boolean
-        get() = !isInitialLoading && users.isEmpty()
-}
+    val isLast: Boolean = false,
+    val page: Int = 0
+)
 
 class BlockedUserViewModel(
     private val userBlockRepository: UserBlockRepository
@@ -32,37 +31,39 @@ class BlockedUserViewModel(
     private val _toastEvent = Channel<String>(Channel.BUFFERED)
     val toastEvent = _toastEvent.receiveAsFlow()
 
-    private var currentPage = 0
-    private var isLastPage = false
     private var feedJob: Job? = null
 
     fun loadMyBlockedUser(isRefresh: Boolean) {
 
         if (isRefresh) {
             feedJob?.cancel()
-            _uiState.update { it.copy(isRefreshing = true) }
-            currentPage = 0
-            isLastPage = false
+            _uiState.update {
+                it.copy(
+                    isRefreshing = true,
+                    isLast = false
+            )
+            }
         } else {
-            if (isLastPage || feedJob?.isActive == true) return
+            if (_uiState.value.isLast || feedJob?.isActive == true) return
             if (_uiState.value.users.isEmpty()) {
                 _uiState.update { it.copy(isInitialLoading = true) }
             }
         }
 
-        val targetPage = if (isRefresh) 0 else currentPage
+        val targetPage = if (isRefresh) 0 else _uiState.value.page
 
         feedJob = viewModelScope.launch {
             try {
                 userBlockRepository.getMyBlockedUser(targetPage)
                 .onSuccess { slice ->
-                    isLastPage = slice.last
-                    currentPage = targetPage + 1
                     _uiState.update { current ->
-                        val newUsers = if (isRefresh) slice.content else current.users + slice.content
+                        val newUsers = if (isRefresh) slice.content else (current.users + slice.content).distinctBy { it.id }
                         current.copy(
                             users = newUsers,
-                            isLast = isLastPage
+                            page = targetPage + 1,
+                            isLast = slice.last,
+                            isInitialLoading = false,
+                            isRefreshing = false
                         )
                     }
                 }

@@ -1,6 +1,7 @@
 package org.example.myapp
 
 import android.app.Application
+import org.example.myapp.auth.platform.ActivityHolder
 import org.example.myapp.auth.platform.initKakaoSdk
 import org.example.myapp.di.initKoin
 import org.koin.android.ext.koin.androidContext
@@ -8,6 +9,8 @@ import org.koin.android.ext.koin.androidContext
 class MyApplication: Application() {
     override fun onCreate() {
         super.onCreate()
+
+        registerActivityLifecycleCallbacks(ActivityHolder)
 
         initKoin {
             androidContext(this@MyApplication)

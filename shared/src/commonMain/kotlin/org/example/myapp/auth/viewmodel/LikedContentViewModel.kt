@@ -26,9 +26,7 @@ data class LikedUsersTabState(
     val isLast: Boolean = false,
     val page: Int = 0,
     val isLoading: Boolean = false
-) {
-    val isEmpty: Boolean get() = !isInitialLoading && users.isEmpty()
-}
+)
 
 data class LikedPostsTabState(
     val posts: List<PostResponse> = emptyList(),
@@ -36,9 +34,7 @@ data class LikedPostsTabState(
     val isRefreshing: Boolean = false,
     val isLast: Boolean = false,
     val page: Int = 0
-) {
-    val isEmpty: Boolean get() = !isInitialLoading && posts.isEmpty()
-}
+)
 
 class LikedContentViewModel(
     private val postRepository: PostRepository,
@@ -60,8 +56,16 @@ class LikedContentViewModel(
 
     init {
         viewModelScope.launch {
-            postRepository.getFeedStream(FeedType.Liked).collect { posts ->
+            postRepository.getFeedStream(FeedType.LikedPosts).collect { posts ->
                 _postsState.update { it.copy(posts = posts) }
+            }
+        }
+
+        viewModelScope.launch {
+            postRepository.feedRefreshEvent.collect { feedType ->
+                if (feedType is FeedType.LikedPosts) {
+                    loadLikedPosts(isRefresh = true)
+                }
             }
         }
 
@@ -73,8 +77,8 @@ class LikedContentViewModel(
             }
         }
 
-        loadLikedUsers(isRefresh = true)
-        loadLikedPosts(isRefresh = true)
+        loadLikedUsers(isRefresh = false)
+        loadLikedPosts(isRefresh = false)
     }
 
     fun loadLikedUsers(isRefresh: Boolean) {
@@ -154,7 +158,7 @@ class LikedContentViewModel(
         val targetPage = if (isRefresh) 0 else _postsState.value.page
 
         postsJob = viewModelScope.launch {
-            postRepository.fetchFeed(FeedType.Liked, targetPage, isRefresh)
+            postRepository.fetchFeed(FeedType.LikedPosts, targetPage, isRefresh)
                 .onSuccess { isLast ->
                     _postsState.update {
                         it.copy(

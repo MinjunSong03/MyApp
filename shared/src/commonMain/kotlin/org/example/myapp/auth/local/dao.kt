@@ -43,6 +43,7 @@ interface PostDao {
     @Query("UPDATE posts SET isLiked = :isLiked, likeCount = :likeCount WHERE id = :postId")
     suspend fun updateLikeStatus(postId: Long, isLiked: Boolean, likeCount: Long)
 
+
     @Transaction
     suspend fun saveFeedPage(
         feedType: String,

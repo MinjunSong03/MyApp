@@ -15,6 +15,7 @@ dependencies {
     debugImplementation(libs.compose.uiTooling)
     implementation(libs.koin.android)
     implementation(libs.kakao.user)
+    implementation("androidx.core:core-splashscreen:1.0.1")
 }
 
 val localProperties = Properties()

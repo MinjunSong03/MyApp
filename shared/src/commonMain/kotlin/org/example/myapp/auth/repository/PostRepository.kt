@@ -9,9 +9,20 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import org.example.myapp.auth.local.PostEntity
 import org.example.myapp.auth.local.PostDao
-import org.example.myapp.auth.network.*
+import org.example.myapp.auth.local.PostEntity
+import org.example.myapp.auth.network.CreatePostRequest
+import org.example.myapp.auth.network.CreateReportRequest
+import org.example.myapp.auth.network.EditPostRequest
+import org.example.myapp.auth.network.LikeResponse
+import org.example.myapp.auth.network.PostApiService
+import org.example.myapp.auth.network.PostResponse
+import org.example.myapp.auth.network.ReportApiService
+import org.example.myapp.auth.network.ReportReason
+import org.example.myapp.auth.network.SliceResponse
+import org.example.myapp.auth.network.UserBlockApiService
+import org.example.myapp.auth.network.UserProfileResponse
+import org.example.myapp.auth.network.UserResponse
 
 sealed interface FeedType {
     val storageKey: String
@@ -26,12 +37,12 @@ sealed interface FeedType {
         override val storageKey: String = "MY_HIDDEN"
     }
 
-    data class User(val userId: Long) : FeedType {
+    data class UserPosts(val userId: Long) : FeedType {
         override val storageKey: String = "USER_$userId"
     }
 
-    data object Liked : FeedType {
-        override val storageKey: String = "LIKED"
+    data object LikedPosts : FeedType {
+        override val storageKey: String = "LIKED_POSTS"
     }
 }
 
@@ -39,10 +50,10 @@ class PostRepository(
     private val postApiService: PostApiService,
     private val postDao: PostDao
 ) {
-    private val _feedRefreshEvent = MutableSharedFlow<FeedType>(extraBufferCapacity = 1)
+    private val _feedRefreshEvent = MutableSharedFlow<FeedType>(extraBufferCapacity = 64)
     val feedRefreshEvent = _feedRefreshEvent.asSharedFlow()
 
-    private val _userUnlikeEvent = MutableSharedFlow<Long>(extraBufferCapacity = 1)
+    private val _userUnlikeEvent = MutableSharedFlow<Long>(extraBufferCapacity = 64)
     val userUnlikeEvent = _userUnlikeEvent.asSharedFlow()
 
     fun getFeedStream(feedType: FeedType): Flow<List<PostResponse>> {
@@ -61,8 +72,8 @@ class PostRepository(
                 is FeedType.Home -> postApiService.getHomeFeed(page)
                 is FeedType.MyAct -> postApiService.getMyActPost(page)
                 is FeedType.MyHidden -> postApiService.getMyHiddenPost(page)
-                is FeedType.User -> postApiService.getUserPosts(feedType.userId, page)
-                is FeedType.Liked -> postApiService.getLikedPosts(page)
+                is FeedType.UserPosts -> postApiService.getUserPosts(feedType.userId, page)
+                is FeedType.LikedPosts -> postApiService.getLikedPosts(page)
             }
             postDao.saveFeedPage(
                 feedType = feedType.storageKey,
@@ -76,9 +87,8 @@ class PostRepository(
     suspend fun createPost(request: CreatePostRequest): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             postApiService.createPost(request)
-            _feedRefreshEvent.tryEmit(FeedType.Home)
-            _feedRefreshEvent.tryEmit(FeedType.MyAct)
-            Unit
+            _feedRefreshEvent.emit(FeedType.Home)
+            _feedRefreshEvent.emit(FeedType.MyAct)
         }.onFailure { if (it is CancellationException) throw it }
     }
 
@@ -102,7 +112,8 @@ class PostRepository(
             postApiService.hidePost(postId)
             postDao.removePostFromFeed(FeedType.Home.storageKey, postId)
             postDao.removePostFromFeed(FeedType.MyAct.storageKey, postId)
-            postDao.removePostFromFeed(FeedType.Liked.storageKey, postId)
+            postDao.removePostFromFeed(FeedType.LikedPosts.storageKey, postId)
+            _feedRefreshEvent.emit(FeedType.MyHidden)
         }.onFailure { if (it is CancellationException) throw it }
     }
 
@@ -111,6 +122,12 @@ class PostRepository(
             val updated = postApiService.unhidePost(postId)
             postDao.removePostFromFeed(FeedType.MyHidden.storageKey, postId)
             postDao.upsertPosts(listOf(updated.toEntity()))
+            _feedRefreshEvent.emit(FeedType.Home)
+            _feedRefreshEvent.emit(FeedType.MyAct)
+            if (updated.isLiked) {
+                _feedRefreshEvent.emit(FeedType.LikedPosts)
+            }
+            Unit
         }.onFailure { if (it is CancellationException) throw it }
     }
 
@@ -191,7 +208,7 @@ class PostRepository(
     suspend fun unlikeUser(targetUserId: Long): Result<LikeResponse> = withContext(Dispatchers.IO) {
         runCatching {
             val response = postApiService.unlikeUser(targetUserId)
-            _userUnlikeEvent.tryEmit(targetUserId)
+            _userUnlikeEvent.emit(targetUserId)
             response
         }.onFailure { if (it is CancellationException) throw it }
     }
@@ -243,6 +260,9 @@ class UserBlockRepository(
     private val userBlockApiService: UserBlockApiService,
     private val postDao: PostDao
 ) {
+    private val _unBlockUserEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 64)
+    val unBlockUserEvent = _unBlockUserEvent.asSharedFlow()
+
     suspend fun blockUser(targetUserId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             userBlockApiService.blockUser(targetUserId)
@@ -253,6 +273,7 @@ class UserBlockRepository(
     suspend fun unblockUser(targetUserId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             userBlockApiService.unblockUser(targetUserId)
+            _unBlockUserEvent.emit(Unit)
         }.onFailure { if (it is CancellationException) throw it }
     }
 

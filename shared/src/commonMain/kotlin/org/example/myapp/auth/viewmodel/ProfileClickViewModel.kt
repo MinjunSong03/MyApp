@@ -27,10 +27,7 @@ data class ProfileClickUiState(
     val isLast: Boolean = false,
     val page: Int = 0,
     val userProfileResponse: UserProfileResponse? = null
-) {
-    val isEmpty: Boolean
-        get() = !isInitialLoading && posts.isEmpty()
-}
+)
 
 class ProfileClickViewModel(
     savedStateHandle: SavedStateHandle,
@@ -48,7 +45,7 @@ class ProfileClickViewModel(
 
     init {
         viewModelScope.launch {
-            postRepository.getFeedStream(FeedType.User(userId)).collect { posts ->
+            postRepository.getFeedStream(FeedType.UserPosts(userId)).collect { posts ->
                 _uiState.update { it.copy(posts = posts) }
             }
         }
@@ -91,7 +88,7 @@ class ProfileClickViewModel(
         val targetPage = if (isRefresh) 0 else _uiState.value.page
 
         feedJob = viewModelScope.launch {
-            postRepository.fetchFeed(FeedType.User(userId), targetPage, isRefresh)
+            postRepository.fetchFeed(FeedType.UserPosts(userId), targetPage, isRefresh)
                 .onSuccess { isLast ->
                     _uiState.update {
                         it.copy(

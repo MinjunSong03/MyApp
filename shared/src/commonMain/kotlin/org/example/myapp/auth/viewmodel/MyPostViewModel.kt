@@ -55,13 +55,16 @@ class MyPostViewModel(
 
         viewModelScope.launch {
             postRepository.feedRefreshEvent.collect { feedType ->
-                if (feedType is FeedType.MyAct) {
-                    loadActFeed(isRefresh = true)
+                when (feedType) {
+                    is FeedType.MyAct -> loadActFeed(isRefresh = true)
+                    is FeedType.MyHidden -> loadHiddenFeed(isRefresh = true)
+                    else -> Unit
                 }
             }
         }
-        loadActFeed(isRefresh = true)
-        loadHiddenFeed(isRefresh = true)
+
+        loadActFeed(isRefresh = false)
+        loadHiddenFeed(isRefresh = false)
     }
 
     fun loadActFeed(isRefresh: Boolean) = loadFeed(
@@ -149,7 +152,6 @@ class MyPostViewModel(
             postRepository.hidePost(postId)
                 .onSuccess {
                     _toastEvent.send("게시물을 숨김 처리하였습니다.")
-                    loadHiddenFeed(isRefresh = true)
                 }
                 .onFailure { error ->
                     val message = error.message ?: return@onFailure
@@ -163,7 +165,6 @@ class MyPostViewModel(
             postRepository.unhidePost(postId)
                 .onSuccess {
                     _toastEvent.send("게시물 숨김을 해제하였습니다.")
-                    loadActFeed(isRefresh = true)
                 }
                 .onFailure { error ->
                     val message = error.message ?: return@onFailure
@@ -184,6 +185,4 @@ class MyPostViewModel(
                 }
         }
     }
-
-
 }

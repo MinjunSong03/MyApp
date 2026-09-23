@@ -1,21 +1,12 @@
 package org.example.myapp.ui
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -24,26 +15,22 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import org.example.myapp.auth.viewmodel.LikedContentViewModel
-import org.example.myapp.ui.card.LikedUserCard
 import org.example.myapp.ui.dialog.ReportDialog
-import org.example.myapp.ui.item.AppPullToRefreshBox
 import org.example.myapp.ui.item.AppTopBar
 import org.example.myapp.ui.item.PostFeedList
+import org.example.myapp.ui.item.UserList
 import org.example.myapp.util.AndroidVideoPlayerManager
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -71,21 +58,6 @@ fun LikedContentScreen(
     val pagerState = rememberPagerState(pageCount = { 2 })
     val coroutineScope = rememberCoroutineScope()
     var activeDialog by remember { mutableStateOf<LikedContentDialog?>(null) }
-
-    val userListState = rememberLazyListState()
-    val shouldLoadMoreUsers by remember {
-        derivedStateOf {
-            val totalItems = userListState.layoutInfo.totalItemsCount
-            val lastVisibleIndex = userListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            totalItems > 0 && lastVisibleIndex >= totalItems - 2
-        }
-    }
-
-    LaunchedEffect(shouldLoadMoreUsers) {
-        if (shouldLoadMoreUsers) {
-            viewModel.loadLikedUsers(isRefresh = false)
-        }
-    }
 
     LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) {
         videoManager.pause()
@@ -131,63 +103,20 @@ fun LikedContentScreen(
                 modifier = Modifier.fillMaxSize()
             ) { page ->
                 if (page == 0) {
-                    AppPullToRefreshBox(
+                    UserList(
+                        users = usersState.users,
+                        isInitialLoading = usersState.isInitialLoading,
                         isRefreshing = usersState.isRefreshing,
+                        isLast = usersState.isLast,
+                        emptyMessage = "좋아요한 사용자가 없습니다.",
+                        isLiked = true,
                         onRefresh = { viewModel.loadLikedUsers(isRefresh = true) },
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        when {
-                            usersState.isInitialLoading && usersState.users.isEmpty() -> {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.align(Alignment.Center),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            usersState.isEmpty -> {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .verticalScroll(rememberScrollState()),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "좋아요한 사용자가 없습니다.",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                            else -> {
-                                LazyColumn(
-                                    state = userListState,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentPadding = PaddingValues(vertical = 8.dp)
-                                ) {
-                                    items(usersState.users, key = { it.id }) { user ->
-                                        LikedUserCard(
-                                            user = user,
-                                            isLiked = true,
-                                            onProfileClick = onNavigateToProfileClick,
-                                            onLikeClick = { viewModel.toggleLikeUser(it) },
-                                            onBlockUserClick = { activeDialog = LikedContentDialog.BlockUser(it) },
-                                            onReportUserClick = { activeDialog = LikedContentDialog.ReportUser(it) }
-                                        )
-                                    }
-                                    if (!usersState.isLast) {
-                                        item {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(16.dp),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                        onLoadMore = { viewModel.loadLikedUsers(isRefresh = false) },
+                        onProfileClick = onNavigateToProfileClick,
+                        onLikeClick = { viewModel.toggleLikeUser(it) },
+                        onBlockClick = { activeDialog = LikedContentDialog.BlockUser(it) },
+                        onReportClick = { activeDialog = LikedContentDialog.ReportUser(it) }
+                    )
                 } else {
                     PostFeedList(
                         posts = postsState.posts,
